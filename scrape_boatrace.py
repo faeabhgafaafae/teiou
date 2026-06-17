@@ -14,6 +14,7 @@
   python scrape_boatrace.py --date 20260617
 """
 
+import os
 import re
 import sys
 import time
