@@ -1,0 +1,54 @@
+name: 艇王 自動データ取得
+
+on:
+  schedule:
+    - cron: '0 22 * * *'   # JST 7:00 出走表・直前情報取得
+    - cron: '0 11 * * *'   # JST 20:00 競走成績取得
+  workflow_dispatch:        # 手動実行も可能
+
+jobs:
+  # ─── 毎朝7時: 直前情報取得 ───────────────────────────
+  scrape_beforeinfo:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 22 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: 直前情報スクレイピング
+        env:
+          API_URL: ${{ secrets.API_URL_BEFOREINFO }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: python scrape_boatrace.py
+
+  # ─── 毎夜20時: 競走成績取得 ──────────────────────────
+  fetch_results:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 11 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: 競走成績取得
+        env:
+          API_URL: ${{ secrets.API_URL_RESULTS }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          YESTERDAY=$(date -d 'yesterday' +%Y-%m-%d)
+          python download_results.py --start $YESTERDAY --end $YESTERDAY
