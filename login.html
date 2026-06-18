@@ -4,8 +4,119 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>艇王 - ログイン</title>
-<link rel="stylesheet" href="css/common.css">
-<link rel="stylesheet" href="css/auth.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo a { text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.logo h1 { font-size: 24px; font-weight: 800; letter-spacing: 3px; color: #0055a4; }
+.logo-sub { font-size: 11px; color: #888; letter-spacing: 1px; }
+.container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
+.grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.5px; }
+.grade-sg { background: #fff3cd; color: #b8860b; }
+.grade-g1 { background: #fee2e2; color: #c0392b; }
+.grade-g2 { background: #dbeafe; color: #2563eb; }
+.grade-g3 { background: #d1fae5; color: #16a34a; }
+.grade-ippan { background: #f3f4f6; color: #888; }
+.loading { text-align: center; padding: 60px 20px; color: #999; }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
+footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
+
+.auth-container {
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+.auth-card {
+  background: #fff;
+  border: 1px solid #e0e3e8;
+  border-radius: 12px;
+  padding: 32px 28px;
+}
+
+.auth-card h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #333;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-group input:focus {
+  border-color: #0055a4;
+  box-shadow: 0 0 0 3px rgba(0, 85, 164, 0.1);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background: #0055a4;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 6px;
+}
+
+.submit-btn:hover { background: #003d7a; }
+.submit-btn:disabled { background: #999; cursor: not-allowed; }
+
+.error-msg {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #dc2626;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: #888;
+}
+
+.auth-footer a {
+  color: #0055a4;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-footer a:hover { text-decoration: underline; }
+</style>
 </head>
 <body>
 
@@ -42,16 +153,16 @@
 <footer>艇王 &copy; 2026</footer>
 
 <script>
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const btn = document.getElementById('submitBtn');
-  const errEl = document.getElementById('errorMsg');
+  var btn = document.getElementById('submitBtn');
+  var errEl = document.getElementById('errorMsg');
   errEl.style.display = 'none';
   btn.disabled = true;
   btn.textContent = 'ログイン中...';
 
   try {
-    const res = await fetch('login.php', {
+    var res = await fetch('login.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -59,14 +170,14 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         password: document.getElementById('password').value,
       }),
     });
-    const data = await res.json();
+    var data = await res.json();
     if (!res.ok) {
       errEl.textContent = data.error;
       errEl.style.display = 'block';
       return;
     }
     location.href = 'index.html';
-  } catch {
+  } catch(err) {
     errEl.textContent = '通信エラーが発生しました';
     errEl.style.display = 'block';
   } finally {

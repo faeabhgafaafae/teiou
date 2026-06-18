@@ -4,8 +4,361 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>艇王 - ボートレース予想</title>
-<link rel="stylesheet" href="css/common.css">
-<link rel="stylesheet" href="css/index.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo a { text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.logo h1 { font-size: 24px; font-weight: 800; letter-spacing: 3px; color: #0055a4; }
+.logo-sub { font-size: 11px; color: #888; letter-spacing: 1px; }
+.container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
+.grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.5px; }
+.grade-sg { background: #fff3cd; color: #b8860b; }
+.grade-g1 { background: #fee2e2; color: #c0392b; }
+.grade-g2 { background: #dbeafe; color: #2563eb; }
+.grade-g3 { background: #d1fae5; color: #16a34a; }
+.grade-ippan { background: #f3f4f6; color: #888; }
+.loading { text-align: center; padding: 60px 20px; color: #999; }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
+footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
+
+header {
+  justify-content: space-between;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-date {
+  font-size: 13px;
+  color: #555;
+  font-weight: 600;
+}
+
+.header-auth {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-link {
+  font-size: 13px;
+  color: #0055a4;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.auth-link:hover {
+  background: #e8f0fd;
+}
+
+.auth-link.register {
+  background: #0055a4;
+  color: #fff;
+}
+
+.auth-link.register:hover {
+  background: #003d7a;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+  font-weight: 600;
+  transition: border-color 0.15s;
+}
+
+.user-btn:hover {
+  border-color: #0055a4;
+}
+
+.user-icon {
+  width: 24px;
+  height: 24px;
+  background: #0055a4;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plan-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #f3f4f6;
+  color: #888;
+}
+
+.plan-badge.standard { background: #dbeafe; color: #2563eb; }
+.plan-badge.premium { background: #fff3cd; color: #b8860b; }
+
+.dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e0e3e8;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown.open { display: block; }
+
+.dropdown-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+  color: #333;
+}
+
+.dropdown-header small {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.1s;
+}
+
+.dropdown-item:hover {
+  background: #f5f7fa;
+}
+
+.dropdown-item.logout {
+  color: #e53e3e;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* --- 注目レースバナー --- */
+.featured-banner {
+  background: linear-gradient(135deg, #0055a4 0%, #0077cc 100%);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: box-shadow 0.2s;
+}
+
+.featured-banner:hover {
+  box-shadow: 0 4px 16px rgba(0, 85, 164, 0.3);
+}
+
+.featured-tag {
+  background: #ff6b00;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: 1px;
+}
+
+.featured-body { flex: 1; }
+
+.featured-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.featured-sub {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.featured-arrow {
+  font-size: 22px;
+  opacity: 0.7;
+}
+
+/* --- セクション --- */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+  padding-left: 10px;
+  border-left: 3px solid #0055a4;
+}
+
+.venue-count {
+  font-size: 12px;
+  color: #999;
+}
+
+/* --- 会場グリッド --- */
+.venue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.venue-card {
+  background: #fff;
+  border: 1px solid #e0e3e8;
+  border-radius: 10px;
+  padding: 14px;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.venue-card:hover {
+  border-color: #0055a4;
+  box-shadow: 0 2px 10px rgba(0, 85, 164, 0.12);
+  transform: translateY(-1px);
+}
+
+.venue-card.inactive {
+  background: #f7f8f9;
+  border-color: #e8e8e8;
+  pointer-events: none;
+}
+
+.venue-card.inactive .venue-name { color: #bbb; }
+.venue-card.inactive .grade-badge { background: #e0e0e0; color: #bbb; }
+.venue-card.inactive .deadline-time { color: #ccc; }
+.venue-card.inactive .deadline-label { color: #ccc; }
+.venue-card.inactive .race-info { color: #ccc; }
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.venue-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #222;
+}
+
+.deadline-label {
+  font-size: 10px;
+  color: #999;
+  margin-bottom: 1px;
+}
+
+.deadline-time {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0055a4;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.race-info {
+  font-size: 11px;
+  color: #777;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: #e53e3e;
+  font-weight: 700;
+}
+
+.status-live::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: #e53e3e;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+.status-closed {
+  font-size: 10px;
+  color: #bbb;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.loading { grid-column: 1 / -1; }
+.error-msg { grid-column: 1 / -1; }
+
+@media (max-width: 600px) {
+  .venue-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .venue-name { font-size: 15px; }
+  .deadline-time { font-size: 17px; }
+  .featured-banner { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .featured-arrow { display: none; }
+  header { flex-wrap: wrap; gap: 8px; }
+  .header-right { gap: 8px; }
+  .auth-link { font-size: 12px; padding: 5px 10px; }
+  .user-btn { font-size: 12px; padding: 5px 8px; }
+}
+</style>
 </head>
 <body>
 
@@ -38,16 +391,16 @@
 <footer>艇王 &copy; 2026</footer>
 
 <script>
-const ALL_VENUES = [
+var ALL_VENUES = [
   '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
   '蒲郡','常滑','津','三国','びわこ','住之江',
   '尼崎','鳴門','丸亀','児島','宮島','徳山',
   '下関','若松','芦屋','福岡','唐津','大村'
 ];
 
-const GRADE_CLASSES = { 'SG': 'grade-sg', 'G1': 'grade-g1', 'G2': 'grade-g2', 'G3': 'grade-g3', '一般': 'grade-ippan' };
+var GRADE_CLASSES = { 'SG': 'grade-sg', 'G1': 'grade-g1', 'G2': 'grade-g2', 'G3': 'grade-g3', '一般': 'grade-ippan' };
 
-const VENUE_GRADES = {
+var VENUE_GRADES = {
   '桐生': 'G3', '戸田': '一般', '江戸川': '一般', '平和島': 'G1', '多摩川': '一般',
   '浜名湖': '一般', '蒲郡': '一般', '常滑': '一般', '津': '一般', '三国': '一般',
   'びわこ': '一般', '住之江': 'G2', '尼崎': 'G3', '鳴門': '一般', '丸亀': '一般',
@@ -56,169 +409,163 @@ const VENUE_GRADES = {
 };
 
 function generateDeadline(venueName, raceIndex) {
-  const hash = [...venueName].reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const h = String(10 + Math.floor(hash % 8)).padStart(2, '0');
-  const m = String((hash * 7 + raceIndex * 27) % 60).padStart(2, '0');
-  return `${h}:${m}`;
+  var hash = Array.prototype.slice.call(venueName).reduce(function(acc, c) { return acc + c.charCodeAt(0); }, 0);
+  var h = String(10 + Math.floor(hash % 8)).padStart(2, '0');
+  var m = String((hash * 7 + raceIndex * 27) % 60).padStart(2, '0');
+  return h + ':' + m;
 }
 
 function simulateCurrentRace(venueName, totalRaces) {
-  const hash = [...venueName].reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const progress = (new Date().getHours() - 9) / 10;
+  var hash = Array.prototype.slice.call(venueName).reduce(function(acc, c) { return acc + c.charCodeAt(0); }, 0);
+  var progress = (new Date().getHours() - 9) / 10;
   return Math.max(1, Math.min(totalRaces, Math.floor(progress * totalRaces) + (hash % 3)));
 }
 
 function formatDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  const days = ['日','月','火','水','木','金','土'];
-  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 (${days[d.getDay()]})`;
+  var d = new Date(dateStr + 'T00:00:00');
+  var days = ['日','月','火','水','木','金','土'];
+  return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (' + days[d.getDay()] + ')';
 }
 
-let apiDate = '';
-let activeVenueSet = new Set();
+var apiDate = '';
+var activeVenueSet = new Set();
 
 function createVenueCard(venueName, venueData) {
-  const isActive = !!venueData;
-  const grade = VENUE_GRADES[venueName] || '一般';
-  const gradeClass = GRADE_CLASSES[grade];
+  var isActive = !!venueData;
+  var grade = VENUE_GRADES[venueName] || '一般';
+  var gradeClass = GRADE_CLASSES[grade];
 
   if (!isActive) {
-    return `
-      <div class="venue-card inactive">
-        <div class="card-top">
-          <span class="venue-name">${venueName}</span>
-          <span class="grade-badge ${gradeClass}">${grade}</span>
-        </div>
-        <div class="deadline-label">締切</div>
-        <div class="deadline-time">--:--</div>
-        <div class="race-info">
-          <span class="status-closed">非開催</span>
-        </div>
-      </div>`;
+    return '<div class="venue-card inactive">' +
+        '<div class="card-top">' +
+          '<span class="venue-name">' + venueName + '</span>' +
+          '<span class="grade-badge ' + gradeClass + '">' + grade + '</span>' +
+        '</div>' +
+        '<div class="deadline-label">締切</div>' +
+        '<div class="deadline-time">--:--</div>' +
+        '<div class="race-info">' +
+          '<span class="status-closed">非開催</span>' +
+        '</div>' +
+      '</div>';
   }
 
-  const totalRaces = venueData.race_count;
-  const currentRace = simulateCurrentRace(venueName, totalRaces);
-  const deadline = generateDeadline(venueName, currentRace);
-  const isLive = currentRace < totalRaces;
-  const href = `races.html?venue=${encodeURIComponent(venueName)}&date=${apiDate}`;
+  var totalRaces = venueData.race_count;
+  var currentRace = simulateCurrentRace(venueName, totalRaces);
+  var deadline = generateDeadline(venueName, currentRace);
+  var isLive = currentRace < totalRaces;
+  var href = 'races.html?venue=' + encodeURIComponent(venueName) + '&date=' + apiDate;
 
-  return `
-    <a class="venue-card" href="${href}">
-      <div class="card-top">
-        <span class="venue-name">${venueName}</span>
-        <span class="grade-badge ${gradeClass}">${grade}</span>
-      </div>
-      <div class="deadline-label">次の締切</div>
-      <div class="deadline-time">${deadline}</div>
-      <div class="race-info">
-        <span>${currentRace}R / ${totalRaces}R</span>
-        ${isLive ? '<span class="status-live">LIVE</span>' : ''}
-      </div>
-    </a>`;
+  return '<a class="venue-card" href="' + href + '">' +
+      '<div class="card-top">' +
+        '<span class="venue-name">' + venueName + '</span>' +
+        '<span class="grade-badge ' + gradeClass + '">' + grade + '</span>' +
+      '</div>' +
+      '<div class="deadline-label">次の締切</div>' +
+      '<div class="deadline-time">' + deadline + '</div>' +
+      '<div class="race-info">' +
+        '<span>' + currentRace + 'R / ' + totalRaces + 'R</span>' +
+        (isLive ? '<span class="status-live">LIVE</span>' : '') +
+      '</div>' +
+    '</a>';
 }
 
 function renderFeaturedBanner(venues) {
-  const banner = document.getElementById('featuredBanner');
-  const sgVenue = venues.find(v => VENUE_GRADES[v.venue] === 'SG');
-  const g1Venue = venues.find(v => VENUE_GRADES[v.venue] === 'G1');
-  const featured = sgVenue || g1Venue;
+  var banner = document.getElementById('featuredBanner');
+  var sgVenue = venues.find(function(v) { return VENUE_GRADES[v.venue] === 'SG'; });
+  var g1Venue = venues.find(function(v) { return VENUE_GRADES[v.venue] === 'G1'; });
+  var featured = sgVenue || g1Venue;
   if (!featured) {
     banner.innerHTML = '';
     return;
   }
-  const grade = VENUE_GRADES[featured.venue];
-  const currentRace = simulateCurrentRace(featured.venue, featured.race_count);
-  const deadline = generateDeadline(featured.venue, currentRace);
-  const href = `races.html?venue=${encodeURIComponent(featured.venue)}&date=${apiDate}`;
+  var grade = VENUE_GRADES[featured.venue];
+  var currentRace = simulateCurrentRace(featured.venue, featured.race_count);
+  var deadline = generateDeadline(featured.venue, currentRace);
+  var href = 'races.html?venue=' + encodeURIComponent(featured.venue) + '&date=' + apiDate;
 
-  banner.innerHTML = `
-    <a class="featured-banner" href="${href}">
-      <span class="featured-tag">${grade}</span>
-      <div class="featured-body">
-        <div class="featured-title">${featured.venue} - 本日の注目レース</div>
-        <div class="featured-sub">${currentRace}R 締切 ${deadline} / 全${featured.race_count}レース</div>
-      </div>
-      <span class="featured-arrow">&rsaquo;</span>
-    </a>`;
+  banner.innerHTML = '<a class="featured-banner" href="' + href + '">' +
+      '<span class="featured-tag">' + grade + '</span>' +
+      '<div class="featured-body">' +
+        '<div class="featured-title">' + featured.venue + ' - 本日の注目レース</div>' +
+        '<div class="featured-sub">' + currentRace + 'R 締切 ' + deadline + ' / 全' + featured.race_count + 'レース</div>' +
+      '</div>' +
+      '<span class="featured-arrow">&rsaquo;</span>' +
+    '</a>';
 }
 
 async function loadVenues() {
-  const grid = document.getElementById('venueGrid');
+  var grid = document.getElementById('venueGrid');
   try {
-    const res = await fetch('https://2410049.moo.jp/venues.php');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    var res = await fetch('https://' + '2410049.moo.jp/venues.php');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
 
     apiDate = data.date;
     document.getElementById('headerDate').textContent = formatDate(data.date);
 
-    const venueMap = {};
+    var venueMap = {};
     if (data.venues) {
-      data.venues.forEach(v => { venueMap[v.venue] = v; });
+      data.venues.forEach(function(v) { venueMap[v.venue] = v; });
     }
 
-    const activeCount = data.venues ? data.venues.length : 0;
-    document.getElementById('venueCount').textContent = `${activeCount}場 開催中 / 全${ALL_VENUES.length}場`;
+    var activeCount = data.venues ? data.venues.length : 0;
+    document.getElementById('venueCount').textContent = activeCount + '場 開催中 / 全' + ALL_VENUES.length + '場';
 
     if (data.venues && data.venues.length > 0) {
       renderFeaturedBanner(data.venues);
     }
 
-    grid.innerHTML = ALL_VENUES.map(name => createVenueCard(name, venueMap[name])).join('');
+    grid.innerHTML = ALL_VENUES.map(function(name) { return createVenueCard(name, venueMap[name]); }).join('');
   } catch (e) {
-    grid.innerHTML = `<div class="error-msg">データの取得に失敗しました<br><small>${e.message}</small></div>`;
+    grid.innerHTML = '<div class="error-msg">データの取得に失敗しました<br><small>' + e.message + '</small></div>';
   }
 }
 
 loadVenues();
 
 async function checkAuth() {
-  const authEl = document.getElementById('headerAuth');
+  var authEl = document.getElementById('headerAuth');
   try {
-    const res = await fetch('me.php');
+    var res = await fetch('me.php');
     if (!res.ok) {
-      authEl.innerHTML = `
-        <a class="auth-link" href="login.html">ログイン</a>
-        <a class="auth-link register" href="register.html">新規登録</a>`;
+      authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a>' +
+        '<a class="auth-link register" href="register.html">新規登録</a>';
       return;
     }
-    const data = await res.json();
-    const user = data.user;
-    const initial = user.name.charAt(0);
-    const planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
-    const planClass = user.plan !== 'free' ? user.plan : '';
+    var data = await res.json();
+    var user = data.user;
+    var initial = user.name.charAt(0);
+    var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
+    var planClass = user.plan !== 'free' ? user.plan : '';
 
-    authEl.innerHTML = `
-      <div class="user-menu">
-        <button class="user-btn" id="userBtn">
-          <span class="user-icon">${initial}</span>
-          <span>${user.name}</span>
-          <span class="plan-badge ${planClass}">${planLabel[user.plan] || 'Free'}</span>
-        </button>
-        <div class="dropdown" id="userDropdown">
-          <div class="dropdown-header">
-            ${user.name}<small>${user.email}</small>
-          </div>
-          <button class="dropdown-item logout" id="logoutBtn">ログアウト</button>
-        </div>
-      </div>`;
+    authEl.innerHTML = '<div class="user-menu">' +
+        '<button class="user-btn" id="userBtn">' +
+          '<span class="user-icon">' + initial + '</span>' +
+          '<span>' + user.name + '</span>' +
+          '<span class="plan-badge ' + planClass + '">' + (planLabel[user.plan] || 'Free') + '</span>' +
+        '</button>' +
+        '<div class="dropdown" id="userDropdown">' +
+          '<div class="dropdown-header">' +
+            user.name + '<small>' + user.email + '</small>' +
+          '</div>' +
+          '<button class="dropdown-item logout" id="logoutBtn">ログアウト</button>' +
+        '</div>' +
+      '</div>';
 
-    document.getElementById('userBtn').addEventListener('click', (e) => {
+    document.getElementById('userBtn').addEventListener('click', function(e) {
       e.stopPropagation();
       document.getElementById('userDropdown').classList.toggle('open');
     });
-    document.addEventListener('click', () => {
+    document.addEventListener('click', function() {
       document.getElementById('userDropdown').classList.remove('open');
     });
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
+    document.getElementById('logoutBtn').addEventListener('click', async function() {
       await fetch('logout.php');
       location.reload();
     });
-  } catch {
-    authEl.innerHTML = `
-      <a class="auth-link" href="login.html">ログイン</a>
-      <a class="auth-link register" href="register.html">新規登録</a>`;
+  } catch(err) {
+    authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a>' +
+      '<a class="auth-link register" href="register.html">新規登録</a>';
   }
 }
 
