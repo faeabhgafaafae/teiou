@@ -4,13 +4,213 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>艇王 - 予測</title>
-<link rel="stylesheet" href="css/common.css">
-<link rel="stylesheet" href="css/predict.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo a { text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.logo h1 { font-size: 24px; font-weight: 800; letter-spacing: 3px; color: #0055a4; }
+.logo-sub { font-size: 11px; color: #888; letter-spacing: 1px; }
+.container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
+.grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.5px; }
+.grade-sg { background: #fff3cd; color: #b8860b; }
+.grade-g1 { background: #fee2e2; color: #c0392b; }
+.grade-g2 { background: #dbeafe; color: #2563eb; }
+.grade-g3 { background: #d1fae5; color: #16a34a; }
+.grade-ippan { background: #f3f4f6; color: #888; }
+.loading { text-align: center; padding: 60px 20px; color: #999; }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
+footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
+
+body { background: #f5f7fa; color: #222; }
+
+.header {
+  background: #1a4a8a;
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header a { color: white; text-decoration: none; font-size: 20px; }
+.header h1 { font-size: 18px; font-weight: 600; }
+
+.container { max-width: 800px; }
+
+.ai-comment {
+  background: #e8f0fd;
+  border-left: 4px solid #1a4a8a;
+  border-radius: 0 10px 10px 0;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1a3a6a;
+}
+
+.ai-comment .label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1a4a8a;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.weather-bar {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: #555;
+}
+
+.weather-bar span { display: flex; align-items: center; gap: 4px; }
+
+.prediction-list { display: flex; flex-direction: column; gap: 10px; }
+
+.player-card {
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.player-card.rank-1 { border-color: #f59e0b; }
+.player-card.rank-2 { border-color: #9ca3af; }
+.player-card.rank-3 { border-color: #b45309; }
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+.rank-1 .rank-badge { background: #fef3c7; color: #d97706; }
+.rank-2 .rank-badge { background: #f3f4f6; color: #6b7280; }
+.rank-3 .rank-badge { background: #fef3c7; color: #92400e; }
+.rank-other .rank-badge { background: #f3f4f6; color: #9ca3af; }
+
+.player-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.lane-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 12px;
+  margin-right: 8px;
+  color: white;
+}
+
+.lane-1 { background: #1a4a8a; }
+.lane-2 { background: #e53e3e; }
+.lane-3 { background: #d97706; }
+.lane-4 { background: #38a169; }
+.lane-5 { background: #805ad5; }
+.lane-6 { background: #718096; }
+
+.player-name { font-size: 16px; font-weight: 600; flex: 1; }
+
+.player-grade {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.grade-A1 { background: #fef3c7; color: #d97706; }
+.grade-A2 { background: #e8f0fd; color: #1a4a8a; }
+.grade-B1 { background: #f3f4f6; color: #6b7280; }
+.grade-B2 { background: #f3f4f6; color: #9ca3af; }
+
+.score-bar-wrap { margin: 8px 0; }
+
+.score-bar-bg {
+  background: #f3f4f6;
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: #1a4a8a;
+  transition: width 0.5s ease;
+}
+
+.score-total {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a4a8a;
+  text-align: right;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.stat-item { text-align: center; }
+.stat-label { font-size: 10px; color: #888; margin-bottom: 2px; }
+.stat-value { font-size: 13px; font-weight: 600; }
+
+.flying-badge {
+  display: inline-block;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 6px;
+}
+
+.loading { padding: 40px; color: #888; font-size: 14px; }
+
+.error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  padding: 16px;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
 </head>
 <body>
 
 <div class="header">
-  <a id="back-link" href="index.html">←</a>
+  <a id="back-link" href="index.html">&#8592;</a>
   <div>
     <h1 id="page-title">予測</h1>
   </div>
@@ -18,13 +218,13 @@
 
 <div class="container">
   <div id="ai-comment-wrap" style="display:none" class="ai-comment">
-    <div class="label">🤖 AI解説</div>
+    <div class="label">&#129302; AI解説</div>
     <div id="ai-comment-text"></div>
   </div>
 
   <div id="weather-wrap" style="display:none" class="weather-bar">
-    <span>🌬️ 風速 <strong id="wind-speed">-</strong>m</span>
-    <span>🌊 波高 <strong id="wave-height">-</strong>cm</span>
+    <span>&#127788;&#65039; 風速 <strong id="wind-speed">-</strong>m</span>
+    <span>&#127754; 波高 <strong id="wave-height">-</strong>cm</span>
   </div>
 
   <div class="prediction-list" id="prediction-list">
@@ -33,117 +233,116 @@
 </div>
 
 <script>
-const params = new URLSearchParams(location.search);
-const venue   = params.get('venue')   || '';
-const date    = params.get('date')    || today();
-const race_no = params.get('race_no') || '1';
+var params = new URLSearchParams(location.search);
+var venue   = params.get('venue')   || '';
+var date    = params.get('date')    || today();
+var race_no = params.get('race_no') || '1';
 
 function today() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
-document.getElementById('page-title').textContent = `${venue} ${race_no}R 予測`;
-document.getElementById('back-link').href = `races.html?venue=${encodeURIComponent(venue)}&date=${date}`;
-document.title = `艇王 - ${venue} ${race_no}R`;
+document.getElementById('page-title').textContent = venue + ' ' + race_no + 'R 予測';
+document.getElementById('back-link').href = 'races.html?venue=' + encodeURIComponent(venue) + '&date=' + date;
+document.title = '艇王 - ' + venue + ' ' + race_no + 'R';
 
-const API_BASE = 'https://2410049.moo.jp';
-const GEMINI_API_KEY = 'AQ.Ab8RN6Jv2essTIUfHJXe8gQLbul6T8Zt0ET84HjEX2BinE-ADQ';
+var API_BASE = 'https://' + '2410049.moo.jp';
+var GEMINI_API_KEY = 'AQ.Ab8RN6Jv2essTIUfHJXe8gQLbul6T8Zt0ET84HjEX2BinE-ADQ';
 
 async function getAIComment(predictions) {
   if (!GEMINI_API_KEY) return null;
-  const top = predictions[0];
-  const prompt = `以下はボートレースの予測スコアです。初心者にわかりやすく、なぜこの選手が1位予測なのか、注意点も含めて3〜4文で解説してください。
-
-1位予測：${top.name}（${top.lane}コース）${top.grade}級
-- 選手能力スコア：${top.score_ability.toFixed(1)}/40点
-- コース別補正：${top.score_course.toFixed(1)}/20点
-- 当日情報：${top.score_today.toFixed(1)}/35点
-- 気象補正：${top.score_weather.toFixed(1)}/5点
-- 合計：${top.score_total.toFixed(1)}点`;
+  var top = predictions[0];
+  var prompt = '以下はボートレースの予測スコアです。初心者にわかりやすく、なぜこの選手が1位予測なのか、注意点も含めて3〜4文で解説してください。\n\n' +
+    '1位予測：' + top.name + '（' + top.lane + 'コース）' + top.grade + '級\n' +
+    '- 選手能力スコア：' + top.score_ability.toFixed(1) + '/40点\n' +
+    '- コース別補正：' + top.score_course.toFixed(1) + '/20点\n' +
+    '- 当日情報：' + top.score_today.toFixed(1) + '/35点\n' +
+    '- 気象補正：' + top.score_weather.toFixed(1) + '/5点\n' +
+    '- 合計：' + top.score_total.toFixed(1) + '点';
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
+    var geminiUrl = 'https://' + 'generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=' + GEMINI_API_KEY;
+    var res = await fetch(geminiUrl, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({contents: [{parts: [{text: prompt}]}]})
     });
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+    var data = await res.json();
+    return (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text) || null;
   } catch(e) {
     return null;
   }
 }
 
 async function loadPrediction() {
-  const list = document.getElementById('prediction-list');
+  var list = document.getElementById('prediction-list');
   try {
-    const res = await fetch(`${API_BASE}/predict.php?date=${date}&venue=${encodeURIComponent(venue)}&race_no=${race_no}`);
-    const data = await res.json();
+    var apiUrl = API_BASE + '/predict.php?date=' + date + '&venue=' + encodeURIComponent(venue) + '&race_no=' + race_no;
+    var res = await fetch(apiUrl);
+    var data = await res.json();
 
     if (data.error) {
-      list.innerHTML = `<div class="error">${data.error}</div>`;
+      list.innerHTML = '<div class="error">' + data.error + '</div>';
       return;
     }
 
     // 気象情報
     if (data.weather) {
-      document.getElementById('wind-speed').textContent = data.weather.wind_speed ?? '-';
-      document.getElementById('wave-height').textContent = data.weather.wave_height ?? '-';
+      document.getElementById('wind-speed').textContent = data.weather.wind_speed != null ? data.weather.wind_speed : '-';
+      document.getElementById('wave-height').textContent = data.weather.wave_height != null ? data.weather.wave_height : '-';
       document.getElementById('weather-wrap').style.display = 'flex';
     }
 
     // 予測リスト
     list.innerHTML = '';
-    const maxScore = data.predictions[0]?.score_total || 100;
+    var maxScore = (data.predictions[0] && data.predictions[0].score_total) || 100;
 
-    data.predictions.forEach(p => {
-      const rankClass = p.predicted_rank <= 3 ? `rank-${p.predicted_rank}` : 'rank-other';
-      const card = document.createElement('div');
-      card.className = `player-card ${rankClass}`;
+    data.predictions.forEach(function(p) {
+      var rankClass = p.predicted_rank <= 3 ? 'rank-' + p.predicted_rank : 'rank-other';
+      var card = document.createElement('div');
+      card.className = 'player-card ' + rankClass;
 
-      const gradeClass = `grade-${p.grade.replace(/\s/g, '')}`;
-      const barWidth = Math.max(5, (p.score_total / maxScore * 100)).toFixed(0);
+      var gradeClass = 'grade-' + p.grade.replace(/\s/g, '');
+      var barWidth = Math.max(5, (p.score_total / maxScore * 100)).toFixed(0);
 
-      card.innerHTML = `
-        <div class="player-top">
-          <span class="rank-badge">${p.predicted_rank}</span>
-          <span class="lane-badge lane-${p.lane}">${p.lane}</span>
-          <span class="player-name">${p.name}${p.is_flying ? '<span class="flying-badge">F</span>' : ''}</span>
-          <span class="player-grade ${gradeClass}">${p.grade}</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div class="score-bar-wrap" style="flex:1">
-            <div class="score-bar-bg">
-              <div class="score-bar-fill" style="width:${barWidth}%"></div>
-            </div>
-          </div>
-          <div class="score-total">${p.score_total.toFixed(1)}</div>
-        </div>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-label">選手能力</div>
-            <div class="stat-value">${p.score_ability.toFixed(1)}</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-label">コース補正</div>
-            <div class="stat-value">${p.score_course.toFixed(1)}</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-label">当日情報</div>
-            <div class="stat-value">${p.score_today.toFixed(1)}</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-label">展示タイム</div>
-            <div class="stat-value">${p.exhibit_time ? p.exhibit_time.toFixed(2) : '-'}</div>
-          </div>
-        </div>
-      `;
+      card.innerHTML = '<div class="player-top">' +
+          '<span class="rank-badge">' + p.predicted_rank + '</span>' +
+          '<span class="lane-badge lane-' + p.lane + '">' + p.lane + '</span>' +
+          '<span class="player-name">' + p.name + (p.is_flying ? '<span class="flying-badge">F</span>' : '') + '</span>' +
+          '<span class="player-grade ' + gradeClass + '">' + p.grade + '</span>' +
+        '</div>' +
+        '<div style="display:flex; align-items:center; gap:10px;">' +
+          '<div class="score-bar-wrap" style="flex:1">' +
+            '<div class="score-bar-bg">' +
+              '<div class="score-bar-fill" style="width:' + barWidth + '%"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="score-total">' + p.score_total.toFixed(1) + '</div>' +
+        '</div>' +
+        '<div class="stats-grid">' +
+          '<div class="stat-item">' +
+            '<div class="stat-label">選手能力</div>' +
+            '<div class="stat-value">' + p.score_ability.toFixed(1) + '</div>' +
+          '</div>' +
+          '<div class="stat-item">' +
+            '<div class="stat-label">コース補正</div>' +
+            '<div class="stat-value">' + p.score_course.toFixed(1) + '</div>' +
+          '</div>' +
+          '<div class="stat-item">' +
+            '<div class="stat-label">当日情報</div>' +
+            '<div class="stat-value">' + p.score_today.toFixed(1) + '</div>' +
+          '</div>' +
+          '<div class="stat-item">' +
+            '<div class="stat-label">展示タイム</div>' +
+            '<div class="stat-value">' + (p.exhibit_time ? p.exhibit_time.toFixed(2) : '-') + '</div>' +
+          '</div>' +
+        '</div>';
       list.appendChild(card);
     });
 
     // AI解説
-    const comment = await getAIComment(data.predictions);
+    var comment = await getAIComment(data.predictions);
     if (comment) {
       document.getElementById('ai-comment-text').textContent = comment;
       document.getElementById('ai-comment-wrap').style.display = 'block';
