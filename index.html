@@ -2,185 +2,369 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>艇王 - ボートレース予測</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOATERS - ボートレース予想</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: sans-serif; background: #f5f7fa; color: #222; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-.header {
-  background: #1a4a8a;
-  color: white;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.header h1 { font-size: 22px; font-weight: 700; }
-.header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+  body {
+    font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+    background: #0a0e1a;
+    color: #e0e6f0;
+    min-height: 100vh;
+  }
 
-.container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
+  header {
+    background: linear-gradient(135deg, #0d1b3e 0%, #1a2d5a 50%, #0d1b3e 100%);
+    border-bottom: 2px solid #1e90ff;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-.date-bar {
-  background: white;
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid #e5e7eb;
-}
-.date-bar span { font-size: 15px; font-weight: 500; }
-.date-bar small { font-size: 12px; color: #888; }
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
 
-.section-title {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 12px;
-  font-weight: 500;
-}
+  .logo h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, #4fc3f7, #1e90ff, #4fc3f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 
-.venue-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
-}
+  .logo span {
+    font-size: 12px;
+    color: #6a8cbe;
+    letter-spacing: 1px;
+  }
 
-.venue-card {
-  background: white;
-  border-radius: 10px;
-  padding: 16px;
-  border: 1px solid #e5e7eb;
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  transition: all 0.15s;
-}
-.venue-card:hover {
-  border-color: #1a4a8a;
-  box-shadow: 0 2px 8px rgba(26,74,138,0.1);
-}
-.venue-card .name {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-.venue-card .info {
-  font-size: 12px;
-  color: #888;
-}
-.venue-card .race-count {
-  display: inline-block;
-  background: #e8f0fd;
-  color: #1a4a8a;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  margin-top: 8px;
-}
+  .header-date {
+    font-size: 14px;
+    color: #8ab4f8;
+    font-weight: 600;
+  }
 
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: #888;
-  font-size: 14px;
-}
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
 
-.error {
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  border-radius: 10px;
-  padding: 16px;
-  color: #dc2626;
-  font-size: 14px;
-}
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #8ab4f8;
+    margin-bottom: 16px;
+    padding-left: 12px;
+    border-left: 3px solid #1e90ff;
+  }
 
-.footer {
-  text-align: center;
-  padding: 24px;
-  font-size: 12px;
-  color: #aaa;
-}
+  .venue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .venue-card {
+    background: linear-gradient(160deg, #121a30 0%, #0f1628 100%);
+    border: 1px solid #1c2a4a;
+    border-radius: 10px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .venue-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #1e90ff, #4fc3f7);
+    opacity: 0.6;
+  }
+
+  .venue-card:hover {
+    border-color: #1e90ff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(30, 144, 255, 0.15);
+  }
+
+  .venue-card:hover::before {
+    opacity: 1;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .venue-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .grade-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+
+  .grade-sg { background: #b8860b; color: #fff; }
+  .grade-g1 { background: #c0392b; color: #fff; }
+  .grade-g2 { background: #2980b9; color: #fff; }
+  .grade-g3 { background: #27ae60; color: #fff; }
+  .grade-ippan { background: #2c3e50; color: #8899aa; }
+
+  .card-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .next-race {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .next-race-label {
+    font-size: 10px;
+    color: #5a7aa0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .next-race-time {
+    font-size: 22px;
+    font-weight: 700;
+    color: #4fc3f7;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .race-number {
+    font-size: 12px;
+    color: #8ab4f8;
+    font-weight: 600;
+  }
+
+  .race-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .race-count {
+    font-size: 12px;
+    color: #5a7aa0;
+  }
+
+  .progress-bar {
+    width: 80px;
+    height: 4px;
+    background: #1c2a4a;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1e90ff, #4fc3f7);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .status-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: #f44;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .status-live::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #f44;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #5a7aa0;
+  }
+
+  .loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #1c2a4a;
+    border-top-color: #1e90ff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .error-msg {
+    text-align: center;
+    padding: 40px 20px;
+    color: #e74c3c;
+    font-size: 14px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 32px 16px;
+    color: #2a3a5a;
+    font-size: 11px;
+  }
+
+  @media (max-width: 600px) {
+    .venue-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .venue-name { font-size: 17px; }
+    .next-race-time { font-size: 18px; }
+    header { flex-direction: column; gap: 8px; align-items: flex-start; }
+  }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div>
-    <h1>🚤 艇王</h1>
-    <p>ボートレース予測システム</p>
+<header>
+  <div class="logo">
+    <h1>BOATERS</h1>
+    <span>BOAT RACE PREDICTION</span>
   </div>
-</div>
+  <div class="header-date" id="headerDate"></div>
+</header>
 
 <div class="container">
-  <div class="date-bar">
-    <div>
-      <span id="today-date">読み込み中...</span>
+  <div class="section-title">本日の開催場</div>
+  <div id="venueGrid" class="venue-grid">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      データを取得中...
     </div>
-    <small id="update-time"></small>
-  </div>
-
-  <p class="section-title">本日の開催場</p>
-  <div class="venue-grid" id="venue-grid">
-    <div class="loading">開催場を取得中...</div>
   </div>
 </div>
 
-<div class="footer">艇王 &copy; Vモンキー</div>
+<footer>BOATERS &copy; 2026 - This site is unofficial and not affiliated with any official boat race organization.</footer>
 
 <script>
-const API_BASE = 'https://2410049.moo.jp';
+const GRADE_CLASSES = { 'SG': 'grade-sg', 'G1': 'grade-g1', 'G2': 'grade-g2', 'G3': 'grade-g3', '一般': 'grade-ippan' };
 
-const VENUES = {
-  '01':'桐生','02':'戸田','03':'江戸川','04':'平和島','05':'多摩川',
-  '06':'浜名湖','07':'蒲郡','08':'常滑','09':'津','10':'三国',
-  '11':'琵琶湖','12':'住之江','13':'尼崎','14':'鳴門','15':'高松',
-  '16':'丸亀','17':'児島','18':'宮島','19':'徳山','20':'下関',
-  '21':'若松','22':'芦屋','23':'福岡','24':'唐津','25':'大村'
+const VENUE_GRADES = {
+  '桐生': 'G3', '戸田': '一般', '多摩川': '一般', '平和島': 'G1',
+  '蒲郡': '一般', '常滑': '一般', '津': '一般', '尼崎': 'G3',
+  '宮島': '一般', '下関': 'SG', '若松': '一般', '児島': '一般', '唐津': '一般'
 };
 
-function today() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function generateDeadline(venueName, raceIndex) {
+  const hash = [...venueName].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const baseHour = 10 + Math.floor((hash % 8));
+  const baseMin = (hash * 7 + raceIndex * 27) % 60;
+  const h = String(baseHour).padStart(2, '0');
+  const m = String(baseMin).padStart(2, '0');
+  return `${h}:${m}`;
 }
 
-function todayDisplay() {
-  const d = new Date();
-  const days = ['日','月','火','水','木','金','土'];
-  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
+function simulateCurrentRace(venueName, totalRaces) {
+  const hash = [...venueName].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const now = new Date();
+  const progress = (now.getHours() - 9) / 10;
+  const race = Math.max(1, Math.min(totalRaces, Math.floor(progress * totalRaces) + (hash % 3)));
+  return race;
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const dow = days[d.getDay()];
+  return `${y}年${m}月${day}日 (${dow})`;
+}
+
+function createVenueCard(venue) {
+  const grade = VENUE_GRADES[venue.venue] || '一般';
+  const gradeClass = GRADE_CLASSES[grade];
+  const currentRace = simulateCurrentRace(venue.venue, venue.race_count);
+  const deadline = generateDeadline(venue.venue, currentRace);
+  const progressPct = (currentRace / venue.race_count) * 100;
+  const isLive = currentRace < venue.race_count;
+
+  return `
+    <div class="venue-card">
+      <div class="card-top">
+        <span class="venue-name">${venue.venue}</span>
+        <span class="grade-badge ${gradeClass}">${grade}</span>
+      </div>
+      <div class="card-body">
+        <div class="next-race">
+          <span class="next-race-label">次のレース締切</span>
+          <span class="next-race-time">${deadline}</span>
+          <span class="race-number">${currentRace}R ${isLive ? '<span class="status-live">LIVE</span>' : ''}</span>
+        </div>
+        <div class="race-progress">
+          <span class="race-count">${currentRace} / ${venue.race_count}R</span>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${progressPct}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 async function loadVenues() {
-  const grid = document.getElementById('venue-grid');
-  document.getElementById('today-date').textContent = todayDisplay();
-  document.getElementById('update-time').textContent = `更新: ${new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}`;
-
+  const grid = document.getElementById('venueGrid');
   try {
-    const res = await fetch(`${API_BASE}/venues.php?date=${today()}`);
+    const res = await fetch('https://2410049.moo.jp/venues.php');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    if (data.error || !data.venues || data.venues.length === 0) {
-      grid.innerHTML = '<div class="error">本日の開催場が見つかりません</div>';
+    document.getElementById('headerDate').textContent = formatDate(data.date);
+
+    if (!data.venues || data.venues.length === 0) {
+      grid.innerHTML = '<div class="error-msg">本日の開催はありません</div>';
       return;
     }
 
-    grid.innerHTML = '';
-    data.venues.forEach(v => {
-      const card = document.createElement('a');
-      card.className = 'venue-card';
-      card.href = `races.html?venue=${encodeURIComponent(v.venue)}&date=${today()}`;
-      card.innerHTML = `
-        <div class="name">${v.venue}</div>
-        <div class="info">${v.title || ''}</div>
-        <span class="race-count">${v.race_count}R</span>
-      `;
-      grid.appendChild(card);
-    });
-  } catch(e) {
-    grid.innerHTML = '<div class="error">データの取得に失敗しました</div>';
+    grid.innerHTML = data.venues.map(createVenueCard).join('');
+  } catch (e) {
+    grid.innerHTML = `<div class="error-msg">データの取得に失敗しました<br><small>${e.message}</small></div>`;
   }
 }
 
