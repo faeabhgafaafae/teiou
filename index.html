@@ -42,10 +42,146 @@ header {
   letter-spacing: 1px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .header-date {
   font-size: 13px;
   color: #555;
   font-weight: 600;
+}
+
+.header-auth {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-link {
+  font-size: 13px;
+  color: #0055a4;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.auth-link:hover {
+  background: #e8f0fd;
+}
+
+.auth-link.register {
+  background: #0055a4;
+  color: #fff;
+}
+
+.auth-link.register:hover {
+  background: #003d7a;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+  font-weight: 600;
+  transition: border-color 0.15s;
+}
+
+.user-btn:hover {
+  border-color: #0055a4;
+}
+
+.user-icon {
+  width: 24px;
+  height: 24px;
+  background: #0055a4;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plan-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #f3f4f6;
+  color: #888;
+}
+
+.plan-badge.standard { background: #dbeafe; color: #2563eb; }
+.plan-badge.premium { background: #fff3cd; color: #b8860b; }
+
+.dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e0e3e8;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown.open { display: block; }
+
+.dropdown-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+  color: #333;
+}
+
+.dropdown-header small {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.1s;
+}
+
+.dropdown-item:hover {
+  background: #f5f7fa;
+}
+
+.dropdown-item.logout {
+  color: #e53e3e;
+  border-top: 1px solid #f0f0f0;
 }
 
 .container {
@@ -298,6 +434,10 @@ footer {
   .deadline-time { font-size: 17px; }
   .featured-banner { flex-direction: column; align-items: flex-start; gap: 10px; }
   .featured-arrow { display: none; }
+  header { flex-wrap: wrap; gap: 8px; }
+  .header-right { gap: 8px; }
+  .auth-link { font-size: 12px; padding: 5px 10px; }
+  .user-btn { font-size: 12px; padding: 5px 8px; }
 }
 </style>
 </head>
@@ -308,7 +448,10 @@ footer {
     <h1>BOATERS</h1>
     <span class="logo-sub">BOAT RACE PREDICTION</span>
   </div>
-  <div class="header-date" id="headerDate"></div>
+  <div class="header-right">
+    <div class="header-date" id="headerDate"></div>
+    <div class="header-auth" id="headerAuth"></div>
+  </div>
 </header>
 
 <div class="container">
@@ -463,6 +606,57 @@ async function loadVenues() {
 }
 
 loadVenues();
+
+async function checkAuth() {
+  const authEl = document.getElementById('headerAuth');
+  try {
+    const res = await fetch('me.php');
+    if (!res.ok) {
+      authEl.innerHTML = `
+        <a class="auth-link" href="login.html">ログイン</a>
+        <a class="auth-link register" href="register.html">新規登録</a>`;
+      return;
+    }
+    const data = await res.json();
+    const user = data.user;
+    const initial = user.name.charAt(0);
+    const planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
+    const planClass = user.plan !== 'free' ? user.plan : '';
+
+    authEl.innerHTML = `
+      <div class="user-menu">
+        <button class="user-btn" id="userBtn">
+          <span class="user-icon">${initial}</span>
+          <span>${user.name}</span>
+          <span class="plan-badge ${planClass}">${planLabel[user.plan] || 'Free'}</span>
+        </button>
+        <div class="dropdown" id="userDropdown">
+          <div class="dropdown-header">
+            ${user.name}<small>${user.email}</small>
+          </div>
+          <button class="dropdown-item logout" id="logoutBtn">ログアウト</button>
+        </div>
+      </div>`;
+
+    document.getElementById('userBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('userDropdown').classList.toggle('open');
+    });
+    document.addEventListener('click', () => {
+      document.getElementById('userDropdown').classList.remove('open');
+    });
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await fetch('logout.php');
+      location.reload();
+    });
+  } catch {
+    authEl.innerHTML = `
+      <a class="auth-link" href="login.html">ログイン</a>
+      <a class="auth-link register" href="register.html">新規登録</a>`;
+  }
+}
+
+checkAuth();
 </script>
 </body>
 </html>
