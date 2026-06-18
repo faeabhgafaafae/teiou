@@ -321,12 +321,7 @@ function renderRaceCard(race) {
   var ld = document.createElement('div'); ld.className = 'player-loading'; ld.textContent = '選手データを読み込み中...';
   panel1.appendChild(ld);
 
-  // AI予想パネル（非表示）
-  var panel2 = document.createElement('div'); panel2.className = 'tab-panel'; panel2.id = 'predict-' + rno;
-  var ld2 = document.createElement('div'); ld2.className = 'player-loading'; ld2.textContent = '予想データを読み込み中...';
-  panel2.appendChild(ld2);
-
-  // アクションバー（タブ兼用）
+  // アクションバー
   var actions = document.createElement('div'); actions.className = 'race-actions';
 
   var b1 = document.createElement('a'); b1.className = 'action-btn';
@@ -337,26 +332,14 @@ function renderRaceCard(race) {
   b2.href = 'predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
   b2.textContent = '直前情報';
 
-  var b3 = document.createElement('button'); b3.className = 'action-btn'; b3.textContent = 'AI予想';
-  b3.setAttribute('data-rno', rno);
-  b3.addEventListener('click', function() {
-    var isActive = b3.classList.contains('active');
-    if (isActive) {
-      b3.classList.remove('active');
-      panel2.classList.remove('active');
-      panel1.classList.add('active');
-    } else {
-      b3.classList.add('active');
-      panel1.classList.remove('active');
-      panel2.classList.add('active');
-    }
-  });
+  var b3 = document.createElement('a'); b3.className = 'action-btn primary';
+  b3.href = 'ai-predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
+  b3.textContent = 'AI予想';
 
   actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3);
 
   card.appendChild(hdr);
   card.appendChild(panel1);
-  card.appendChild(panel2);
   card.appendChild(actions);
   return card;
 }
@@ -377,15 +360,6 @@ async function loadPlayerData(raceNo) {
       sorted.forEach(function(p) { el.appendChild(renderPlayerRow(p)); });
     }
 
-    // AI予想パネル
-    var predEl = document.getElementById('predict-' + raceNo);
-    if (predEl) {
-      var rates = calcRates(data.predictions);
-      predEl.textContent = '';
-      for (var i = 0; i < rates.length; i++) {
-        predEl.appendChild(renderPredRow(rates[i], i + 1));
-      }
-    }
   } catch(e) {}
 }
 
