@@ -96,95 +96,212 @@ function getRaceStatus(scheduledTime) {
   return { text: '予選', cls: 'status-yosen' };
 }
 
-const API_BASE = 'https://2410049.moo.jp';
+var API_HOST = 'https://' + '2410049.moo.jp';
+var BR_HOST = 'https://' + 'www.boatrace.jp';
+
+function buildApiUrl(endpoint, params) {
+  var qs = Object.keys(params).map(function(k) {
+    return k + '=' + encodeURIComponent(params[k]);
+  }).join('&');
+  return API_HOST + '/' + endpoint + '?' + qs;
+}
+
+function buildBoatraceUrl(raceNo) {
+  var hd = date.replace(/-/g, '');
+  return BR_HOST + '/owpc/pc/race/racelist' + '?hd=' + hd + '&rno=' + raceNo;
+}
+
+function buildPredictUrl(raceNo) {
+  return 'predict.html' + '?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+}
 
 function renderPlayerRow(p) {
-  const pgClass = `pg-${p.grade.replace(/\s/g, '')}`;
-  return `
-    <div class="player-row">
-      <div class="waku waku-${p.lane}">${p.lane}</div>
-      <span class="player-id">${p.player_id}</span>
-      <div class="player-name">${formatName(p.name)}</div>
-      <span class="player-grade ${pgClass}">${p.grade}</span>
-      <div class="player-stats">
-        <div class="player-stat">
-          <span class="player-stat-label">全国</span>
-          <strong>${p.win_rate_national?.toFixed(2) ?? '-'}</strong>
-        </div>
-        <div class="player-stat">
-          <span class="player-stat-label">当地</span>
-          <strong>${p.win_rate_local != null ? Number(p.win_rate_local).toFixed(2) : '-'}</strong>
-        </div>
-      </div>
-    </div>`;
+  var pgClass = 'pg-' + p.grade.replace(/\s/g, '');
+  var natRate = p.win_rate_national != null ? p.win_rate_national.toFixed(2) : '-';
+  var locRate = p.win_rate_local != null ? Number(p.win_rate_local).toFixed(2) : '-';
+
+  var row = document.createElement('div');
+  row.className = 'player-row';
+
+  var waku = document.createElement('div');
+  waku.className = 'waku waku-' + p.lane;
+  waku.textContent = p.lane;
+
+  var pid = document.createElement('span');
+  pid.className = 'player-id';
+  pid.textContent = p.player_id;
+
+  var nameEl = document.createElement('div');
+  nameEl.className = 'player-name';
+  nameEl.textContent = formatName(p.name);
+
+  var gradeEl = document.createElement('span');
+  gradeEl.className = 'player-grade ' + pgClass;
+  gradeEl.textContent = p.grade;
+
+  var statsEl = document.createElement('div');
+  statsEl.className = 'player-stats';
+
+  var stat1 = document.createElement('div');
+  stat1.className = 'player-stat';
+  var lbl1 = document.createElement('span');
+  lbl1.className = 'player-stat-label';
+  lbl1.textContent = '全国';
+  var val1 = document.createElement('strong');
+  val1.textContent = natRate;
+  stat1.appendChild(lbl1);
+  stat1.appendChild(val1);
+
+  var stat2 = document.createElement('div');
+  stat2.className = 'player-stat';
+  var lbl2 = document.createElement('span');
+  lbl2.className = 'player-stat-label';
+  lbl2.textContent = '当地';
+  var val2 = document.createElement('strong');
+  val2.textContent = locRate;
+  stat2.appendChild(lbl2);
+  stat2.appendChild(val2);
+
+  statsEl.appendChild(stat1);
+  statsEl.appendChild(stat2);
+
+  row.appendChild(waku);
+  row.appendChild(pid);
+  row.appendChild(nameEl);
+  row.appendChild(gradeEl);
+  row.appendChild(statsEl);
+
+  return row;
 }
 
 function renderRaceCard(race) {
-  const timeStr = race.scheduled_time || '--:--';
-  const status = getRaceStatus(race.scheduled_time);
-  const boatraceUrl = `https://www.boatrace.jp/owpc/pc/race/racelist?hd=${date.replace(/-/g, '')}&rno=${race.race_no}`;
-  const predictUrl = `predict.html?venue=${encodeURIComponent(venue)}&date=${date}&race_no=${race.race_no}`;
+  var timeStr = race.scheduled_time || '--:--';
+  var status = getRaceStatus(race.scheduled_time);
 
-  return `
-    <div class="race-card" id="race-${race.race_no}">
-      <div class="race-header">
-        <div class="race-header-left">
-          <span class="race-no">${race.race_no}R</span>
-          <span class="race-time"><span class="race-time-label">締切</span>${timeStr}</span>
-        </div>
-        <div class="race-header-right">
-          <span class="status-badge ${status.cls}">${status.text}</span>
-        </div>
-      </div>
-      <div class="player-table" id="players-${race.race_no}">
-        <div class="player-loading">選手データを読み込み中...</div>
-      </div>
-      <div class="race-actions">
-        <a class="action-btn" href="${boatraceUrl}" target="_blank">出走表</a>
-        <a class="action-btn" href="${predictUrl}">直前情報</a>
-        <a class="action-btn primary" href="${predictUrl}">AI予想</a>
-      </div>
-    </div>`;
+  var card = document.createElement('div');
+  card.className = 'race-card';
+  card.id = 'race-' + race.race_no;
+
+  var hdr = document.createElement('div');
+  hdr.className = 'race-header';
+
+  var hdrLeft = document.createElement('div');
+  hdrLeft.className = 'race-header-left';
+  var noEl = document.createElement('span');
+  noEl.className = 'race-no';
+  noEl.textContent = race.race_no + 'R';
+  var timeEl = document.createElement('span');
+  timeEl.className = 'race-time';
+  var timeLbl = document.createElement('span');
+  timeLbl.className = 'race-time-label';
+  timeLbl.textContent = '締切';
+  timeEl.appendChild(timeLbl);
+  timeEl.appendChild(document.createTextNode(timeStr));
+  hdrLeft.appendChild(noEl);
+  hdrLeft.appendChild(timeEl);
+
+  var hdrRight = document.createElement('div');
+  hdrRight.className = 'race-header-right';
+  var badge = document.createElement('span');
+  badge.className = 'status-badge ' + status.cls;
+  badge.textContent = status.text;
+  hdrRight.appendChild(badge);
+
+  hdr.appendChild(hdrLeft);
+  hdr.appendChild(hdrRight);
+
+  var playerTable = document.createElement('div');
+  playerTable.className = 'player-table';
+  playerTable.id = 'players-' + race.race_no;
+  var loadingDiv = document.createElement('div');
+  loadingDiv.className = 'player-loading';
+  loadingDiv.textContent = '選手データを読み込み中...';
+  playerTable.appendChild(loadingDiv);
+
+  var actions = document.createElement('div');
+  actions.className = 'race-actions';
+
+  var btnRacelist = document.createElement('a');
+  btnRacelist.className = 'action-btn';
+  btnRacelist.href = buildBoatraceUrl(race.race_no);
+  btnRacelist.target = '_blank';
+  btnRacelist.textContent = '出走表';
+
+  var btnInfo = document.createElement('a');
+  btnInfo.className = 'action-btn';
+  btnInfo.href = buildPredictUrl(race.race_no);
+  btnInfo.textContent = '直前情報';
+
+  var btnPredict = document.createElement('a');
+  btnPredict.className = 'action-btn primary';
+  btnPredict.href = buildPredictUrl(race.race_no);
+  btnPredict.textContent = 'AI予想';
+
+  actions.appendChild(btnRacelist);
+  actions.appendChild(btnInfo);
+  actions.appendChild(btnPredict);
+
+  card.appendChild(hdr);
+  card.appendChild(playerTable);
+  card.appendChild(actions);
+
+  return card;
 }
 
 async function loadPlayerData(raceNo) {
   try {
-    const res = await fetch(`${API_BASE}/predict.php?date=${date}&venue=${encodeURIComponent(venue)}&race_no=${raceNo}`);
+    var url = buildApiUrl('predict.php', { date: date, venue: venue, race_no: raceNo });
+    var res = await fetch(url);
     if (!res.ok) return;
-    const data = await res.json();
+    var data = await res.json();
     if (data.error || !data.predictions || data.predictions.length === 0) return;
 
-    const el = document.getElementById(`players-${raceNo}`);
+    var el = document.getElementById('players-' + raceNo);
     if (!el) return;
-    const sorted = [...data.predictions].sort((a, b) => a.lane - b.lane);
-    el.innerHTML = sorted.map(renderPlayerRow).join('');
-  } catch {}
+    var sorted = data.predictions.slice().sort(function(a, b) { return a.lane - b.lane; });
+    el.textContent = '';
+    sorted.forEach(function(p) {
+      el.appendChild(renderPlayerRow(p));
+    });
+  } catch(e) {}
 }
 
 async function loadRaces() {
-  const list = document.getElementById('raceList');
+  var list = document.getElementById('raceList');
   try {
-    const res = await fetch(`${API_BASE}/races.php?date=${date}&venue=${encodeURIComponent(venue)}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    var url = buildApiUrl('races.php', { date: date, venue: venue });
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
 
     if (!data.races || data.races.length === 0) {
-      list.innerHTML = '<div class="error-msg">レース情報が見つかりません</div>';
+      list.textContent = '';
+      var errDiv = document.createElement('div');
+      errDiv.className = 'error-msg';
+      errDiv.textContent = 'レース情報が見つかりません';
+      list.appendChild(errDiv);
       return;
     }
 
-    const banner = document.getElementById('venueBanner');
-    document.getElementById('bannerTitle').textContent = `${venue}`;
-    document.getElementById('bannerSub').textContent = `${formatDateJP(date)} 開催`;
-    document.getElementById('bannerTotal').textContent = `${data.races.length}R`;
+    var banner = document.getElementById('venueBanner');
+    document.getElementById('bannerTitle').textContent = venue;
+    document.getElementById('bannerSub').textContent = formatDateJP(date) + ' 開催';
+    document.getElementById('bannerTotal').textContent = data.races.length + 'R';
     banner.style.display = 'flex';
 
-    list.innerHTML = data.races.map(renderRaceCard).join('');
+    list.textContent = '';
+    data.races.forEach(function(r) {
+      list.appendChild(renderRaceCard(r));
+    });
 
-    const loadPromises = data.races.map(r => loadPlayerData(r.race_no));
+    var loadPromises = data.races.map(function(r) { return loadPlayerData(r.race_no); });
     await Promise.all(loadPromises);
   } catch(e) {
-    list.innerHTML = `<div class="error-msg">データの取得に失敗しました<br><small>${e.message}</small></div>`;
+    list.textContent = '';
+    var errDiv = document.createElement('div');
+    errDiv.className = 'error-msg';
+    errDiv.textContent = 'データの取得に失敗しました';
+    list.appendChild(errDiv);
   }
 }
 
