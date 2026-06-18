@@ -6,67 +6,230 @@
 <title>艇王 - レース一覧</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: sans-serif; background: #f5f7fa; color: #222; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; }
 
-.header {
-  background: #1a4a8a;
-  color: white;
-  padding: 16px 20px;
+header {
+  background: #fff;
+  border-bottom: 3px solid #0055a4;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
-.header a { color: white; text-decoration: none; font-size: 20px; }
-.header h1 { font-size: 18px; font-weight: 600; }
 
-.container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
+header a.back {
+  color: #0055a4;
+  text-decoration: none;
+  font-size: 22px;
+  line-height: 1;
+}
 
-.race-list { display: flex; flex-direction: column; gap: 10px; }
+.header-title h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #222;
+}
+
+.header-title small {
+  font-size: 12px;
+  color: #888;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
 
 .race-card {
-  background: white;
-  border-radius: 10px;
-  padding: 16px;
-  border: 1px solid #e5e7eb;
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
+  background: #fff;
+  border: 1px solid #e0e3e8;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.race-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 16px;
+  background: #fafbfc;
+  border-bottom: 1px solid #e0e3e8;
+}
+
+.race-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.race-no {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0055a4;
+}
+
+.race-time {
+  font-size: 13px;
+  color: #555;
+  font-weight: 600;
+}
+
+.race-time-label {
+  font-size: 10px;
+  color: #999;
+  margin-right: 3px;
+}
+
+.grade-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.grade-sg { background: #fff3cd; color: #b8860b; }
+.grade-g1 { background: #fee2e2; color: #c0392b; }
+.grade-g2 { background: #dbeafe; color: #2563eb; }
+.grade-g3 { background: #d1fae5; color: #16a34a; }
+.grade-ippan { background: #f3f4f6; color: #888; }
+
+.player-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 10px;
+}
+
+.player-row:last-child { border-bottom: none; }
+
+.waku {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
+.waku-2 { background: #222; color: #fff; }
+.waku-3 { background: #e53e3e; color: #fff; }
+.waku-4 { background: #2563eb; color: #fff; }
+.waku-5 { background: #eab308; color: #222; }
+.waku-6 { background: #16a34a; color: #fff; }
+
+.player-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-grade {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.pg-A1 { background: #fff3cd; color: #b8860b; }
+.pg-A2 { background: #dbeafe; color: #2563eb; }
+.pg-B1 { background: #f3f4f6; color: #666; }
+.pg-B2 { background: #f3f4f6; color: #aaa; }
+
+.player-stat {
+  font-size: 11px;
+  color: #777;
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 55px;
+}
+
+.player-stat strong {
+  color: #333;
+}
+
+.race-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fafbfc;
+  border-top: 1px solid #e0e3e8;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
   transition: all 0.15s;
 }
-.race-card:hover {
-  border-color: #1a4a8a;
-  box-shadow: 0 2px 8px rgba(26,74,138,0.1);
-}
-.race-no {
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a4a8a;
-  min-width: 50px;
-}
-.race-info { flex: 1; padding: 0 12px; }
-.race-info .title { font-size: 14px; font-weight: 500; }
-.race-info .time { font-size: 12px; color: #888; margin-top: 2px; }
-.race-status {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 20px;
-}
-.status-ready { background: #e8f0fd; color: #1a4a8a; }
-.status-done { background: #f0fdf4; color: #16a34a; }
-.status-live { background: #fef3c7; color: #d97706; }
 
-.arrow { color: #ccc; font-size: 18px; }
+.action-btn:hover {
+  border-color: #0055a4;
+  color: #0055a4;
+}
+
+.action-btn.primary {
+  background: #0055a4;
+  color: #fff;
+  border-color: #0055a4;
+}
+
+.action-btn.primary:hover {
+  background: #003d7a;
+}
+
+.player-loading {
+  padding: 20px 16px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
 
 .loading {
   text-align: center;
-  padding: 40px;
-  color: #888;
-  font-size: 14px;
+  padding: 60px 20px;
+  color: #999;
 }
-.error {
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e0e3e8;
+  border-top-color: #0055a4;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-msg {
   background: #fef2f2;
   border: 1px solid #fca5a5;
   border-radius: 10px;
@@ -74,22 +237,43 @@ body { font-family: sans-serif; background: #f5f7fa; color: #222; }
   color: #dc2626;
   font-size: 14px;
 }
+
+footer {
+  text-align: center;
+  padding: 28px 16px;
+  color: #bbb;
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .player-row { padding: 7px 12px; gap: 8px; }
+  .player-name { font-size: 13px; }
+  .player-stat { display: none; }
+  .race-actions { gap: 6px; }
+  .action-btn { font-size: 11px; padding: 7px 4px; }
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <a href="index.html">←</a>
-  <div>
-    <h1 id="page-title">レース一覧</h1>
+<header>
+  <a class="back" href="index.html">&larr;</a>
+  <div class="header-title">
+    <h1 id="pageTitle">レース一覧</h1>
+    <small id="pageDate"></small>
+  </div>
+</header>
+
+<div class="container">
+  <div id="raceList">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      レース情報を取得中...
+    </div>
   </div>
 </div>
 
-<div class="container">
-  <div class="race-list" id="race-list">
-    <div class="loading">レース情報を取得中...</div>
-  </div>
-</div>
+<footer>艇王 &copy; 2026</footer>
 
 <script>
 const params = new URLSearchParams(location.search);
@@ -101,46 +285,115 @@ function today() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-document.getElementById('page-title').textContent = `${venue} レース一覧`;
+const VENUE_GRADES = {
+  '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般',
+  '浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般',
+  'びわこ':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般',
+  '児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般',
+  '芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般'
+};
+const GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
+
+document.getElementById('pageTitle').textContent = `${venue} レース一覧`;
+document.getElementById('pageDate').textContent = date;
 document.title = `艇王 - ${venue}`;
 
 const API_BASE = 'https://2410049.moo.jp';
 
+function formatName(name) {
+  return name.replace(/\s+/g, ' ').trim();
+}
+
+function renderRaceCard(race, predictions) {
+  const venueGrade = VENUE_GRADES[venue] || '一般';
+  const gradeClass = GRADE_CLASSES[venueGrade];
+  const timeStr = race.scheduled_time || '--:--';
+
+  let playersHtml;
+  if (predictions && predictions.length > 0) {
+    const sorted = [...predictions].sort((a, b) => a.lane - b.lane);
+    playersHtml = sorted.map(p => {
+      const pgClass = `pg-${p.grade.replace(/\s/g, '')}`;
+      return `
+        <div class="player-row">
+          <div class="waku waku-${p.lane}">${p.lane}</div>
+          <div class="player-name">${formatName(p.name)}</div>
+          <span class="player-grade ${pgClass}">${p.grade}</span>
+          <div class="player-stat">勝率 <strong>${p.win_rate_national?.toFixed(2) ?? '-'}</strong></div>
+        </div>`;
+    }).join('');
+  } else {
+    playersHtml = '<div class="player-loading">選手データを取得中...</div>';
+  }
+
+  const boatraceUrl = `https://www.boatrace.jp/owpc/pc/race/racelist?hd=${date.replace(/-/g, '')}&jcd=&rno=${race.race_no}`;
+
+  return `
+    <div class="race-card" id="race-${race.race_no}">
+      <div class="race-header">
+        <div class="race-header-left">
+          <span class="race-no">${race.race_no}R</span>
+          <span class="race-time"><span class="race-time-label">締切</span>${timeStr}</span>
+        </div>
+        <span class="grade-badge ${gradeClass}">${venueGrade}</span>
+      </div>
+      <div class="player-list" id="players-${race.race_no}">
+        ${playersHtml}
+      </div>
+      <div class="race-actions">
+        <a class="action-btn" href="${boatraceUrl}" target="_blank">出走表</a>
+        <a class="action-btn" href="predict.html?venue=${encodeURIComponent(venue)}&date=${date}&race_no=${race.race_no}">直前情報</a>
+        <a class="action-btn primary" href="predict.html?venue=${encodeURIComponent(venue)}&date=${date}&race_no=${race.race_no}">AI予想</a>
+      </div>
+    </div>`;
+}
+
+async function loadPredictions(raceNo) {
+  try {
+    const res = await fetch(`${API_BASE}/predict.php?date=${date}&venue=${encodeURIComponent(venue)}&race_no=${raceNo}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.error || !data.predictions) return null;
+    return data.predictions;
+  } catch {
+    return null;
+  }
+}
+
 async function loadRaces() {
-  const list = document.getElementById('race-list');
+  const list = document.getElementById('raceList');
   try {
     const res = await fetch(`${API_BASE}/races.php?date=${date}&venue=${encodeURIComponent(venue)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    if (data.error || !data.races || data.races.length === 0) {
-      list.innerHTML = '<div class="error">レース情報が見つかりません</div>';
+    if (!data.races || data.races.length === 0) {
+      list.innerHTML = '<div class="error-msg">レース情報が見つかりません</div>';
       return;
     }
 
-    list.innerHTML = '';
-    data.races.forEach(r => {
-      const card = document.createElement('a');
-      card.className = 'race-card';
-      card.href = `predict.html?venue=${encodeURIComponent(venue)}&date=${date}&race_no=${r.race_no}`;
+    list.innerHTML = data.races.map(r => renderRaceCard(r, null)).join('');
 
-      const now = new Date();
-      const hour = now.getHours();
-      let statusClass = 'status-ready';
-      let statusText = '予測を見る';
-
-      card.innerHTML = `
-        <div class="race-no">${r.race_no}R</div>
-        <div class="race-info">
-          <div class="title">${r.title || '一般'}</div>
-          <div class="time">${r.scheduled_time || ''}</div>
-        </div>
-        <span class="race-status ${statusClass}">${statusText}</span>
-        <span class="arrow">›</span>
-      `;
-      list.appendChild(card);
+    data.races.forEach(async (race) => {
+      const predictions = await loadPredictions(race.race_no);
+      if (predictions && predictions.length > 0) {
+        const el = document.getElementById(`players-${race.race_no}`);
+        if (!el) return;
+        const sorted = [...predictions].sort((a, b) => a.lane - b.lane);
+        el.innerHTML = sorted.map(p => {
+          const pgClass = `pg-${p.grade.replace(/\s/g, '')}`;
+          return `
+            <div class="player-row">
+              <div class="waku waku-${p.lane}">${p.lane}</div>
+              <div class="player-name">${formatName(p.name)}</div>
+              <span class="player-grade ${pgClass}">${p.grade}</span>
+              <div class="player-stat">勝率 <strong>${p.win_rate_national?.toFixed(2) ?? '-'}</strong></div>
+            </div>`;
+        }).join('');
+      }
     });
   } catch(e) {
-    list.innerHTML = '<div class="error">データの取得に失敗しました</div>';
+    list.innerHTML = `<div class="error-msg">データの取得に失敗しました<br><small>${e.message}</small></div>`;
   }
 }
 
