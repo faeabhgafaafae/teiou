@@ -430,6 +430,10 @@ function getRaceStatus(scheduledTime) {
 var API_HOST = 'https://' + '2410049.moo.jp';
 var BR_HOST = 'https://' + 'www.boatrace.jp';
 
+function buildRacelistUrl(raceNo) {
+  return 'racelist.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+}
+
 function buildApiUrl(endpoint, params) {
   var qs = Object.keys(params).map(function(k) {
     return k + '=' + encodeURIComponent(params[k]);
@@ -554,8 +558,7 @@ function renderRaceCard(race) {
 
   var btnRacelist = document.createElement('a');
   btnRacelist.className = 'action-btn';
-  btnRacelist.href = buildBoatraceUrl(race.race_no);
-  btnRacelist.target = '_blank';
+  btnRacelist.href = buildRacelistUrl(race.race_no);
   btnRacelist.textContent = '出走表';
 
   var btnInfo = document.createElement('a');

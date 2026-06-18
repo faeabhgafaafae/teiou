@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>艇王 - 出走表</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; gap: 14px; justify-content: space-between; }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
+.back-btn:hover { background: #e8f0fd; }
+.header-info h1 { font-size: 18px; font-weight: 700; color: #222; }
+.header-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.header-meta .date { font-size: 12px; color: #888; }
+.grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.5px; }
+.grade-sg { background: #fff3cd; color: #b8860b; }
+.grade-g1 { background: #fee2e2; color: #c0392b; }
+.grade-g2 { background: #dbeafe; color: #2563eb; }
+.grade-g3 { background: #d1fae5; color: #16a34a; }
+.grade-ippan { background: #f3f4f6; color: #888; }
+.container { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+.loading { text-align: center; padding: 60px 20px; color: #999; }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
+footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
+
+.race-info-bar { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+.race-info-left { display: flex; align-items: center; gap: 14px; }
+.race-no-large { font-size: 28px; font-weight: 800; color: #0055a4; }
+.race-detail-text { font-size: 13px; color: #555; }
+.race-detail-text strong { color: #222; }
+.race-info-right { display: flex; gap: 8px; }
+.nav-btn { padding: 8px 16px; border: 1px solid #d0d5dd; border-radius: 8px; background: #fff; font-size: 13px; font-weight: 600; color: #555; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.15s; }
+.nav-btn:hover { border-color: #0055a4; color: #0055a4; background: #f0f5ff; }
+.nav-btn.primary { background: #0055a4; color: #fff; border-color: #0055a4; }
+.nav-btn.primary:hover { background: #003d7a; }
+
+.weather-bar { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; gap: 24px; font-size: 13px; color: #555; }
+.weather-item { display: flex; align-items: center; gap: 6px; }
+.weather-label { color: #999; font-size: 11px; }
+.weather-value { font-weight: 600; color: #333; }
+
+.entry-card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 10px; overflow: hidden; transition: box-shadow 0.15s; }
+.entry-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+.entry-header { display: flex; align-items: center; padding: 12px 20px; gap: 12px; border-bottom: 1px solid #f0f0f0; }
+.waku { width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; flex-shrink: 0; }
+.waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
+.waku-2 { background: #222; color: #fff; }
+.waku-3 { background: #e53e3e; color: #fff; }
+.waku-4 { background: #2563eb; color: #fff; }
+.waku-5 { background: #eab308; color: #222; }
+.waku-6 { background: #16a34a; color: #fff; }
+
+.entry-name-area { flex: 1; }
+.entry-player-id { font-size: 11px; color: #999; }
+.entry-player-name { font-size: 18px; font-weight: 700; color: #222; }
+.entry-grade { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 4px; flex-shrink: 0; }
+.eg-A1 { background: #fff3cd; color: #b8860b; }
+.eg-A2 { background: #dbeafe; color: #2563eb; }
+.eg-B1 { background: #f3f4f6; color: #666; }
+.eg-B2 { background: #f3f4f6; color: #aaa; }
+.flying-badge { background: #fef2f2; color: #dc2626; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+
+.entry-stats { padding: 12px 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.stat-box { text-align: center; padding: 8px 4px; background: #fafbfc; border-radius: 8px; }
+.stat-box-label { font-size: 10px; color: #999; margin-bottom: 3px; }
+.stat-box-value { font-size: 16px; font-weight: 700; color: #222; }
+.stat-box-value.highlight { color: #0055a4; }
+
+@media (max-width: 600px) {
+  .race-info-bar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .race-info-right { width: 100%; }
+  .nav-btn { flex: 1; }
+  .entry-stats { grid-template-columns: repeat(2, 1fr); }
+  .entry-header { padding: 10px 14px; gap: 10px; }
+  .entry-player-name { font-size: 16px; }
+  .weather-bar { flex-wrap: wrap; gap: 12px; }
+  .waku { width: 30px; height: 30px; font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <a class="back-btn" id="backBtn" href="index.html">&larr;</a>
+    <div class="header-info">
+      <h1 id="pageTitle">出走表</h1>
+      <div class="header-meta">
+        <span class="date" id="pageDate"></span>
+        <span class="grade-badge" id="pageBadge"></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="race-info-bar" id="raceInfoBar" style="display:none">
+    <div class="race-info-left">
+      <div class="race-no-large" id="raceNoLarge"></div>
+      <div class="race-detail-text" id="raceDetailText"></div>
+    </div>
+    <div class="race-info-right">
+      <a class="nav-btn" id="btnPrev">前のR</a>
+      <a class="nav-btn" id="btnNext">次のR</a>
+      <a class="nav-btn primary" id="btnPredict">AI予想</a>
+    </div>
+  </div>
+
+  <div class="weather-bar" id="weatherBar" style="display:none"></div>
+
+  <div id="entryList">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      出走表を取得中...
+    </div>
+  </div>
+</div>
+
+<footer>艇王 &copy; 2026</footer>
+
+<script>
+var params = new URLSearchParams(location.search);
+var venue = params.get('venue') || '';
+var date = params.get('date') || todayStr();
+var raceNo = parseInt(params.get('race_no') || '1', 10);
+
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+var VENUE_GRADES = {
+  '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般',
+  '浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般',
+  'びわこ':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般',
+  '児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般',
+  '芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般'
+};
+var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
+
+var venueGrade = VENUE_GRADES[venue] || '一般';
+var gradeClass = GRADE_CLASSES[venueGrade];
+
+document.getElementById('pageTitle').textContent = venue + ' ' + raceNo + 'R 出走表';
+document.title = '艇王 - ' + venue + ' ' + raceNo + 'R 出走表';
+
+var badge = document.getElementById('pageBadge');
+badge.textContent = venueGrade;
+badge.className = 'grade-badge ' + gradeClass;
+
+function formatDateJP(dateStr) {
+  var d = new Date(dateStr + 'T00:00:00');
+  var days = ['日','月','火','水','木','金','土'];
+  return (d.getMonth()+1) + '/' + d.getDate() + ' (' + days[d.getDay()] + ')';
+}
+document.getElementById('pageDate').textContent = formatDateJP(date);
+
+var backUrl = 'races.html?venue=' + encodeURIComponent(venue) + '&date=' + date;
+document.getElementById('backBtn').href = backUrl;
+
+var predictUrl = 'predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+document.getElementById('btnPredict').href = predictUrl;
+
+var prevNo = raceNo > 1 ? raceNo - 1 : 1;
+var nextNo = raceNo < 12 ? raceNo + 1 : 12;
+document.getElementById('btnPrev').href = 'racelist.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + prevNo;
+document.getElementById('btnNext').href = 'racelist.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + nextNo;
+if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
+if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
+
+function formatName(name) {
+  return name.replace(/[\s　]+/g, ' ').trim();
+}
+
+function fmtRate(val) {
+  if (val == null) return '-';
+  return Number(val).toFixed(2);
+}
+
+function renderEntry(p) {
+  var card = document.createElement('div');
+  card.className = 'entry-card';
+
+  var hdr = document.createElement('div');
+  hdr.className = 'entry-header';
+
+  var waku = document.createElement('div');
+  waku.className = 'waku waku-' + p.lane;
+  waku.textContent = p.lane;
+
+  var nameArea = document.createElement('div');
+  nameArea.className = 'entry-name-area';
+  var pidEl = document.createElement('div');
+  pidEl.className = 'entry-player-id';
+  pidEl.textContent = '登番 ' + p.player_id;
+  var nameEl = document.createElement('div');
+  nameEl.className = 'entry-player-name';
+  nameEl.textContent = formatName(p.name);
+  nameArea.appendChild(pidEl);
+  nameArea.appendChild(nameEl);
+
+  var gradeEl = document.createElement('span');
+  gradeEl.className = 'entry-grade eg-' + p.grade.replace(/\s/g, '');
+  gradeEl.textContent = p.grade;
+
+  hdr.appendChild(waku);
+  hdr.appendChild(nameArea);
+  hdr.appendChild(gradeEl);
+
+  if (p.is_flying) {
+    var flyBadge = document.createElement('span');
+    flyBadge.className = 'flying-badge';
+    flyBadge.textContent = 'F持ち';
+    hdr.appendChild(flyBadge);
+  }
+
+  var stats = document.createElement('div');
+  stats.className = 'entry-stats';
+
+  var items = [
+    { label: '全国勝率', value: fmtRate(p.win_rate_national), hl: true },
+    { label: '当地勝率', value: fmtRate(p.win_rate_local), hl: false },
+    { label: 'モーター2連率', value: fmtRate(p.motor_2rate), hl: false },
+    { label: '展示タイム', value: p.exhibit_time != null ? Number(p.exhibit_time).toFixed(2) : '-', hl: false }
+  ];
+
+  for (var i = 0; i < items.length; i++) {
+    var box = document.createElement('div');
+    box.className = 'stat-box';
+    var lbl = document.createElement('div');
+    lbl.className = 'stat-box-label';
+    lbl.textContent = items[i].label;
+    var val = document.createElement('div');
+    val.className = 'stat-box-value' + (items[i].hl ? ' highlight' : '');
+    val.textContent = items[i].value;
+    box.appendChild(lbl);
+    box.appendChild(val);
+    stats.appendChild(box);
+  }
+
+  card.appendChild(hdr);
+  card.appendChild(stats);
+  return card;
+}
+
+var API_HOST = 'https://' + '2410049.moo.jp';
+
+async function loadEntry() {
+  var list = document.getElementById('entryList');
+  try {
+    var url = API_HOST + '/predict.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+
+    if (data.error || !data.predictions || data.predictions.length === 0) {
+      list.textContent = '';
+      var errDiv = document.createElement('div');
+      errDiv.className = 'error-msg';
+      errDiv.textContent = '出走表データが見つかりません';
+      list.appendChild(errDiv);
+      return;
+    }
+
+    var infoBar = document.getElementById('raceInfoBar');
+    document.getElementById('raceNoLarge').textContent = raceNo + 'R';
+    var detailEl = document.getElementById('raceDetailText');
+    detailEl.innerHTML = '';
+    var detailStrong = document.createElement('strong');
+    detailStrong.textContent = venue;
+    detailEl.appendChild(detailStrong);
+    detailEl.appendChild(document.createTextNode(' ' + formatDateJP(date) + ' / ' + data.entry_count + '艇'));
+    infoBar.style.display = 'flex';
+
+    if (data.weather && (data.weather.wind_speed != null || data.weather.wave_height != null)) {
+      var wb = document.getElementById('weatherBar');
+      wb.textContent = '';
+      var items = [
+        { label: '風速', value: (data.weather.wind_speed != null ? data.weather.wind_speed + 'm' : '-') },
+        { label: '風向', value: (data.weather.wind_dir || '-') },
+        { label: '波高', value: (data.weather.wave_height != null ? data.weather.wave_height + 'cm' : '-') }
+      ];
+      for (var i = 0; i < items.length; i++) {
+        var item = document.createElement('div');
+        item.className = 'weather-item';
+        var lbl = document.createElement('span');
+        lbl.className = 'weather-label';
+        lbl.textContent = items[i].label;
+        var val = document.createElement('span');
+        val.className = 'weather-value';
+        val.textContent = items[i].value;
+        item.appendChild(lbl);
+        item.appendChild(val);
+        wb.appendChild(item);
+      }
+      wb.style.display = 'flex';
+    }
+
+    var sorted = data.predictions.slice().sort(function(a, b) { return a.lane - b.lane; });
+    list.textContent = '';
+    for (var j = 0; j < sorted.length; j++) {
+      list.appendChild(renderEntry(sorted[j]));
+    }
+  } catch(e) {
+    list.textContent = '';
+    var errDiv = document.createElement('div');
+    errDiv.className = 'error-msg';
+    errDiv.textContent = 'データの取得に失敗しました';
+    list.appendChild(errDiv);
+  }
+}
+
+loadEntry();
+</script>
+</body>
+</html>
