@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>艇王 - ボートレース予測</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f5f7fa; color: #222; }
+
+.header {
+  background: #1a4a8a;
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header h1 { font-size: 22px; font-weight: 700; }
+.header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+.container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
+
+.date-bar {
+  background: white;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e5e7eb;
+}
+.date-bar span { font-size: 15px; font-weight: 500; }
+.date-bar small { font-size: 12px; color: #888; }
+
+.section-title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.venue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.venue-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: all 0.15s;
+}
+.venue-card:hover {
+  border-color: #1a4a8a;
+  box-shadow: 0 2px 8px rgba(26,74,138,0.1);
+}
+.venue-card .name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.venue-card .info {
+  font-size: 12px;
+  color: #888;
+}
+.venue-card .race-count {
+  display: inline-block;
+  background: #e8f0fd;
+  color: #1a4a8a;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-top: 8px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+  font-size: 14px;
+}
+
+.error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  padding: 16px;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 12px;
+  color: #aaa;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🚤 艇王</h1>
+    <p>ボートレース予測システム</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="date-bar">
+    <div>
+      <span id="today-date">読み込み中...</span>
+    </div>
+    <small id="update-time"></small>
+  </div>
+
+  <p class="section-title">本日の開催場</p>
+  <div class="venue-grid" id="venue-grid">
+    <div class="loading">開催場を取得中...</div>
+  </div>
+</div>
+
+<div class="footer">艇王 &copy; Vモンキー</div>
+
+<script>
+const API_BASE = 'https://2410049.moo.jp';
+
+const VENUES = {
+  '01':'桐生','02':'戸田','03':'江戸川','04':'平和島','05':'多摩川',
+  '06':'浜名湖','07':'蒲郡','08':'常滑','09':'津','10':'三国',
+  '11':'琵琶湖','12':'住之江','13':'尼崎','14':'鳴門','15':'高松',
+  '16':'丸亀','17':'児島','18':'宮島','19':'徳山','20':'下関',
+  '21':'若松','22':'芦屋','23':'福岡','24':'唐津','25':'大村'
+};
+
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function todayDisplay() {
+  const d = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
+}
+
+async function loadVenues() {
+  const grid = document.getElementById('venue-grid');
+  document.getElementById('today-date').textContent = todayDisplay();
+  document.getElementById('update-time').textContent = `更新: ${new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}`;
+
+  try {
+    const res = await fetch(`${API_BASE}/venues.php?date=${today()}`);
+    const data = await res.json();
+
+    if (data.error || !data.venues || data.venues.length === 0) {
+      grid.innerHTML = '<div class="error">本日の開催場が見つかりません</div>';
+      return;
+    }
+
+    grid.innerHTML = '';
+    data.venues.forEach(v => {
+      const card = document.createElement('a');
+      card.className = 'venue-card';
+      card.href = `races.html?venue=${encodeURIComponent(v.venue)}&date=${today()}`;
+      card.innerHTML = `
+        <div class="name">${v.venue}</div>
+        <div class="info">${v.title || ''}</div>
+        <span class="race-count">${v.race_count}R</span>
+      `;
+      grid.appendChild(card);
+    });
+  } catch(e) {
+    grid.innerHTML = '<div class="error">データの取得に失敗しました</div>';
+  }
+}
+
+loadVenues();
+</script>
+</body>
+</html>
