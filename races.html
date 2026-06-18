@@ -7,321 +7,102 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
-header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; }
-.logo { display: flex; align-items: center; gap: 10px; }
-.logo a { text-decoration: none; display: flex; align-items: center; gap: 10px; }
-.logo h1 { font-size: 24px; font-weight: 800; letter-spacing: 3px; color: #0055a4; }
-.logo-sub { font-size: 11px; color: #888; letter-spacing: 1px; }
-.container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
+header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; gap: 14px; justify-content: space-between; }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
+.back-btn:hover { background: #e8f0fd; }
+.header-info h1 { font-size: 18px; font-weight: 700; color: #222; line-height: 1.3; }
+.header-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.header-meta .date { font-size: 12px; color: #888; }
 .grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.5px; }
 .grade-sg { background: #fff3cd; color: #b8860b; }
 .grade-g1 { background: #fee2e2; color: #c0392b; }
 .grade-g2 { background: #dbeafe; color: #2563eb; }
 .grade-g3 { background: #d1fae5; color: #16a34a; }
 .grade-ippan { background: #f3f4f6; color: #888; }
+.container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
 .loading { text-align: center; padding: 60px 20px; color: #999; }
 .loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
 footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
-/* --- ヘッダー --- */
-header {
-  gap: 14px;
-  justify-content: space-between;
-}
+.venue-banner { background: linear-gradient(135deg, #0055a4, #0070cc); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+.venue-banner-left h2 { font-size: 18px; font-weight: 700; }
+.venue-banner-left p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+.venue-banner-right { text-align: right; }
+.venue-banner-right .race-total { font-size: 22px; font-weight: 800; }
+.venue-banner-right .race-total-label { font-size: 10px; opacity: 0.7; }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.back-btn {
-  color: #0055a4;
-  text-decoration: none;
-  font-size: 20px;
-  line-height: 1;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  transition: background 0.15s;
-}
-
-.back-btn:hover { background: #e8f0fd; }
-
-.header-info h1 {
-  font-size: 18px;
-  font-weight: 700;
-  color: #222;
-  line-height: 1.3;
-}
-
-.header-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 2px;
-}
-
-.header-meta .date {
-  font-size: 12px;
-  color: #888;
-}
-
-.header-right-area {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* --- 節タイトルバナー --- */
-.venue-banner {
-  background: linear-gradient(135deg, #0055a4, #0070cc);
-  border-radius: 12px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.venue-banner-left h2 {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.venue-banner-left p {
-  font-size: 12px;
-  opacity: 0.8;
-  margin-top: 2px;
-}
-
-.venue-banner-right {
-  text-align: right;
-}
-
-.venue-banner-right .race-total {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.venue-banner-right .race-total-label {
-  font-size: 10px;
-  opacity: 0.7;
-}
-
-/* --- レースカード --- */
-.race-card {
-  background: #fff;
-  border: 1px solid #e0e3e8;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  overflow: hidden;
-  transition: box-shadow 0.15s;
-}
-
-.race-card:hover {
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-}
-
-.race-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  border-bottom: 1px solid #eee;
-}
-
-.race-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.race-no {
-  font-size: 16px;
-  font-weight: 800;
-  color: #0055a4;
-  min-width: 36px;
-}
-
-.race-time {
-  font-size: 14px;
-  color: #333;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.race-time-label {
-  font-size: 10px;
-  color: #999;
-  font-weight: 400;
-  margin-right: 2px;
-}
-
-.race-header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
-}
-
+.race-card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.race-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #eee; }
+.race-header-left { display: flex; align-items: center; gap: 10px; }
+.race-no { font-size: 16px; font-weight: 800; color: #0055a4; min-width: 36px; }
+.race-time { font-size: 14px; color: #333; font-weight: 700; font-variant-numeric: tabular-nums; }
+.race-time-label { font-size: 10px; color: #999; font-weight: 400; margin-right: 2px; }
+.race-header-right { display: flex; align-items: center; gap: 8px; }
+.status-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
 .status-yosen { background: #dbeafe; color: #2563eb; }
-.status-junyu { background: #d1fae5; color: #16a34a; }
 .status-kakutei { background: #f3f4f6; color: #888; }
 .status-live { background: #fee2e2; color: #dc2626; }
 
-/* --- 選手テーブル --- */
-.player-table {
-  width: 100%;
-}
+/* --- タブ --- */
+.race-tabs { display: flex; border-bottom: 1px solid #eee; }
+.race-tab { flex: 1; padding: 9px 0; text-align: center; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
+.race-tab:hover { color: #555; background: #fafbfc; }
+.race-tab.active { color: #0055a4; border-bottom-color: #0055a4; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
 
-.player-row {
-  display: flex;
-  align-items: center;
-  padding: 7px 16px;
-  border-bottom: 1px solid #f5f5f5;
-  gap: 8px;
-}
-
+/* --- 選手一覧 --- */
+.player-row { display: flex; align-items: center; padding: 7px 16px; border-bottom: 1px solid #f5f5f5; gap: 8px; }
 .player-row:last-child { border-bottom: none; }
-
 .player-row:hover { background: #fafbfc; }
-
-.waku {
-  width: 26px;
-  height: 26px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
+.waku { width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
 .waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
 .waku-2 { background: #222; color: #fff; }
 .waku-3 { background: #e53e3e; color: #fff; }
 .waku-4 { background: #2563eb; color: #fff; }
 .waku-5 { background: #eab308; color: #222; }
 .waku-6 { background: #16a34a; color: #fff; }
-
-.player-id {
-  font-size: 11px;
-  color: #999;
-  min-width: 36px;
-  flex-shrink: 0;
-}
-
-.player-name {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 600;
-  color: #222;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.player-grade {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
+.player-id { font-size: 11px; color: #999; min-width: 36px; flex-shrink: 0; }
+.player-name { flex: 1; font-size: 14px; font-weight: 600; color: #222; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-grade { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
 .pg-A1 { background: #fff3cd; color: #b8860b; }
 .pg-A2 { background: #dbeafe; color: #2563eb; }
 .pg-B1 { background: #f3f4f6; color: #666; }
 .pg-B2 { background: #f3f4f6; color: #aaa; }
+.player-stats { display: flex; gap: 12px; flex-shrink: 0; }
+.player-stat { font-size: 11px; color: #999; text-align: right; }
+.player-stat strong { color: #333; font-weight: 600; }
+.player-stat-label { font-size: 9px; color: #bbb; display: block; }
+.player-loading { padding: 24px 16px; text-align: center; color: #bbb; font-size: 13px; }
 
-.player-stats {
-  display: flex;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.player-stat {
-  font-size: 11px;
-  color: #999;
-  text-align: right;
-}
-
-.player-stat strong {
-  color: #333;
-  font-weight: 600;
-}
-
-.player-stat-label {
-  font-size: 9px;
-  color: #bbb;
-  display: block;
-}
+/* --- AI予想タブ --- */
+.pred-row { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid #f5f5f5; gap: 10px; }
+.pred-row:last-child { border-bottom: none; }
+.pred-row:hover { background: #fafbfc; }
+.pred-name-area { min-width: 100px; }
+.pred-player-name { font-size: 14px; font-weight: 600; color: #222; }
+.pred-player-grade { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-top: 2px; display: inline-block; }
+.pred-rates { flex: 1; display: flex; gap: 6px; }
+.pred-rate-box { flex: 1; text-align: center; padding: 6px 4px; background: #fafbfc; border-radius: 6px; }
+.pred-rate-box.top3 { background: #e8f0fd; }
+.pred-rate-label { font-size: 9px; color: #999; margin-bottom: 2px; }
+.pred-rate-pct { font-size: 15px; font-weight: 700; color: #222; }
+.pred-rate-box.top3 .pred-rate-pct { color: #0055a4; }
+.pred-rate-count { font-size: 10px; color: #999; margin-top: 1px; }
+.pred-rank-badge { font-size: 11px; font-weight: 800; color: #fff; background: #0055a4; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pred-rank-badge.r1 { background: #d97706; }
+.pred-rank-badge.r2 { background: #6b7280; }
+.pred-rank-badge.r3 { background: #92400e; }
 
 /* --- アクションボタン --- */
-.race-actions {
-  display: flex;
-  gap: 6px;
-  padding: 8px 16px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.action-btn {
-  flex: 1;
-  padding: 8px 4px;
-  border: 1px solid #e0e3e8;
-  border-radius: 8px;
-  background: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  color: #555;
-  cursor: pointer;
-  text-align: center;
-  text-decoration: none;
-  transition: all 0.15s;
-}
-
-.action-btn:hover {
-  border-color: #0055a4;
-  color: #0055a4;
-  background: #f0f5ff;
-}
-
-.action-btn.primary {
-  background: #0055a4;
-  color: #fff;
-  border-color: #0055a4;
-}
-
-.action-btn.primary:hover {
-  background: #003d7a;
-}
-
-.player-loading {
-  padding: 24px 16px;
-  text-align: center;
-  color: #bbb;
-  font-size: 13px;
-}
-
-.container {
-  max-width: 800px;
-}
+.race-actions { display: flex; gap: 6px; padding: 8px 16px; border-top: 1px solid #f0f0f0; }
+.action-btn { flex: 1; padding: 8px 4px; border: 1px solid #e0e3e8; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 600; color: #555; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.15s; }
+.action-btn:hover { border-color: #0055a4; color: #0055a4; background: #f0f5ff; }
+.action-btn.primary { background: #0055a4; color: #fff; border-color: #0055a4; }
+.action-btn.primary:hover { background: #003d7a; }
 
 @media (max-width: 600px) {
   .venue-banner { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px 16px; }
@@ -330,6 +111,8 @@ header {
   .player-name { font-size: 13px; }
   .player-id { display: none; }
   .player-stats { display: none; }
+  .pred-row { flex-wrap: wrap; padding: 8px 12px; gap: 6px; }
+  .pred-rates { min-width: 100%; }
   .race-actions { gap: 4px; padding: 8px 12px; }
   .action-btn { font-size: 11px; padding: 7px 2px; }
   .header-info h1 { font-size: 16px; }
@@ -362,12 +145,8 @@ header {
       <div class="race-total-label">レース</div>
     </div>
   </div>
-
   <div id="raceList">
-    <div class="loading">
-      <div class="loading-spinner"></div>
-      レース情報を取得中...
-    </div>
+    <div class="loading"><div class="loading-spinner"></div>レース情報を取得中...</div>
   </div>
 </div>
 
@@ -377,209 +156,220 @@ header {
 var params = new URLSearchParams(location.search);
 var venue = params.get('venue') || '';
 var date  = params.get('date')  || today();
+function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
-function today() {
-  var d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
-var VENUE_GRADES = {
-  '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般',
-  '浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般',
-  'びわこ':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般',
-  '児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般',
-  '芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般'
-};
+var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','びわこ':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
-
 var venueGrade = VENUE_GRADES[venue] || '一般';
-var gradeClass = GRADE_CLASSES[venueGrade];
-
 document.getElementById('pageTitle').textContent = venue + ' レース一覧';
 document.getElementById('pageDate').textContent = formatDateJP(date);
 document.title = '艇王 - ' + venue;
-
 var badge = document.getElementById('pageBadge');
 badge.textContent = venueGrade;
-badge.className = 'grade-badge ' + gradeClass;
+badge.className = 'grade-badge ' + (GRADE_CLASSES[venueGrade] || 'grade-ippan');
 
-function formatDateJP(dateStr) {
-  var d = new Date(dateStr + 'T00:00:00');
-  var days = ['日','月','火','水','木','金','土'];
-  return (d.getMonth()+1) + '/' + d.getDate() + ' (' + days[d.getDay()] + ')';
-}
-
-function formatName(name) {
-  return name.replace(/[\s　]+/g, ' ').trim();
-}
-
-function getRaceStatus(scheduledTime) {
-  if (!scheduledTime) return { text: '予選', cls: 'status-yosen' };
-  var now = new Date();
-  var parts = scheduledTime.split(':').map(Number);
-  var h = parts[0];
-  var m = parts[1];
-  var raceTime = new Date();
-  raceTime.setHours(h, m, 0, 0);
-  if (now > raceTime) return { text: '結果確定', cls: 'status-kakutei' };
-  var diff = raceTime - now;
-  if (diff < 10 * 60 * 1000) return { text: '締切間近', cls: 'status-live' };
-  return { text: '予選', cls: 'status-yosen' };
-}
+function formatDateJP(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
+function formatName(n) { return n.replace(/[\s　]+/g, ' ').trim(); }
+function getRaceStatus(st) { if (!st) return {text:'予選',cls:'status-yosen'}; var now=new Date(); var p=st.split(':').map(Number); var rt=new Date(); rt.setHours(p[0],p[1],0,0); if(now>rt) return {text:'結果確定',cls:'status-kakutei'}; if(rt-now<600000) return {text:'締切間近',cls:'status-live'}; return {text:'予選',cls:'status-yosen'}; }
 
 var API_HOST = 'https://' + '2410049.moo.jp';
-var BR_HOST = 'https://' + 'www.boatrace.jp';
+function buildApiUrl(ep, pr) { var qs=Object.keys(pr).map(function(k){return k+'='+encodeURIComponent(pr[k]);}).join('&'); return API_HOST+'/'+ep+'?'+qs; }
 
-function buildRacelistUrl(raceNo) {
-  return 'racelist.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+function calcRates(predictions) {
+  var scores = predictions.map(function(p) { return p.score_total || 0; });
+  var maxS = Math.max.apply(null, scores);
+  var exps = scores.map(function(s) { return Math.exp((s - maxS) / 8); });
+  var sum = exps.reduce(function(a, b) { return a + b; }, 0);
+  var probs = exps.map(function(e) { return e / sum; });
+  var N = 10;
+  var results = [];
+  for (var i = 0; i < predictions.length; i++) {
+    var p1 = probs[i];
+    var others = [];
+    for (var j = 0; j < probs.length; j++) { if (j !== i) others.push(probs[j]); }
+    var othersSum = others.reduce(function(a, b) { return a + b; }, 0);
+    var p2 = 0; var p3 = 0;
+    for (var k = 0; k < others.length; k++) {
+      var pWinFirst = others[k] / othersSum;
+      var remaining = [];
+      for (var l = 0; l < others.length; l++) { if (l !== k) remaining.push(others[l]); }
+      var remSum = remaining.reduce(function(a, b) { return a + b; }, 0);
+      p2 += pWinFirst * (probs[i] / (probs[i] + remSum));
+      for (var m = 0; m < remaining.length; m++) {
+        var pSecond = remaining[m] / remSum;
+        var rest = [];
+        for (var n = 0; n < remaining.length; n++) { if (n !== m) rest.push(remaining[n]); }
+        var restSum = rest.reduce(function(a, b) { return a + b; }, 0);
+        p3 += pWinFirst * pSecond * (probs[i] / (probs[i] + restSum));
+      }
+    }
+    var r1 = Math.round(p1 * N);
+    var r2 = Math.round(p2 * N);
+    var r3 = Math.round(p3 * N);
+    var top3 = r1 + r2 + r3;
+    results.push({ lane: predictions[i].lane, name: predictions[i].name, grade: predictions[i].grade, player_id: predictions[i].player_id, r1: r1, r2: r2, r3: r3, top3: top3, top3pct: ((r1+r2+r3)/N*100).toFixed(1), r1pct: (r1/N*100).toFixed(1), r2pct: (r2/N*100).toFixed(1), r3pct: (r3/N*100).toFixed(1), N: N });
+  }
+  results.sort(function(a, b) { return b.top3 - a.top3 || b.r1 - a.r1; });
+  return results;
 }
 
-function buildApiUrl(endpoint, params) {
-  var qs = Object.keys(params).map(function(k) {
-    return k + '=' + encodeURIComponent(params[k]);
-  }).join('&');
-  return API_HOST + '/' + endpoint + '?' + qs;
-}
+function renderPredRow(r, rank) {
+  var row = document.createElement('div');
+  row.className = 'pred-row';
 
-function buildBoatraceUrl(raceNo) {
-  var hd = date.replace(/-/g, '');
-  return BR_HOST + '/owpc/pc/race/racelist' + '?hd=' + hd + '&rno=' + raceNo;
-}
+  var rb = document.createElement('div');
+  rb.className = 'pred-rank-badge' + (rank<=3 ? ' r'+rank : '');
+  rb.textContent = rank;
 
-function buildPredictUrl(raceNo) {
-  return 'predict.html' + '?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+  var waku = document.createElement('div');
+  waku.className = 'waku waku-' + r.lane;
+  waku.textContent = r.lane;
+
+  var nameArea = document.createElement('div');
+  nameArea.className = 'pred-name-area';
+  var nm = document.createElement('div');
+  nm.className = 'pred-player-name';
+  nm.textContent = formatName(r.name);
+  var gr = document.createElement('div');
+  gr.className = 'pred-player-grade pg-' + r.grade.replace(/\s/g,'');
+  gr.textContent = r.grade;
+  nameArea.appendChild(nm);
+  nameArea.appendChild(gr);
+
+  var rates = document.createElement('div');
+  rates.className = 'pred-rates';
+  var boxes = [
+    { label: 'AI3連対率', pct: r.top3pct + '%', count: r.top3 + ' / ' + r.N + '回', isTop3: true },
+    { label: '1着率', pct: r.r1pct + '%', count: r.r1 + '回', isTop3: false },
+    { label: '2着率', pct: r.r2pct + '%', count: r.r2 + '回', isTop3: false },
+    { label: '3着率', pct: r.r3pct + '%', count: r.r3 + '回', isTop3: false }
+  ];
+  for (var i = 0; i < boxes.length; i++) {
+    var box = document.createElement('div');
+    box.className = 'pred-rate-box' + (boxes[i].isTop3 ? ' top3' : '');
+    var lbl = document.createElement('div');
+    lbl.className = 'pred-rate-label';
+    lbl.textContent = boxes[i].label;
+    var pct = document.createElement('div');
+    pct.className = 'pred-rate-pct';
+    pct.textContent = boxes[i].pct;
+    var cnt = document.createElement('div');
+    cnt.className = 'pred-rate-count';
+    cnt.textContent = '(' + boxes[i].count + ')';
+    box.appendChild(lbl);
+    box.appendChild(pct);
+    box.appendChild(cnt);
+    rates.appendChild(box);
+  }
+
+  row.appendChild(rb);
+  row.appendChild(waku);
+  row.appendChild(nameArea);
+  row.appendChild(rates);
+  return row;
 }
 
 function renderPlayerRow(p) {
-  var pgClass = 'pg-' + p.grade.replace(/\s/g, '');
-  var natRate = p.win_rate_national != null ? p.win_rate_national.toFixed(2) : '-';
-  var locRate = p.win_rate_local != null ? Number(p.win_rate_local).toFixed(2) : '-';
-
   var row = document.createElement('div');
   row.className = 'player-row';
-
   var waku = document.createElement('div');
   waku.className = 'waku waku-' + p.lane;
   waku.textContent = p.lane;
-
   var pid = document.createElement('span');
   pid.className = 'player-id';
   pid.textContent = p.player_id;
-
   var nameEl = document.createElement('div');
   nameEl.className = 'player-name';
   nameEl.textContent = formatName(p.name);
-
   var gradeEl = document.createElement('span');
-  gradeEl.className = 'player-grade ' + pgClass;
+  gradeEl.className = 'player-grade pg-' + p.grade.replace(/\s/g,'');
   gradeEl.textContent = p.grade;
-
   var statsEl = document.createElement('div');
   statsEl.className = 'player-stats';
-
-  var stat1 = document.createElement('div');
-  stat1.className = 'player-stat';
-  var lbl1 = document.createElement('span');
-  lbl1.className = 'player-stat-label';
-  lbl1.textContent = '全国';
-  var val1 = document.createElement('strong');
-  val1.textContent = natRate;
-  stat1.appendChild(lbl1);
-  stat1.appendChild(val1);
-
-  var stat2 = document.createElement('div');
-  stat2.className = 'player-stat';
-  var lbl2 = document.createElement('span');
-  lbl2.className = 'player-stat-label';
-  lbl2.textContent = '当地';
-  var val2 = document.createElement('strong');
-  val2.textContent = locRate;
-  stat2.appendChild(lbl2);
-  stat2.appendChild(val2);
-
-  statsEl.appendChild(stat1);
-  statsEl.appendChild(stat2);
-
-  row.appendChild(waku);
-  row.appendChild(pid);
-  row.appendChild(nameEl);
-  row.appendChild(gradeEl);
-  row.appendChild(statsEl);
-
+  var s1 = document.createElement('div'); s1.className = 'player-stat';
+  var l1 = document.createElement('span'); l1.className = 'player-stat-label'; l1.textContent = '全国';
+  var v1 = document.createElement('strong'); v1.textContent = p.win_rate_national != null ? p.win_rate_national.toFixed(2) : '-';
+  s1.appendChild(l1); s1.appendChild(v1);
+  var s2 = document.createElement('div'); s2.className = 'player-stat';
+  var l2 = document.createElement('span'); l2.className = 'player-stat-label'; l2.textContent = '当地';
+  var v2 = document.createElement('strong'); v2.textContent = p.win_rate_local != null ? Number(p.win_rate_local).toFixed(2) : '-';
+  s2.appendChild(l2); s2.appendChild(v2);
+  statsEl.appendChild(s1); statsEl.appendChild(s2);
+  row.appendChild(waku); row.appendChild(pid); row.appendChild(nameEl); row.appendChild(gradeEl); row.appendChild(statsEl);
   return row;
 }
 
 function renderRaceCard(race) {
   var timeStr = race.scheduled_time || '--:--';
   var status = getRaceStatus(race.scheduled_time);
-
+  var rno = race.race_no;
   var card = document.createElement('div');
   card.className = 'race-card';
-  card.id = 'race-' + race.race_no;
+  card.id = 'race-' + rno;
 
-  var hdr = document.createElement('div');
-  hdr.className = 'race-header';
+  // ヘッダー
+  var hdr = document.createElement('div'); hdr.className = 'race-header';
+  var hdrL = document.createElement('div'); hdrL.className = 'race-header-left';
+  var noEl = document.createElement('span'); noEl.className = 'race-no'; noEl.textContent = rno + 'R';
+  var tEl = document.createElement('span'); tEl.className = 'race-time';
+  var tLbl = document.createElement('span'); tLbl.className = 'race-time-label'; tLbl.textContent = '締切';
+  tEl.appendChild(tLbl); tEl.appendChild(document.createTextNode(timeStr));
+  hdrL.appendChild(noEl); hdrL.appendChild(tEl);
+  var hdrR = document.createElement('div'); hdrR.className = 'race-header-right';
+  var sb = document.createElement('span'); sb.className = 'status-badge ' + status.cls; sb.textContent = status.text;
+  hdrR.appendChild(sb);
+  hdr.appendChild(hdrL); hdr.appendChild(hdrR);
 
-  var hdrLeft = document.createElement('div');
-  hdrLeft.className = 'race-header-left';
-  var noEl = document.createElement('span');
-  noEl.className = 'race-no';
-  noEl.textContent = race.race_no + 'R';
-  var timeEl = document.createElement('span');
-  timeEl.className = 'race-time';
-  var timeLbl = document.createElement('span');
-  timeLbl.className = 'race-time-label';
-  timeLbl.textContent = '締切';
-  timeEl.appendChild(timeLbl);
-  timeEl.appendChild(document.createTextNode(timeStr));
-  hdrLeft.appendChild(noEl);
-  hdrLeft.appendChild(timeEl);
+  // タブ
+  var tabs = document.createElement('div'); tabs.className = 'race-tabs';
+  var tab1 = document.createElement('button'); tab1.className = 'race-tab active'; tab1.textContent = '選手一覧'; tab1.setAttribute('data-tab', 'players-' + rno);
+  var tab2 = document.createElement('button'); tab2.className = 'race-tab'; tab2.textContent = 'AI予想'; tab2.setAttribute('data-tab', 'predict-' + rno);
+  tabs.appendChild(tab1); tabs.appendChild(tab2);
 
-  var hdrRight = document.createElement('div');
-  hdrRight.className = 'race-header-right';
-  var badge = document.createElement('span');
-  badge.className = 'status-badge ' + status.cls;
-  badge.textContent = status.text;
-  hdrRight.appendChild(badge);
+  tab1.addEventListener('click', function() { switchTab(card, 'players-' + rno); });
+  tab2.addEventListener('click', function() { switchTab(card, 'predict-' + rno); });
 
-  hdr.appendChild(hdrLeft);
-  hdr.appendChild(hdrRight);
+  // 選手パネル
+  var panel1 = document.createElement('div'); panel1.className = 'tab-panel active'; panel1.id = 'players-' + rno;
+  var ld = document.createElement('div'); ld.className = 'player-loading'; ld.textContent = '選手データを読み込み中...';
+  panel1.appendChild(ld);
 
-  var playerTable = document.createElement('div');
-  playerTable.className = 'player-table';
-  playerTable.id = 'players-' + race.race_no;
-  var loadingDiv = document.createElement('div');
-  loadingDiv.className = 'player-loading';
-  loadingDiv.textContent = '選手データを読み込み中...';
-  playerTable.appendChild(loadingDiv);
+  // AI予想パネル
+  var panel2 = document.createElement('div'); panel2.className = 'tab-panel'; panel2.id = 'predict-' + rno;
+  var ld2 = document.createElement('div'); ld2.className = 'player-loading'; ld2.textContent = '予想データを読み込み中...';
+  panel2.appendChild(ld2);
 
-  var actions = document.createElement('div');
-  actions.className = 'race-actions';
-
-  var btnRacelist = document.createElement('a');
-  btnRacelist.className = 'action-btn';
-  btnRacelist.href = buildRacelistUrl(race.race_no);
-  btnRacelist.textContent = '出走表';
-
-  var btnInfo = document.createElement('a');
-  btnInfo.className = 'action-btn';
-  btnInfo.href = buildPredictUrl(race.race_no);
-  btnInfo.textContent = '直前情報';
-
-  var btnPredict = document.createElement('a');
-  btnPredict.className = 'action-btn primary';
-  btnPredict.href = buildPredictUrl(race.race_no);
-  btnPredict.textContent = 'AI予想';
-
-  actions.appendChild(btnRacelist);
-  actions.appendChild(btnInfo);
-  actions.appendChild(btnPredict);
+  // アクション
+  var actions = document.createElement('div'); actions.className = 'race-actions';
+  var b1 = document.createElement('a'); b1.className = 'action-btn';
+  b1.href = 'racelist.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
+  b1.textContent = '出走表';
+  var b2 = document.createElement('a'); b2.className = 'action-btn';
+  b2.href = 'predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
+  b2.textContent = '直前情報';
+  var b3 = document.createElement('a'); b3.className = 'action-btn primary';
+  b3.href = 'predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
+  b3.textContent = 'AI予想詳細';
+  actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3);
 
   card.appendChild(hdr);
-  card.appendChild(playerTable);
+  card.appendChild(tabs);
+  card.appendChild(panel1);
+  card.appendChild(panel2);
   card.appendChild(actions);
-
   return card;
+}
+
+function switchTab(card, panelId) {
+  var allTabs = card.querySelectorAll('.race-tab');
+  var allPanels = card.querySelectorAll('.tab-panel');
+  for (var i = 0; i < allTabs.length; i++) { allTabs[i].classList.remove('active'); }
+  for (var j = 0; j < allPanels.length; j++) { allPanels[j].classList.remove('active'); }
+  var target = document.getElementById(panelId);
+  if (target) target.classList.add('active');
+  for (var k = 0; k < allTabs.length; k++) {
+    if (allTabs[k].getAttribute('data-tab') === panelId) allTabs[k].classList.add('active');
+  }
 }
 
 async function loadPlayerData(raceNo) {
@@ -589,14 +379,24 @@ async function loadPlayerData(raceNo) {
     if (!res.ok) return;
     var data = await res.json();
     if (data.error || !data.predictions || data.predictions.length === 0) return;
-
-    var el = document.getElementById('players-' + raceNo);
-    if (!el) return;
     var sorted = data.predictions.slice().sort(function(a, b) { return a.lane - b.lane; });
-    el.textContent = '';
-    sorted.forEach(function(p) {
-      el.appendChild(renderPlayerRow(p));
-    });
+
+    // 選手一覧パネル
+    var el = document.getElementById('players-' + raceNo);
+    if (el) {
+      el.textContent = '';
+      sorted.forEach(function(p) { el.appendChild(renderPlayerRow(p)); });
+    }
+
+    // AI予想パネル
+    var predEl = document.getElementById('predict-' + raceNo);
+    if (predEl) {
+      var rates = calcRates(data.predictions);
+      predEl.textContent = '';
+      for (var i = 0; i < rates.length; i++) {
+        predEl.appendChild(renderPredRow(rates[i], i + 1));
+      }
+    }
   } catch(e) {}
 }
 
@@ -607,35 +407,23 @@ async function loadRaces() {
     var res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
-
     if (!data.races || data.races.length === 0) {
       list.textContent = '';
-      var errDiv = document.createElement('div');
-      errDiv.className = 'error-msg';
-      errDiv.textContent = 'レース情報が見つかりません';
-      list.appendChild(errDiv);
-      return;
+      var err = document.createElement('div'); err.className = 'error-msg'; err.textContent = 'レース情報が見つかりません';
+      list.appendChild(err); return;
     }
-
     var banner = document.getElementById('venueBanner');
     document.getElementById('bannerTitle').textContent = venue;
     document.getElementById('bannerSub').textContent = formatDateJP(date) + ' 開催';
     document.getElementById('bannerTotal').textContent = data.races.length + 'R';
     banner.style.display = 'flex';
-
     list.textContent = '';
-    data.races.forEach(function(r) {
-      list.appendChild(renderRaceCard(r));
-    });
-
-    var loadPromises = data.races.map(function(r) { return loadPlayerData(r.race_no); });
-    await Promise.all(loadPromises);
+    data.races.forEach(function(r) { list.appendChild(renderRaceCard(r)); });
+    await Promise.all(data.races.map(function(r) { return loadPlayerData(r.race_no); }));
   } catch(e) {
     list.textContent = '';
-    var errDiv = document.createElement('div');
-    errDiv.className = 'error-msg';
-    errDiv.textContent = 'データの取得に失敗しました';
-    list.appendChild(errDiv);
+    var err = document.createElement('div'); err.className = 'error-msg'; err.textContent = 'データの取得に失敗しました';
+    list.appendChild(err);
   }
 }
 
