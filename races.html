@@ -46,11 +46,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .status-kakutei { background: #f3f4f6; color: #888; }
 .status-live { background: #fee2e2; color: #dc2626; }
 
-/* --- タブ --- */
-.race-tabs { display: flex; border-bottom: 1px solid #eee; }
-.race-tab { flex: 1; padding: 9px 0; text-align: center; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
-.race-tab:hover { color: #555; background: #fafbfc; }
-.race-tab.active { color: #0055a4; border-bottom-color: #0055a4; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
@@ -101,6 +96,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .race-actions { display: flex; gap: 6px; padding: 8px 16px; border-top: 1px solid #f0f0f0; }
 .action-btn { flex: 1; padding: 8px 4px; border: 1px solid #e0e3e8; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 600; color: #555; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.15s; }
 .action-btn:hover { border-color: #0055a4; color: #0055a4; background: #f0f5ff; }
+.action-btn.active { background: #0055a4; color: #fff; border-color: #0055a4; }
 .action-btn.primary { background: #0055a4; color: #fff; border-color: #0055a4; }
 .action-btn.primary:hover { background: #003d7a; }
 
@@ -320,56 +316,49 @@ function renderRaceCard(race) {
   hdrR.appendChild(sb);
   hdr.appendChild(hdrL); hdr.appendChild(hdrR);
 
-  // タブ
-  var tabs = document.createElement('div'); tabs.className = 'race-tabs';
-  var tab1 = document.createElement('button'); tab1.className = 'race-tab active'; tab1.textContent = '選手一覧'; tab1.setAttribute('data-tab', 'players-' + rno);
-  var tab2 = document.createElement('button'); tab2.className = 'race-tab'; tab2.textContent = 'AI予想'; tab2.setAttribute('data-tab', 'predict-' + rno);
-  tabs.appendChild(tab1); tabs.appendChild(tab2);
-
-  tab1.addEventListener('click', function() { switchTab(card, 'players-' + rno); });
-  tab2.addEventListener('click', function() { switchTab(card, 'predict-' + rno); });
-
-  // 選手パネル
+  // 選手パネル（デフォルト表示）
   var panel1 = document.createElement('div'); panel1.className = 'tab-panel active'; panel1.id = 'players-' + rno;
   var ld = document.createElement('div'); ld.className = 'player-loading'; ld.textContent = '選手データを読み込み中...';
   panel1.appendChild(ld);
 
-  // AI予想パネル
+  // AI予想パネル（非表示）
   var panel2 = document.createElement('div'); panel2.className = 'tab-panel'; panel2.id = 'predict-' + rno;
   var ld2 = document.createElement('div'); ld2.className = 'player-loading'; ld2.textContent = '予想データを読み込み中...';
   panel2.appendChild(ld2);
 
-  // アクション
+  // アクションバー（タブ兼用）
   var actions = document.createElement('div'); actions.className = 'race-actions';
+
   var b1 = document.createElement('a'); b1.className = 'action-btn';
   b1.href = 'racelist.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
   b1.textContent = '出走表';
+
   var b2 = document.createElement('a'); b2.className = 'action-btn';
   b2.href = 'predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
   b2.textContent = '直前情報';
-  var b3 = document.createElement('a'); b3.className = 'action-btn primary';
-  b3.href = 'predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
-  b3.textContent = 'AI予想詳細';
+
+  var b3 = document.createElement('button'); b3.className = 'action-btn'; b3.textContent = 'AI予想';
+  b3.setAttribute('data-rno', rno);
+  b3.addEventListener('click', function() {
+    var isActive = b3.classList.contains('active');
+    if (isActive) {
+      b3.classList.remove('active');
+      panel2.classList.remove('active');
+      panel1.classList.add('active');
+    } else {
+      b3.classList.add('active');
+      panel1.classList.remove('active');
+      panel2.classList.add('active');
+    }
+  });
+
   actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3);
 
   card.appendChild(hdr);
-  card.appendChild(tabs);
   card.appendChild(panel1);
   card.appendChild(panel2);
   card.appendChild(actions);
   return card;
-}
-
-function switchTab(card, panelId) {
-  var allTabs = card.querySelectorAll('.race-tab');
-  var allPanels = card.querySelectorAll('.tab-panel');
-  for (var i = 0; i < allTabs.length; i++) { allTabs[i].classList.remove('active'); }
-  for (var j = 0; j < allPanels.length; j++) { allPanels[j].classList.remove('active'); }
-  var target = document.getElementById(panelId);
-  if (target) target.classList.add('active');
-  for (var k = 0; k < allTabs.length; k++) {
-    if (allTabs[k].getAttribute('data-tab') === panelId) allTabs[k].classList.add('active');
-  }
 }
 
 async function loadPlayerData(raceNo) {
