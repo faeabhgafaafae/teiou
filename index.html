@@ -80,6 +80,9 @@
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: block;
   }
 
   .venue-card::before {
@@ -317,6 +320,8 @@ function formatDate(dateStr) {
   return `${y}年${m}月${day}日 (${dow})`;
 }
 
+let apiDate = '';
+
 function createVenueCard(venue) {
   const grade = VENUE_GRADES[venue.venue] || '一般';
   const gradeClass = GRADE_CLASSES[grade];
@@ -324,9 +329,10 @@ function createVenueCard(venue) {
   const deadline = generateDeadline(venue.venue, currentRace);
   const progressPct = (currentRace / venue.race_count) * 100;
   const isLive = currentRace < venue.race_count;
+  const href = `races.html?venue=${encodeURIComponent(venue.venue)}&date=${apiDate}`;
 
   return `
-    <div class="venue-card">
+    <a class="venue-card" href="${href}">
       <div class="card-top">
         <span class="venue-name">${venue.venue}</span>
         <span class="grade-badge ${gradeClass}">${grade}</span>
@@ -344,7 +350,7 @@ function createVenueCard(venue) {
           </div>
         </div>
       </div>
-    </div>
+    </a>
   `;
 }
 
@@ -355,6 +361,7 @@ async function loadVenues() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
+    apiDate = data.date;
     document.getElementById('headerDate').textContent = formatDate(data.date);
 
     if (!data.venues || data.venues.length === 0) {
