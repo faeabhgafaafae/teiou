@@ -231,7 +231,7 @@ document.getElementById('back-link').href = `races.html?venue=${encodeURICompone
 document.title = `艇王 - ${venue} ${race_no}R`;
 
 const API_BASE = 'https://2410049.moo.jp';
-const GEMINI_API_KEY = 'AIzaSyCm1R0QQ7dTMe-dhtCttHjaxDqelfRmROk';
+const GEMINI_API_KEY = 'AQ.Ab8RN6Jv2essTIUfHJXe8gQLbul6T8Zt0ET84HjEX2BinE-ADQ';
 
 async function getAIComment(predictions) {
   if (!GEMINI_API_KEY) return null;
@@ -246,7 +246,7 @@ async function getAIComment(predictions) {
 - 合計：${top.score_total.toFixed(1)}点`;
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({contents: [{parts: [{text: prompt}]}]})
