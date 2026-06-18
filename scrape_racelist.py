@@ -46,6 +46,28 @@ HEADERS = {
 }
 
 
+def scrape_schedule_times(jcd: str, hd: str) -> dict[int, str]:
+    """raceindexページから全レースの締切予定時刻を取得"""
+    url = f'{BASE_URL}/owpc/pc/race/raceindex?jcd={jcd}&hd={hd}'
+    try:
+        res = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(res.text, 'html.parser')
+    except Exception as e:
+        print(f'    [時刻取得ERROR] {e}')
+        return {}
+
+    times = {}
+    time_pattern = re.compile(r'^\d{1,2}:\d{2}$')
+    race_no = 1
+    for td in soup.find_all('td'):
+        text = td.get_text(strip=True)
+        if time_pattern.match(text) and race_no <= 12:
+            times[race_no] = text
+            race_no += 1
+
+    return times
+
+
 def get_today_venues(hd: str) -> list[str]:
     """本日の開催場コードを取得"""
     url = f'{BASE_URL}/owpc/pc/race/index'
@@ -241,6 +263,14 @@ def main():
         venue_name = VENUES.get(jcd, jcd)
         rnos = [args.rno] if args.rno else range(1, 13)
 
+        print(f'  [{venue_name}] 締切時刻を取得中...')
+        schedule_times = scrape_schedule_times(jcd, hd)
+        if schedule_times:
+            print(f'    → {len(schedule_times)}レース分の時刻を取得')
+        else:
+            print(f'    → 時刻データなし')
+        time.sleep(SLEEP_SEC)
+
         for rno in rnos:
             print(f'  [{venue_name}] {rno}R 取得中...', end=' ')
             data = scrape_racelist(jcd, rno, hd)
@@ -249,6 +279,9 @@ def main():
                 print('データなし')
                 time.sleep(1)
                 continue
+
+            if rno in schedule_times:
+                data['scheduled_time'] = schedule_times[rno]
 
             print(f'{len(data["players"])}選手', end=' ')
             send_data(data)
