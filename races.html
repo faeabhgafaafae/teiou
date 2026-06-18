@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>艇王 - レース一覧</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f5f7fa; color: #222; }
+
+.header {
+  background: #1a4a8a;
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header a { color: white; text-decoration: none; font-size: 20px; }
+.header h1 { font-size: 18px; font-weight: 600; }
+
+.container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
+
+.race-list { display: flex; flex-direction: column; gap: 10px; }
+
+.race-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.15s;
+}
+.race-card:hover {
+  border-color: #1a4a8a;
+  box-shadow: 0 2px 8px rgba(26,74,138,0.1);
+}
+.race-no {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a4a8a;
+  min-width: 50px;
+}
+.race-info { flex: 1; padding: 0 12px; }
+.race-info .title { font-size: 14px; font-weight: 500; }
+.race-info .time { font-size: 12px; color: #888; margin-top: 2px; }
+.race-status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.status-ready { background: #e8f0fd; color: #1a4a8a; }
+.status-done { background: #f0fdf4; color: #16a34a; }
+.status-live { background: #fef3c7; color: #d97706; }
+
+.arrow { color: #ccc; font-size: 18px; }
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+  font-size: 14px;
+}
+.error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  padding: 16px;
+  color: #dc2626;
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="index.html">←</a>
+  <div>
+    <h1 id="page-title">レース一覧</h1>
+  </div>
+</div>
+
+<div class="container">
+  <div class="race-list" id="race-list">
+    <div class="loading">レース情報を取得中...</div>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const venue = params.get('venue') || '';
+const date  = params.get('date')  || today();
+
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+document.getElementById('page-title').textContent = `${venue} レース一覧`;
+document.title = `艇王 - ${venue}`;
+
+const API_BASE = 'https://2410049.moo.jp';
+
+async function loadRaces() {
+  const list = document.getElementById('race-list');
+  try {
+    const res = await fetch(`${API_BASE}/races.php?date=${date}&venue=${encodeURIComponent(venue)}`);
+    const data = await res.json();
+
+    if (data.error || !data.races || data.races.length === 0) {
+      list.innerHTML = '<div class="error">レース情報が見つかりません</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    data.races.forEach(r => {
+      const card = document.createElement('a');
+      card.className = 'race-card';
+      card.href = `predict.html?venue=${encodeURIComponent(venue)}&date=${date}&race_no=${r.race_no}`;
+
+      const now = new Date();
+      const hour = now.getHours();
+      let statusClass = 'status-ready';
+      let statusText = '予測を見る';
+
+      card.innerHTML = `
+        <div class="race-no">${r.race_no}R</div>
+        <div class="race-info">
+          <div class="title">${r.title || '一般'}</div>
+          <div class="time">${r.scheduled_time || ''}</div>
+        </div>
+        <span class="race-status ${statusClass}">${statusText}</span>
+        <span class="arrow">›</span>
+      `;
+      list.appendChild(card);
+    });
+  } catch(e) {
+    list.innerHTML = '<div class="error">データの取得に失敗しました</div>';
+  }
+}
+
+loadRaces();
+</script>
+</body>
+</html>
