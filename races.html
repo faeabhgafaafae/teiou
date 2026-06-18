@@ -10,14 +10,30 @@
 <body>
 
 <header>
-  <a class="back" href="index.html">&larr;</a>
-  <div class="header-title">
-    <h1 id="pageTitle">レース一覧</h1>
-    <small id="pageDate"></small>
+  <div class="header-left">
+    <a class="back-btn" href="index.html">&larr;</a>
+    <div class="header-info">
+      <h1 id="pageTitle">レース一覧</h1>
+      <div class="header-meta">
+        <span class="date" id="pageDate"></span>
+        <span class="grade-badge" id="pageBadge"></span>
+      </div>
+    </div>
   </div>
 </header>
 
 <div class="container">
+  <div class="venue-banner" id="venueBanner" style="display:none">
+    <div class="venue-banner-left">
+      <h2 id="bannerTitle"></h2>
+      <p id="bannerSub"></p>
+    </div>
+    <div class="venue-banner-right">
+      <div class="race-total" id="bannerTotal">-</div>
+      <div class="race-total-label">レース</div>
+    </div>
+  </div>
+
   <div id="raceList">
     <div class="loading">
       <div class="loading-spinner"></div>
@@ -47,39 +63,67 @@ const VENUE_GRADES = {
 };
 const GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
 
+const venueGrade = VENUE_GRADES[venue] || '一般';
+const gradeClass = GRADE_CLASSES[venueGrade];
+
 document.getElementById('pageTitle').textContent = `${venue} レース一覧`;
-document.getElementById('pageDate').textContent = date;
+document.getElementById('pageDate').textContent = formatDateJP(date);
 document.title = `艇王 - ${venue}`;
+
+const badge = document.getElementById('pageBadge');
+badge.textContent = venueGrade;
+badge.className = `grade-badge ${gradeClass}`;
+
+function formatDateJP(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['日','月','火','水','木','金','土'];
+  return `${d.getMonth()+1}/${d.getDate()} (${days[d.getDay()]})`;
+}
+
+function formatName(name) {
+  return name.replace(/[\s　]+/g, ' ').trim();
+}
+
+function getRaceStatus(scheduledTime) {
+  if (!scheduledTime) return { text: '予選', cls: 'status-yosen' };
+  const now = new Date();
+  const [h, m] = scheduledTime.split(':').map(Number);
+  const raceTime = new Date();
+  raceTime.setHours(h, m, 0, 0);
+  if (now > raceTime) return { text: '結果確定', cls: 'status-kakutei' };
+  const diff = raceTime - now;
+  if (diff < 10 * 60 * 1000) return { text: '締切間近', cls: 'status-live' };
+  return { text: '予選', cls: 'status-yosen' };
+}
 
 const API_BASE = 'https://2410049.moo.jp';
 
-function formatName(name) {
-  return name.replace(/\s+/g, ' ').trim();
+function renderPlayerRow(p) {
+  const pgClass = `pg-${p.grade.replace(/\s/g, '')}`;
+  return `
+    <div class="player-row">
+      <div class="waku waku-${p.lane}">${p.lane}</div>
+      <span class="player-id">${p.player_id}</span>
+      <div class="player-name">${formatName(p.name)}</div>
+      <span class="player-grade ${pgClass}">${p.grade}</span>
+      <div class="player-stats">
+        <div class="player-stat">
+          <span class="player-stat-label">全国</span>
+          <strong>${p.win_rate_national?.toFixed(2) ?? '-'}</strong>
+        </div>
+        <div class="player-stat">
+          <span class="player-stat-label">当地</span>
+          <strong>${p.win_rate_local != null ? Number(p.win_rate_local).toFixed(2) : '-'}</strong>
+        </div>
+      </div>
+    </div>`;
 }
 
-function renderRaceCard(race, predictions) {
-  const venueGrade = VENUE_GRADES[venue] || '一般';
-  const gradeClass = GRADE_CLASSES[venueGrade];
+function renderRaceCard(race) {
   const timeStr = race.scheduled_time || '--:--';
-
-  let playersHtml;
-  if (predictions && predictions.length > 0) {
-    const sorted = [...predictions].sort((a, b) => a.lane - b.lane);
-    playersHtml = sorted.map(p => {
-      const pgClass = `pg-${p.grade.replace(/\s/g, '')}`;
-      return `
-        <div class="player-row">
-          <div class="waku waku-${p.lane}">${p.lane}</div>
-          <div class="player-name">${formatName(p.name)}</div>
-          <span class="player-grade ${pgClass}">${p.grade}</span>
-          <div class="player-stat">勝率 <strong>${p.win_rate_national?.toFixed(2) ?? '-'}</strong></div>
-        </div>`;
-    }).join('');
-  } else {
-    playersHtml = '<div class="player-loading">選手データを取得中...</div>';
-  }
-
-  const boatraceUrl = `https://www.boatrace.jp/owpc/pc/race/racelist?hd=${date.replace(/-/g, '')}&jcd=&rno=${race.race_no}`;
+  const status = getRaceStatus(race.scheduled_time);
+  const boatraceUrl = `https://www.boatrace.jp/owpc/pc/race/racelist?hd=${date.replace(/-/g, '')}&rno=${race.race_no}`;
+  const predictUrl = `predict.html?venue=${encodeURIComponent(venue)}&date=${date}&race_no=${race.race_no}`;
 
   return `
     <div class="race-card" id="race-${race.race_no}">
@@ -88,29 +132,33 @@ function renderRaceCard(race, predictions) {
           <span class="race-no">${race.race_no}R</span>
           <span class="race-time"><span class="race-time-label">締切</span>${timeStr}</span>
         </div>
-        <span class="grade-badge ${gradeClass}">${venueGrade}</span>
+        <div class="race-header-right">
+          <span class="status-badge ${status.cls}">${status.text}</span>
+        </div>
       </div>
-      <div class="player-list" id="players-${race.race_no}">
-        ${playersHtml}
+      <div class="player-table" id="players-${race.race_no}">
+        <div class="player-loading">選手データを読み込み中...</div>
       </div>
       <div class="race-actions">
         <a class="action-btn" href="${boatraceUrl}" target="_blank">出走表</a>
-        <a class="action-btn" href="predict.html?venue=${encodeURIComponent(venue)}&date=${date}&race_no=${race.race_no}">直前情報</a>
-        <a class="action-btn primary" href="predict.html?venue=${encodeURIComponent(venue)}&date=${date}&race_no=${race.race_no}">AI予想</a>
+        <a class="action-btn" href="${predictUrl}">直前情報</a>
+        <a class="action-btn primary" href="${predictUrl}">AI予想</a>
       </div>
     </div>`;
 }
 
-async function loadPredictions(raceNo) {
+async function loadPlayerData(raceNo) {
   try {
     const res = await fetch(`${API_BASE}/predict.php?date=${date}&venue=${encodeURIComponent(venue)}&race_no=${raceNo}`);
-    if (!res.ok) return null;
+    if (!res.ok) return;
     const data = await res.json();
-    if (data.error || !data.predictions) return null;
-    return data.predictions;
-  } catch {
-    return null;
-  }
+    if (data.error || !data.predictions || data.predictions.length === 0) return;
+
+    const el = document.getElementById(`players-${raceNo}`);
+    if (!el) return;
+    const sorted = [...data.predictions].sort((a, b) => a.lane - b.lane);
+    el.innerHTML = sorted.map(renderPlayerRow).join('');
+  } catch {}
 }
 
 async function loadRaces() {
@@ -125,26 +173,16 @@ async function loadRaces() {
       return;
     }
 
-    list.innerHTML = data.races.map(r => renderRaceCard(r, null)).join('');
+    const banner = document.getElementById('venueBanner');
+    document.getElementById('bannerTitle').textContent = `${venue}`;
+    document.getElementById('bannerSub').textContent = `${formatDateJP(date)} 開催`;
+    document.getElementById('bannerTotal').textContent = `${data.races.length}R`;
+    banner.style.display = 'flex';
 
-    data.races.forEach(async (race) => {
-      const predictions = await loadPredictions(race.race_no);
-      if (predictions && predictions.length > 0) {
-        const el = document.getElementById(`players-${race.race_no}`);
-        if (!el) return;
-        const sorted = [...predictions].sort((a, b) => a.lane - b.lane);
-        el.innerHTML = sorted.map(p => {
-          const pgClass = `pg-${p.grade.replace(/\s/g, '')}`;
-          return `
-            <div class="player-row">
-              <div class="waku waku-${p.lane}">${p.lane}</div>
-              <div class="player-name">${formatName(p.name)}</div>
-              <span class="player-grade ${pgClass}">${p.grade}</span>
-              <div class="player-stat">勝率 <strong>${p.win_rate_national?.toFixed(2) ?? '-'}</strong></div>
-            </div>`;
-        }).join('');
-      }
-    });
+    list.innerHTML = data.races.map(renderRaceCard).join('');
+
+    const loadPromises = data.races.map(r => loadPlayerData(r.race_no));
+    await Promise.all(loadPromises);
   } catch(e) {
     list.innerHTML = `<div class="error-msg">データの取得に失敗しました<br><small>${e.message}</small></div>`;
   }

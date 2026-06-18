@@ -1,44 +1,113 @@
+/* --- ヘッダー --- */
 header {
   gap: 14px;
+  justify-content: space-between;
 }
 
-header a.back {
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn {
   color: #0055a4;
   text-decoration: none;
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.15s;
 }
 
-.header-title h1 {
+.back-btn:hover { background: #e8f0fd; }
+
+.header-info h1 {
   font-size: 18px;
   font-weight: 700;
   color: #222;
+  line-height: 1.3;
 }
 
-.header-title small {
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.header-meta .date {
   font-size: 12px;
   color: #888;
 }
 
-.container {
-  max-width: 900px;
+.header-right-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+/* --- 節タイトルバナー --- */
+.venue-banner {
+  background: linear-gradient(135deg, #0055a4, #0070cc);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.venue-banner-left h2 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.venue-banner-left p {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.venue-banner-right {
+  text-align: right;
+}
+
+.venue-banner-right .race-total {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.venue-banner-right .race-total-label {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* --- レースカード --- */
 .race-card {
   background: #fff;
   border: 1px solid #e0e3e8;
   border-radius: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.race-card:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
 .race-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: #fafbfc;
-  border-bottom: 1px solid #e0e3e8;
+  padding: 10px 16px;
+  border-bottom: 1px solid #eee;
 }
 
 .race-header-left {
@@ -48,42 +117,71 @@ header a.back {
 }
 
 .race-no {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   color: #0055a4;
+  min-width: 36px;
 }
 
 .race-time {
-  font-size: 13px;
-  color: #555;
-  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .race-time-label {
   font-size: 10px;
   color: #999;
-  margin-right: 3px;
+  font-weight: 400;
+  margin-right: 2px;
+}
+
+.race-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.status-yosen { background: #dbeafe; color: #2563eb; }
+.status-junyu { background: #d1fae5; color: #16a34a; }
+.status-kakutei { background: #f3f4f6; color: #888; }
+.status-live { background: #fee2e2; color: #dc2626; }
+
+/* --- 選手テーブル --- */
+.player-table {
+  width: 100%;
 }
 
 .player-row {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
-  gap: 10px;
+  padding: 7px 16px;
+  border-bottom: 1px solid #f5f5f5;
+  gap: 8px;
 }
 
 .player-row:last-child { border-bottom: none; }
 
+.player-row:hover { background: #fafbfc; }
+
 .waku {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   flex-shrink: 0;
 }
 
@@ -93,6 +191,13 @@ header a.back {
 .waku-4 { background: #2563eb; color: #fff; }
 .waku-5 { background: #eab308; color: #222; }
 .waku-6 { background: #16a34a; color: #fff; }
+
+.player-id {
+  font-size: 11px;
+  color: #999;
+  min-width: 36px;
+  flex-shrink: 0;
+}
 
 .player-name {
   flex: 1;
@@ -106,10 +211,10 @@ header a.back {
 }
 
 .player-grade {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
   flex-shrink: 0;
 }
 
@@ -118,30 +223,41 @@ header a.back {
 .pg-B1 { background: #f3f4f6; color: #666; }
 .pg-B2 { background: #f3f4f6; color: #aaa; }
 
+.player-stats {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 .player-stat {
   font-size: 11px;
-  color: #777;
-  flex-shrink: 0;
+  color: #999;
   text-align: right;
-  min-width: 55px;
 }
 
 .player-stat strong {
   color: #333;
+  font-weight: 600;
 }
 
+.player-stat-label {
+  font-size: 9px;
+  color: #bbb;
+  display: block;
+}
+
+/* --- アクションボタン --- */
 .race-actions {
   display: flex;
-  gap: 8px;
-  padding: 10px 16px;
-  background: #fafbfc;
-  border-top: 1px solid #e0e3e8;
+  gap: 6px;
+  padding: 8px 16px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .action-btn {
   flex: 1;
-  padding: 8px;
-  border: 1px solid #d0d5dd;
+  padding: 8px 4px;
+  border: 1px solid #e0e3e8;
   border-radius: 8px;
   background: #fff;
   font-size: 12px;
@@ -156,6 +272,7 @@ header a.back {
 .action-btn:hover {
   border-color: #0055a4;
   color: #0055a4;
+  background: #f0f5ff;
 }
 
 .action-btn.primary {
@@ -169,16 +286,24 @@ header a.back {
 }
 
 .player-loading {
-  padding: 20px 16px;
+  padding: 24px 16px;
   text-align: center;
-  color: #999;
+  color: #bbb;
   font-size: 13px;
 }
 
+.container {
+  max-width: 800px;
+}
+
 @media (max-width: 600px) {
-  .player-row { padding: 7px 12px; gap: 8px; }
+  .venue-banner { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px 16px; }
+  .venue-banner-right { text-align: left; }
+  .player-row { padding: 6px 12px; gap: 6px; }
   .player-name { font-size: 13px; }
-  .player-stat { display: none; }
-  .race-actions { gap: 6px; }
-  .action-btn { font-size: 11px; padding: 7px 4px; }
+  .player-id { display: none; }
+  .player-stats { display: none; }
+  .race-actions { gap: 4px; padding: 8px 12px; }
+  .action-btn { font-size: 11px; padding: 7px 2px; }
+  .header-info h1 { font-size: 16px; }
 }
