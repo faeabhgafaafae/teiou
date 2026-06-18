@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>艇王 - ログイン</title>
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <a href="index.html">
+      <h1>艇王</h1>
+      <span class="logo-sub">ボートレース予測</span>
+    </a>
+  </div>
+</header>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>ログイン</h2>
+    <div class="error-msg" id="errorMsg"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">メールアドレス</label>
+        <input type="email" id="email" required placeholder="example@mail.com">
+      </div>
+      <div class="form-group">
+        <label for="password">パスワード</label>
+        <input type="password" id="password" required placeholder="パスワードを入力">
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">ログイン</button>
+    </form>
+    <div class="auth-footer">
+      アカウントをお持ちでない方は <a href="register.html">会員登録</a>
+    </div>
+  </div>
+</div>
+
+<footer>艇王 &copy; 2026</footer>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const errEl = document.getElementById('errorMsg');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'ログイン中...';
+
+  try {
+    const res = await fetch('login.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email:    document.getElementById('email').value,
+        password: document.getElementById('password').value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = data.error;
+      errEl.style.display = 'block';
+      return;
+    }
+    location.href = 'index.html';
+  } catch {
+    errEl.textContent = '通信エラーが発生しました';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ログイン';
+  }
+});
+</script>
+</body>
+</html>
