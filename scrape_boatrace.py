@@ -16,6 +16,8 @@ import argparse
 import requests
 from datetime import date
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # ─── 設定 ──────────────────────────────────────────────
 API_URL   = os.environ.get('API_URL', 'https://2410049.moo.jp/import_beforeinfo.php')
@@ -38,9 +40,40 @@ HEADERS = {
 }
 
 
+def make_session():
+    session = requests.Session()
+    retry = Retry(
+        total=4,
+        backoff_factor=2,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+SESSION = make_session()
+
+def fetch(url, *, timeout=30, retries=3):
+    last_err = None
+    for i in range(retries):
+        try:
+            res = SESSION.get(url, headers=HEADERS, timeout=timeout)
+            res.raise_for_status()
+            return res
+        except (requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError) as e:
+            last_err = e
+            wait = 5 * (i + 1)
+            print(f"  取得失敗({i+1}/{retries}): {e} → {wait}秒後に再試行")
+            time.sleep(wait)
+    raise last_err
+
+
 def get_today_venues(hd: str) -> list:
     url = f'{BASE_URL}/owpc/pc/race/index'
-    res = requests.get(url, headers=HEADERS, timeout=30)
+    res = fetch(url, timeout=30)
     soup = BeautifulSoup(res.text, 'html.parser')
     jcds = []
     for a in soup.find_all('a', href=True):
@@ -55,9 +88,7 @@ def get_today_venues(hd: str) -> list:
 def scrape_beforeinfo(jcd: str, rno: int, hd: str):
     url = f'{BASE_URL}/owpc/pc/race/beforeinfo?rno={rno}&jcd={jcd}&hd={hd}'
     try:
-        res = requests.get(url, headers=HEADERS, timeout=30)
-        if res.status_code != 200:
-            return None
+        res = fetch(url, timeout=30)
         soup = BeautifulSoup(res.text, 'html.parser')
     except Exception as e:
         print(f'    [ERROR] {e}')

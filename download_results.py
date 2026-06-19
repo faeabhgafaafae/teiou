@@ -25,12 +25,49 @@ import argparse
 import tempfile
 import subprocess
 from datetime import date, timedelta
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # ─── 設定 ──────────────────────────────────────────────
 API_URL   = os.environ.get('API_URL', 'https://2410049.moo.jp/import_results.php')
 API_KEY   = os.environ.get('API_KEY', 'teio2025')
 SLEEP_SEC = 3
 SEVENZIP  = r'C:\Program Files\7-Zip\7z.exe'
+
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+}
+
+
+def make_session():
+    session = requests.Session()
+    retry = Retry(
+        total=4,
+        backoff_factor=2,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+SESSION = make_session()
+
+def fetch(url, *, timeout=30, retries=3):
+    last_err = None
+    for i in range(retries):
+        try:
+            res = SESSION.get(url, headers=HEADERS, timeout=timeout)
+            res.raise_for_status()
+            return res
+        except (requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError) as e:
+            last_err = e
+            wait = 5 * (i + 1)
+            print(f"  取得失敗({i+1}/{retries}): {e} → {wait}秒後に再試行")
+            time.sleep(wait)
+    raise last_err
 
 # ─── 場名マスタ ────────────────────────────────────────
 VENUE_MAP = {
@@ -144,12 +181,7 @@ def download_and_parse(target_date):
     url    = f'http://www1.mbrace.or.jp/od2/K/{yyyymm}/k{yymmdd}.lzh'
 
     try:
-        res = requests.get(url, timeout=15)
-        if res.status_code == 404:
-            return None
-        if res.status_code != 200:
-            print(f'  [SKIP] {res.status_code}')
-            return None
+        res = fetch(url, timeout=30)
 
         # 一時ディレクトリに保存して解凍
         with tempfile.TemporaryDirectory() as tmpdir:
