@@ -33,10 +33,13 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .race-bar-detail { font-size: 13px; color: #555; }
 .race-bar-detail strong { color: #222; }
 .race-bar-right { display: flex; gap: 6px; }
-.nav-btn { padding: 7px 14px; border: 1px solid #d0d5dd; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 600; color: #555; text-decoration: none; transition: all 0.15s; }
-.nav-btn:hover { border-color: #0055a4; color: #0055a4; }
-.nav-btn.primary { background: #0055a4; color: #fff; border-color: #0055a4; }
-.nav-btn.primary:hover { background: #003d7a; }
+.race-tabs-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; margin-bottom: 4px; }
+.race-tabs { display: inline-flex; gap: 4px; }
+.race-tab { display: inline-block; padding: 7px 10px; border-radius: 6px; background: #e9ecef; font-size: 12px; font-weight: 600; color: #888; text-decoration: none; transition: all 0.15s; text-align: center; min-width: 38px; }
+.race-tab:hover { background: #dde0e4; color: #555; }
+.race-tab.active { background: #222; color: #fff; }
+.predict-btn { display: inline-block; padding: 7px 14px; border-radius: 8px; background: #0055a4; color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; transition: background 0.15s; }
+.predict-btn:hover { background: #003d7a; }
 
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid #e0e3e8; background: #fff; }
 .entry-table { width: 100%; border-collapse: collapse; min-width: 700px; font-size: 13px; }
@@ -69,8 +72,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
 @media (max-width: 600px) {
   .race-bar { flex-direction: column; align-items: flex-start; }
-  .race-bar-right { width: 100%; }
-  .nav-btn { flex: 1; text-align: center; }
+  .race-tab { padding: 6px 8px; min-width: 34px; font-size: 11px; }
   .header-info h1 { font-size: 16px; }
   .entry-table { font-size: 12px; }
   .player-name { font-size: 13px; }
@@ -99,11 +101,10 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
       <div class="race-no-lg" id="raceNoLg"></div>
       <div class="race-bar-detail" id="raceBarDetail"></div>
     </div>
-    <div class="race-bar-right">
-      <a class="nav-btn" id="btnPrev">&#9664; 前R</a>
-      <a class="nav-btn" id="btnNext">次R &#9654;</a>
-      <a class="nav-btn primary" id="btnPredict">予想</a>
-    </div>
+    <a class="predict-btn" id="btnPredict">予想</a>
+  </div>
+  <div class="race-tabs-wrap" id="raceTabsWrap" style="display:none">
+    <div class="race-tabs" id="raceTabs"></div>
   </div>
 
   <div id="entryList">
@@ -138,12 +139,14 @@ var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
 document.getElementById('backBtn').href = 'races.html?' + baseQ;
 document.getElementById('btnPredict').href = 'ai-predict.html?' + baseQ + '&race_no=' + raceNo;
 
-var prevNo = raceNo > 1 ? raceNo - 1 : 1;
-var nextNo = raceNo < 12 ? raceNo + 1 : 12;
-document.getElementById('btnPrev').href = 'racelist.html?' + baseQ + '&race_no=' + prevNo;
-document.getElementById('btnNext').href = 'racelist.html?' + baseQ + '&race_no=' + nextNo;
-if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
-if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
+var tabsEl = document.getElementById('raceTabs');
+for (var t = 1; t <= 12; t++) {
+  var tab = document.createElement('a');
+  tab.className = 'race-tab' + (t === raceNo ? ' active' : '');
+  tab.href = 'racelist.html?' + baseQ + '&race_no=' + t;
+  tab.textContent = t + 'R';
+  tabsEl.appendChild(tab);
+}
 
 function fmt(v, dec) {
   if (v == null || v === '' || v === 0) return '-';
@@ -331,6 +334,9 @@ async function loadEntry() {
     var timeText = data.scheduled_time ? '  締切 ' + data.scheduled_time : '';
     detail.appendChild(document.createTextNode(' ' + fmtDate(date) + timeText));
     bar.style.display = 'flex';
+    document.getElementById('raceTabsWrap').style.display = 'block';
+    var activeTab = tabsEl.children[raceNo - 1];
+    if (activeTab) activeTab.scrollIntoView({ inline: 'center', block: 'nearest' });
 
     var sorted = data.entries.slice().sort(function(a, b) {
       return (a.waku || 0) - (b.waku || 0);
