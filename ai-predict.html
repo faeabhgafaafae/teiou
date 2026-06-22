@@ -157,7 +157,7 @@ var raceNo = parseInt(params.get('race_no') || '1', 10);
 
 function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
-var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','びわこ':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
+var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','高松':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
 var vg = VENUE_GRADES[venue] || '一般';
 
@@ -190,32 +190,33 @@ function calcRates(predictions) {
   var exps = scores.map(function(s) { return Math.exp((s - maxS) / 8); });
   var sum = exps.reduce(function(a, b) { return a + b; }, 0);
   var probs = exps.map(function(e) { return e / sum; });
+  var EPS = 1e-12;
   var N = 10;
   var results = [];
-  for (var i = 0; i < predictions.length; i++) {
+  for (var i = 0; i < probs.length; i++) {
     var p1 = probs[i];
-    var others = [];
-    for (var j = 0; j < probs.length; j++) { if (j !== i) others.push(probs[j]); }
-    var othersSum = others.reduce(function(a, b) { return a + b; }, 0);
-    var p2 = 0; var p3 = 0;
-    for (var k = 0; k < others.length; k++) {
-      var pWin = others[k] / othersSum;
-      var rem = [];
-      for (var l = 0; l < others.length; l++) { if (l !== k) rem.push(others[l]); }
-      var remSum = rem.reduce(function(a, b) { return a + b; }, 0);
-      p2 += pWin * (probs[i] / (probs[i] + remSum));
-      for (var m = 0; m < rem.length; m++) {
-        var pSec = rem[m] / remSum;
-        var rest = [];
-        for (var n = 0; n < rem.length; n++) { if (n !== m) rest.push(rem[n]); }
-        var restSum = rest.reduce(function(a, b) { return a + b; }, 0);
-        p3 += pWin * pSec * (probs[i] / (probs[i] + restSum));
+    var p2 = 0;
+    for (var j = 0; j < probs.length; j++) {
+      if (j === i) continue;
+      var denom2 = 1 - probs[j];
+      if (denom2 < EPS) continue;
+      p2 += probs[j] * (probs[i] / denom2);
+    }
+    var p3 = 0;
+    for (var j = 0; j < probs.length; j++) {
+      if (j === i) continue;
+      for (var k = 0; k < probs.length; k++) {
+        if (k === i || k === j) continue;
+        var d1 = 1 - probs[j];
+        var d2 = 1 - probs[j] - probs[k];
+        if (d1 < EPS || d2 < EPS) continue;
+        p3 += probs[j] * (probs[k] / d1) * (probs[i] / d2);
       }
     }
-    var r1 = Math.round(p1 * N); var r2 = Math.round(p2 * N); var r3 = Math.round(p3 * N);
-    results.push({ lane: predictions[i].lane, name: predictions[i].name, grade: predictions[i].grade, score: predictions[i].score_total, r1: r1, r2: r2, r3: r3, top3: r1+r2+r3, top3pct: ((r1+r2+r3)/N*100).toFixed(1), r1pct: (r1/N*100).toFixed(1), r2pct: (r2/N*100).toFixed(1), r3pct: (r3/N*100).toFixed(1), N: N });
+    var top3 = p1 + p2 + p3;
+    results.push({ lane: predictions[i].lane, name: predictions[i].name, grade: predictions[i].grade, score: predictions[i].score_total, r1: Math.round(p1 * N), r2: Math.round(p2 * N), r3: Math.round(p3 * N), top3: Math.round(top3 * N), top3pct: (top3 * 100).toFixed(1), r1pct: (p1 * 100).toFixed(1), r2pct: (p2 * 100).toFixed(1), r3pct: (p3 * 100).toFixed(1), N: N });
   }
-  results.sort(function(a, b) { return b.top3 - a.top3 || b.r1 - a.r1; });
+  results.sort(function(a, b) { return (b.top3pct - a.top3pct) || (b.r1pct - a.r1pct); });
   return results;
 }
 
