@@ -26,7 +26,7 @@ $raceId = (int)$race['id'];
 
 $stmt = $pdo->prepare('
     SELECT lane, player_id, name, grade, score_total,
-           score_ability, score_course, score_daily, score_weather,
+           score_ability, score_course, score_today, score_weather,
            predicted_rank
     FROM predictions
     WHERE race_id = ?
