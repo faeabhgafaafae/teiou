@@ -249,9 +249,9 @@ function buildResults(predictions) {
     var fukushoRate = p.fukusho_rate != null ? Number(p.fukusho_rate) : null;
     var top3pct = null;
     if (cFukusho != null) {
-      top3pct = (cFukusho * 100).toFixed(1);
+      top3pct = Number(cFukusho).toFixed(1);
     } else if (fukushoRate != null) {
-      top3pct = (fukushoRate * 100).toFixed(1);
+      top3pct = Number(fukushoRate).toFixed(1);
     }
     var r1pct = null;
     if (cRank1 != null && cCount != null && cCount > 0) {
