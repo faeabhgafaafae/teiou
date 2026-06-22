@@ -177,35 +177,33 @@ function calcRates(predictions) {
   var exps = scores.map(function(s) { return Math.exp((s - maxS) / 8); });
   var sum = exps.reduce(function(a, b) { return a + b; }, 0);
   var probs = exps.map(function(e) { return e / sum; });
+  var EPS = 1e-12;
   var N = 10;
   var results = [];
-  for (var i = 0; i < predictions.length; i++) {
+  for (var i = 0; i < probs.length; i++) {
     var p1 = probs[i];
-    var others = [];
-    for (var j = 0; j < probs.length; j++) { if (j !== i) others.push(probs[j]); }
-    var othersSum = others.reduce(function(a, b) { return a + b; }, 0);
-    var p2 = 0; var p3 = 0;
-    for (var k = 0; k < others.length; k++) {
-      var pWinFirst = others[k] / othersSum;
-      var remaining = [];
-      for (var l = 0; l < others.length; l++) { if (l !== k) remaining.push(others[l]); }
-      var remSum = remaining.reduce(function(a, b) { return a + b; }, 0);
-      p2 += pWinFirst * (probs[i] / (probs[i] + remSum));
-      for (var m = 0; m < remaining.length; m++) {
-        var pSecond = remaining[m] / remSum;
-        var rest = [];
-        for (var n = 0; n < remaining.length; n++) { if (n !== m) rest.push(remaining[n]); }
-        var restSum = rest.reduce(function(a, b) { return a + b; }, 0);
-        p3 += pWinFirst * pSecond * (probs[i] / (probs[i] + restSum));
+    var p2 = 0;
+    for (var j = 0; j < probs.length; j++) {
+      if (j === i) continue;
+      var denom2 = 1 - probs[j];
+      if (denom2 < EPS) continue;
+      p2 += probs[j] * (probs[i] / denom2);
+    }
+    var p3 = 0;
+    for (var j = 0; j < probs.length; j++) {
+      if (j === i) continue;
+      for (var k = 0; k < probs.length; k++) {
+        if (k === i || k === j) continue;
+        var d1 = 1 - probs[j];
+        var d2 = 1 - probs[j] - probs[k];
+        if (d1 < EPS || d2 < EPS) continue;
+        p3 += probs[j] * (probs[k] / d1) * (probs[i] / d2);
       }
     }
-    var r1 = Math.round(p1 * N);
-    var r2 = Math.round(p2 * N);
-    var r3 = Math.round(p3 * N);
-    var top3 = r1 + r2 + r3;
-    results.push({ lane: predictions[i].lane, name: predictions[i].name, grade: predictions[i].grade, player_id: predictions[i].player_id, r1: r1, r2: r2, r3: r3, top3: top3, top3pct: ((r1+r2+r3)/N*100).toFixed(1), r1pct: (r1/N*100).toFixed(1), r2pct: (r2/N*100).toFixed(1), r3pct: (r3/N*100).toFixed(1), N: N });
+    var top3 = p1 + p2 + p3;
+    results.push({ lane: predictions[i].lane, name: predictions[i].name, grade: predictions[i].grade, player_id: predictions[i].player_id, r1: Math.round(p1 * N), r2: Math.round(p2 * N), r3: Math.round(p3 * N), top3: Math.round(top3 * N), top3pct: (top3 * 100).toFixed(1), r1pct: (p1 * 100).toFixed(1), r2pct: (p2 * 100).toFixed(1), r3pct: (p3 * 100).toFixed(1), N: N });
   }
-  results.sort(function(a, b) { return b.top3 - a.top3 || b.r1 - a.r1; });
+  results.sort(function(a, b) { return (b.top3pct - a.top3pct) || (b.r1pct - a.r1pct); });
   return results;
 }
 
