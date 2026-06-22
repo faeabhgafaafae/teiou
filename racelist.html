@@ -38,64 +38,43 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .nav-btn.primary { background: #0055a4; color: #fff; border-color: #0055a4; }
 .nav-btn.primary:hover { background: #003d7a; }
 
-/* --- 選手カード --- */
-.entry-card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
-.entry-top { display: flex; align-items: center; padding: 14px 18px; gap: 14px; }
-.waku { width: 40px; height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; flex-shrink: 0; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid #e0e3e8; background: #fff; }
+.entry-table { width: 100%; border-collapse: collapse; min-width: 700px; font-size: 13px; }
+.entry-table th { background: #f7f8fa; font-size: 10px; font-weight: 700; color: #999; padding: 8px 6px; border-bottom: 2px solid #e0e3e8; white-space: nowrap; text-align: center; }
+.entry-table td { padding: 8px 6px; border-bottom: 1px solid #f0f0f0; text-align: center; vertical-align: middle; white-space: nowrap; }
+.entry-table tr:last-child td { border-bottom: none; }
+
+.waku { width: 28px; height: 28px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
 .waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
 .waku-2 { background: #222; color: #fff; }
 .waku-3 { background: #e53e3e; color: #fff; }
 .waku-4 { background: #2563eb; color: #fff; }
 .waku-5 { background: #eab308; color: #222; }
 .waku-6 { background: #16a34a; color: #fff; }
-.entry-name-area { flex: 1; min-width: 0; }
-.entry-pid { font-size: 11px; color: #999; }
-.entry-name { font-size: 20px; font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.entry-badges { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-.eg { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 4px; }
+
+.td-player { text-align: left; padding-left: 10px; }
+.player-name { font-size: 14px; font-weight: 700; color: #222; }
+.player-sub { font-size: 10px; color: #999; margin-top: 1px; }
+.eg { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
 .eg-A1 { background: #fff3cd; color: #b8860b; }
 .eg-A2 { background: #dbeafe; color: #2563eb; }
 .eg-B1 { background: #f3f4f6; color: #666; }
 .eg-B2 { background: #f3f4f6; color: #aaa; }
-.f-badge { background: #fef2f2; color: #dc2626; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
-
-/* --- ST情報 --- */
-.entry-st { display: flex; gap: 16px; padding: 0 18px 10px; }
-.st-item { font-size: 12px; color: #777; }
-.st-item strong { color: #222; font-size: 13px; }
-
-/* --- 成績グリッド --- */
-.entry-stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #f0f0f0; }
-.stat-group { padding: 10px 14px; border-right: 1px solid #f0f0f0; }
-.stat-group:last-child { border-right: none; }
-.stat-group-title { font-size: 10px; color: #999; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.5px; }
-.stat-row { display: flex; justify-content: space-between; padding: 2px 0; }
-.stat-label { font-size: 11px; color: #888; }
-.stat-val { font-size: 13px; font-weight: 600; color: #222; }
-.stat-val.hl { color: #0055a4; }
-
-/* --- モーター・ボート --- */
-.entry-equip { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid #f0f0f0; }
-.equip-group { padding: 10px 14px; border-right: 1px solid #f0f0f0; }
-.equip-group:last-child { border-right: none; }
-.equip-title { font-size: 10px; color: #999; font-weight: 600; margin-bottom: 4px; }
-.equip-no { font-size: 16px; font-weight: 700; color: #222; }
-.equip-rate { font-size: 12px; color: #555; margin-top: 2px; }
+.td-fl { font-size: 12px; color: #888; }
+.fl-f { color: #dc2626; font-weight: 700; }
+.td-rate { font-size: 13px; font-weight: 600; color: #222; font-variant-numeric: tabular-nums; }
+.td-rate.hl-win { background: #eef4ff; }
+.td-rate.hl-motor { background: #fff7ed; }
+.td-st { font-size: 13px; font-weight: 600; color: #222; font-variant-numeric: tabular-nums; }
 
 @media (max-width: 600px) {
   .race-bar { flex-direction: column; align-items: flex-start; }
   .race-bar-right { width: 100%; }
   .nav-btn { flex: 1; text-align: center; }
-  .entry-top { padding: 10px 14px; gap: 10px; }
-  .entry-name { font-size: 17px; }
-  .waku { width: 34px; height: 34px; font-size: 17px; }
-  .entry-stats { grid-template-columns: 1fr; }
-  .stat-group { border-right: none; border-bottom: 1px solid #f0f0f0; }
-  .stat-group:last-child { border-bottom: none; }
-  .entry-equip { grid-template-columns: 1fr; }
-  .equip-group { border-right: none; border-bottom: 1px solid #f0f0f0; }
-  .equip-group:last-child { border-bottom: none; }
-  .entry-st { flex-wrap: wrap; gap: 8px; }
+  .header-info h1 { font-size: 16px; }
+  .entry-table { font-size: 12px; }
+  .player-name { font-size: 13px; }
+  .waku { width: 24px; height: 24px; font-size: 12px; }
 }
 </style>
 </head>
@@ -123,15 +102,12 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     <div class="race-bar-right">
       <a class="nav-btn" id="btnPrev">&#9664; 前R</a>
       <a class="nav-btn" id="btnNext">次R &#9654;</a>
-      <a class="nav-btn primary" id="btnPredict">AI予想</a>
+      <a class="nav-btn primary" id="btnPredict">予想</a>
     </div>
   </div>
 
   <div id="entryList">
-    <div class="loading">
-      <div class="loading-spinner"></div>
-      出走表を取得中...
-    </div>
+    <div class="loading"><div class="loading-spinner"></div>出走表を取得中...</div>
   </div>
 </div>
 
@@ -143,18 +119,9 @@ var venue = params.get('venue') || '';
 var date = params.get('date') || todayStr();
 var raceNo = parseInt(params.get('race_no') || '1', 10);
 
-function todayStr() {
-  var d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
+function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
-var VENUE_GRADES = {
-  '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般',
-  '浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般',
-  'びわこ':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般',
-  '児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般',
-  '芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般'
-};
+var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','びわこ':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
 var vg = VENUE_GRADES[venue] || '一般';
 
@@ -164,20 +131,17 @@ var badge = document.getElementById('pageBadge');
 badge.textContent = vg;
 badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
 
-function fmtDate(ds) {
-  var d = new Date(ds + 'T00:00:00');
-  var w = ['日','月','火','水','木','金','土'];
-  return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')';
-}
+function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
 document.getElementById('pageDate').textContent = fmtDate(date);
 
-document.getElementById('backBtn').href = 'races.html?venue=' + encodeURIComponent(venue) + '&date=' + date;
-document.getElementById('btnPredict').href = 'predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
+document.getElementById('backBtn').href = 'races.html?' + baseQ;
+document.getElementById('btnPredict').href = 'ai-predict.html?' + baseQ + '&race_no=' + raceNo;
 
 var prevNo = raceNo > 1 ? raceNo - 1 : 1;
 var nextNo = raceNo < 12 ? raceNo + 1 : 12;
-document.getElementById('btnPrev').href = 'racelist.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + prevNo;
-document.getElementById('btnNext').href = 'racelist.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + nextNo;
+document.getElementById('btnPrev').href = 'racelist.html?' + baseQ + '&race_no=' + prevNo;
+document.getElementById('btnNext').href = 'racelist.html?' + baseQ + '&race_no=' + nextNo;
 if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
 if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
 
@@ -185,117 +149,126 @@ function fmt(v, dec) {
   if (v == null || v === '' || v === 0) return '-';
   return Number(v).toFixed(dec != null ? dec : 2);
 }
+function formatName(n) { return n.replace(/[\s　]+/g, ' ').trim(); }
 
-function formatName(n) {
-  return n.replace(/[\s　]+/g, ' ').trim();
+function findTopN(entries, key, n) {
+  var vals = [];
+  for (var i = 0; i < entries.length; i++) {
+    var v = entries[i][key] != null ? Number(entries[i][key]) : -1;
+    vals.push({ idx: i, v: v });
+  }
+  vals.sort(function(a, b) { return b.v - a.v; });
+  var result = {};
+  for (var j = 0; j < Math.min(n, vals.length); j++) {
+    if (vals[j].v > 0) result[vals[j].idx] = true;
+  }
+  return result;
 }
 
-function renderEntry(e) {
-  var card = document.createElement('div');
-  card.className = 'entry-card';
+function renderTable(entries) {
+  var winRate = function(e) { return e.pp_win_rate != null ? Number(e.pp_win_rate) : (e.win_rate_national != null ? Number(e.win_rate_national) : -1); };
+  var motorRate = function(e) { return e.motor_2rate != null ? Number(e.motor_2rate) : -1; };
 
-  // --- トップ: 枠番・名前・級 ---
-  var top = document.createElement('div');
-  top.className = 'entry-top';
+  var topWin = findTopN(entries, '_winSort', 2);
+  var topMotor = findTopN(entries, '_motorSort', 2);
 
-  var waku = document.createElement('div');
-  waku.className = 'waku waku-' + e.waku;
-  waku.textContent = e.waku;
+  var wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  var table = document.createElement('table');
+  table.className = 'entry-table';
 
-  var nameArea = document.createElement('div');
-  nameArea.className = 'entry-name-area';
-  var pid = document.createElement('div');
-  pid.className = 'entry-pid';
-  pid.textContent = e.player_id;
-  var nm = document.createElement('div');
-  nm.className = 'entry-name';
-  nm.textContent = e.name ? formatName(e.name) : e.player_id;
-  nameArea.appendChild(pid);
-  nameArea.appendChild(nm);
-
-  var badges = document.createElement('div');
-  badges.className = 'entry-badges';
-  var gr = document.createElement('span');
-  gr.className = 'eg eg-' + (e.grade || 'B1').replace(/\s/g, '');
-  gr.textContent = e.grade || '-';
-  badges.appendChild(gr);
-  if (e.f_count && e.f_count > 0) {
-    var fb = document.createElement('span');
-    fb.className = 'f-badge';
-    fb.textContent = 'F' + e.f_count;
-    badges.appendChild(fb);
+  var thead = document.createElement('thead');
+  var hrow = document.createElement('tr');
+  var headers = ['枠', '選手', 'F/L', '全国勝率', '全国2連率', '当地勝率', '当地2連率', 'モーター', 'ボート', 'ST'];
+  for (var h = 0; h < headers.length; h++) {
+    var th = document.createElement('th');
+    th.textContent = headers[h];
+    hrow.appendChild(th);
   }
+  thead.appendChild(hrow);
+  table.appendChild(thead);
 
-  top.appendChild(waku);
-  top.appendChild(nameArea);
-  top.appendChild(badges);
+  var tbody = document.createElement('tbody');
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    var tr = document.createElement('tr');
 
-  // --- ST情報 ---
-  var stDiv = document.createElement('div');
-  stDiv.className = 'entry-st';
-  var stItems = [
-    { label: 'F', val: e.f_count != null ? e.f_count : '-' },
-    { label: 'L', val: e.l_count != null ? e.l_count : '-' },
-    { label: '平均ST', val: fmt(e.avg_st, 2) }
-  ];
-  for (var s = 0; s < stItems.length; s++) {
-    var si = document.createElement('span');
-    si.className = 'st-item';
-    si.textContent = stItems[s].label + ' ';
-    var sv = document.createElement('strong');
-    sv.textContent = stItems[s].val;
-    si.appendChild(sv);
-    stDiv.appendChild(si);
+    var tdWaku = document.createElement('td');
+    var wakuEl = document.createElement('div');
+    wakuEl.className = 'waku waku-' + e.waku;
+    wakuEl.textContent = e.waku;
+    tdWaku.appendChild(wakuEl);
+    tr.appendChild(tdWaku);
+
+    var tdPlayer = document.createElement('td');
+    tdPlayer.className = 'td-player';
+    var pName = document.createElement('div');
+    pName.className = 'player-name';
+    pName.textContent = e.name ? formatName(e.name) : e.player_id;
+    var grSpan = document.createElement('span');
+    grSpan.className = 'eg eg-' + (e.grade || 'B1').replace(/\s/g, '');
+    grSpan.textContent = e.grade || '-';
+    pName.appendChild(grSpan);
+    var pSub = document.createElement('div');
+    pSub.className = 'player-sub';
+    pSub.textContent = e.player_id;
+    tdPlayer.appendChild(pName);
+    tdPlayer.appendChild(pSub);
+    tr.appendChild(tdPlayer);
+
+    var tdFL = document.createElement('td');
+    tdFL.className = 'td-fl';
+    var fVal = e.f_count != null ? e.f_count : 0;
+    var lVal = e.l_count != null ? e.l_count : 0;
+    var fSpan = document.createElement('span');
+    if (fVal > 0) fSpan.className = 'fl-f';
+    fSpan.textContent = 'F' + fVal;
+    tdFL.appendChild(fSpan);
+    tdFL.appendChild(document.createTextNode(' L' + lVal));
+    tr.appendChild(tdFL);
+
+    var wrNat = e.pp_win_rate != null ? fmt(e.pp_win_rate) : fmt(e.win_rate_national);
+    var tdWinNat = document.createElement('td');
+    tdWinNat.className = 'td-rate' + (topWin[i] ? ' hl-win' : '');
+    tdWinNat.textContent = wrNat;
+    tr.appendChild(tdWinNat);
+
+    var frNat = e.pp_fukusho_rate != null ? fmt(e.pp_fukusho_rate) : fmt(e.fukusho_national);
+    var tdFukNat = document.createElement('td');
+    tdFukNat.className = 'td-rate';
+    tdFukNat.textContent = frNat;
+    tr.appendChild(tdFukNat);
+
+    var tdWinLoc = document.createElement('td');
+    tdWinLoc.className = 'td-rate';
+    tdWinLoc.textContent = fmt(e.win_rate_local);
+    tr.appendChild(tdWinLoc);
+
+    var tdFukLoc = document.createElement('td');
+    tdFukLoc.className = 'td-rate';
+    tdFukLoc.textContent = fmt(e.fukusho_local);
+    tr.appendChild(tdFukLoc);
+
+    var tdMotor = document.createElement('td');
+    tdMotor.className = 'td-rate' + (topMotor[i] ? ' hl-motor' : '');
+    tdMotor.textContent = (e.motor_no || '-') + ' ' + fmt(e.motor_2rate, 1) + '%';
+    tr.appendChild(tdMotor);
+
+    var tdBoat = document.createElement('td');
+    tdBoat.className = 'td-rate';
+    tdBoat.textContent = (e.boat_no || '-') + ' ' + fmt(e.boat_2rate, 1) + '%';
+    tr.appendChild(tdBoat);
+
+    var tdST = document.createElement('td');
+    tdST.className = 'td-st';
+    tdST.textContent = fmt(e.avg_st);
+    tr.appendChild(tdST);
+
+    tbody.appendChild(tr);
   }
-
-  // --- 成績グリッド ---
-  var stats = document.createElement('div');
-  stats.className = 'entry-stats';
-
-  var groups = [
-    { title: '全国成績', rows: [
-      { label: '勝率', val: fmt(e.win_rate_national), hl: true },
-      { label: '2連率', val: fmt(e.fukusho_national) },
-      { label: '3連率', val: fmt(e.rank3_national) }
-    ]},
-    { title: '当地成績', rows: [
-      { label: '勝率', val: fmt(e.win_rate_local), hl: true },
-      { label: '2連率', val: fmt(e.fukusho_local) },
-      { label: '3連率', val: fmt(e.rank3_local) }
-    ]},
-    { title: 'モーター / ボート', rows: [
-      { label: 'モーター', val: (e.motor_no || '-') + ' (' + fmt(e.motor_2rate, 1) + '%)' },
-      { label: 'ボート', val: (e.boat_no || '-') + ' (' + fmt(e.boat_2rate, 1) + '%)' }
-    ]}
-  ];
-
-  for (var g = 0; g < groups.length; g++) {
-    var sg = document.createElement('div');
-    sg.className = 'stat-group';
-    var sgt = document.createElement('div');
-    sgt.className = 'stat-group-title';
-    sgt.textContent = groups[g].title;
-    sg.appendChild(sgt);
-    for (var r = 0; r < groups[g].rows.length; r++) {
-      var row = document.createElement('div');
-      row.className = 'stat-row';
-      var lbl = document.createElement('span');
-      lbl.className = 'stat-label';
-      lbl.textContent = groups[g].rows[r].label;
-      var val = document.createElement('span');
-      val.className = 'stat-val' + (groups[g].rows[r].hl ? ' hl' : '');
-      val.textContent = groups[g].rows[r].val;
-      row.appendChild(lbl);
-      row.appendChild(val);
-      sg.appendChild(row);
-    }
-    stats.appendChild(sg);
-  }
-
-  card.appendChild(top);
-  card.appendChild(stDiv);
-  card.appendChild(stats);
-  return card;
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  return wrap;
 }
 
 var API_HOST = 'https://' + '2410049.moo.jp';
@@ -335,32 +308,19 @@ async function loadEntry() {
         venue: pData.venue,
         race_no: pData.race_no,
         scheduled_time: null,
-        weather: pData.weather,
         entries: pData.predictions.map(function(p) {
           return {
-            waku: p.lane,
-            player_id: p.player_id,
-            name: p.name,
-            grade: p.grade,
-            f_count: p.is_flying ? 1 : 0,
-            l_count: null,
-            avg_st: null,
-            win_rate_national: p.win_rate_national,
-            fukusho_national: null,
-            rank3_national: null,
-            win_rate_local: p.win_rate_local,
-            fukusho_local: null,
-            rank3_local: null,
-            motor_no: null,
-            motor_2rate: p.motor_2rate,
-            boat_no: null,
-            boat_2rate: null
+            waku: p.lane, player_id: p.player_id, name: p.name, grade: p.grade,
+            f_count: p.is_flying ? 1 : 0, l_count: null, avg_st: null,
+            win_rate_national: p.win_rate_national, fukusho_national: null,
+            win_rate_local: p.win_rate_local, fukusho_local: null,
+            motor_no: null, motor_2rate: p.motor_2rate, boat_no: null, boat_2rate: null,
+            pp_win_rate: null, pp_fukusho_rate: null
           };
         })
       };
     }
 
-    // レースバー
     var bar = document.getElementById('raceBar');
     document.getElementById('raceNoLg').textContent = raceNo + 'R';
     var detail = document.getElementById('raceBarDetail');
@@ -372,14 +332,18 @@ async function loadEntry() {
     detail.appendChild(document.createTextNode(' ' + fmtDate(date) + timeText));
     bar.style.display = 'flex';
 
-    // 選手表示
     var sorted = data.entries.slice().sort(function(a, b) {
-      return (a.waku || a.lane || 0) - (b.waku || b.lane || 0);
+      return (a.waku || 0) - (b.waku || 0);
     });
-    list.textContent = '';
-    for (var i = 0; i < sorted.length; i++) {
-      list.appendChild(renderEntry(sorted[i]));
+
+    var winKey = sorted[0] && sorted[0].pp_win_rate != null ? 'pp_win_rate' : 'win_rate_national';
+    for (var k = 0; k < sorted.length; k++) {
+      sorted[k]._winSort = sorted[k][winKey] != null ? Number(sorted[k][winKey]) : -1;
+      sorted[k]._motorSort = sorted[k].motor_2rate != null ? Number(sorted[k].motor_2rate) : -1;
     }
+
+    list.textContent = '';
+    list.appendChild(renderTable(sorted));
   } catch(e) {
     list.textContent = '';
     var errDiv = document.createElement('div');
