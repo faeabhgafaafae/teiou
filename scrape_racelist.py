@@ -168,12 +168,12 @@ def scrape_racelist(jcd: str, rno: int, hd: str) -> dict | None:
             # rowspan=4のtdを取得（主要データ）
             rowspan4_tds = [td for td in tbody.find_all('td') if td.get('rowspan') == '4']
 
-            # F数・L数・平均ST (rowspan=4の3番目)
+            # F数・L数・平均ST (rowspan=4の4番目)
             f_count = l_count = avg_st = None
-            if len(rowspan4_tds) >= 3:
-                fl_text = rowspan4_tds[2].get_text(strip=True)
+            if len(rowspan4_tds) >= 4:
+                fl_text = rowspan4_tds[3].get_text(strip=True)
                 # 'F0\nL0\n0.19' 形式
-                fl_lines = [x.strip() for x in rowspan4_tds[2].get_text().split('\n') if x.strip()]
+                fl_lines = [x.strip() for x in rowspan4_tds[3].get_text().split('\n') if x.strip()]
                 for line in fl_lines:
                     if line.startswith('F'):
                         try: f_count = int(line[1:])
@@ -185,10 +185,10 @@ def scrape_racelist(jcd: str, rno: int, hd: str) -> dict | None:
                         try: avg_st = float(line)
                         except: pass
 
-            # 全国勝率・2連率・3連率 (rowspan=4の4番目)
+            # 全国勝率・2連率・3連率 (rowspan=4の5番目)
             win_rate_n = fukusho_n = rank3_n = None
-            if len(rowspan4_tds) >= 4:
-                lines = [x.strip() for x in rowspan4_tds[3].get_text().split('\n') if x.strip()]
+            if len(rowspan4_tds) >= 5:
+                lines = [x.strip() for x in rowspan4_tds[4].get_text().split('\n') if x.strip()]
                 if len(lines) >= 1:
                     try: win_rate_n = float(lines[0])
                     except: pass
@@ -199,10 +199,10 @@ def scrape_racelist(jcd: str, rno: int, hd: str) -> dict | None:
                     try: rank3_n = float(lines[2])
                     except: pass
 
-            # 当地勝率・2連率・3連率 (rowspan=4の5番目)
+            # 当地勝率・2連率・3連率 (rowspan=4の6番目)
             win_rate_l = fukusho_l = rank3_l = None
-            if len(rowspan4_tds) >= 5:
-                lines = [x.strip() for x in rowspan4_tds[4].get_text().split('\n') if x.strip()]
+            if len(rowspan4_tds) >= 6:
+                lines = [x.strip() for x in rowspan4_tds[5].get_text().split('\n') if x.strip()]
                 if len(lines) >= 1:
                     try: win_rate_l = float(lines[0])
                     except: pass
@@ -213,10 +213,10 @@ def scrape_racelist(jcd: str, rno: int, hd: str) -> dict | None:
                     try: rank3_l = float(lines[2])
                     except: pass
 
-            # モーター番号・2連率 (rowspan=4の6番目)
+            # モーター番号・2連率 (rowspan=4の7番目)
             motor_no = motor_2rate = None
-            if len(rowspan4_tds) >= 6:
-                lines = [x.strip() for x in rowspan4_tds[5].get_text().split('\n') if x.strip()]
+            if len(rowspan4_tds) >= 7:
+                lines = [x.strip() for x in rowspan4_tds[6].get_text().split('\n') if x.strip()]
                 if len(lines) >= 1:
                     try: motor_no = int(lines[0])
                     except: pass
@@ -224,10 +224,10 @@ def scrape_racelist(jcd: str, rno: int, hd: str) -> dict | None:
                     try: motor_2rate = float(lines[1])
                     except: pass
 
-            # ボート番号・2連率 (rowspan=4の7番目)
+            # ボート番号・2連率 (rowspan=4の8番目)
             boat_no = boat_2rate = None
-            if len(rowspan4_tds) >= 7:
-                lines = [x.strip() for x in rowspan4_tds[6].get_text().split('\n') if x.strip()]
+            if len(rowspan4_tds) >= 8:
+                lines = [x.strip() for x in rowspan4_tds[7].get_text().split('\n') if x.strip()]
                 if len(lines) >= 1:
                     try: boat_no = int(lines[0])
                     except: pass
