@@ -1,0 +1,32 @@
+name: 艇王 直前情報・オッズ更新
+
+on:
+  schedule:
+    # 10分ごとに実行（UTC基準。GitHub Actions の cron は数分の遅延がある）
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape_live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: 直前情報・オッズ取得
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          API_URL: ${{ secrets.API_URL_BEFOREINFO }}
+          API_ODDS: ${{ secrets.API_URL_ODDS }}
+          API_PENDING: ${{ secrets.API_URL_PENDING }}
+          WITHIN: '20'
+        run: python scrape_live.py
