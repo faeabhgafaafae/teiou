@@ -180,8 +180,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     <div class="th-rates">
       <div class="th-top3">3連対率</div>
       <div>1着率</div>
-      <div>2着率</div>
-      <div>3着率</div>
     </div>
   </div>
 
@@ -237,69 +235,49 @@ document.getElementById('btnNext').href = 'ai-predict.html?' + baseQ + '&race_no
 if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
 if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
 
-function calcRates(scores) {
-  var n = scores.length;
-  var EPS = 1e-9;
-  var maxS = Math.max.apply(null, scores);
-  var exps = scores.map(function(s){ return Math.exp(s - maxS); });
-  var sumE = exps.reduce(function(a,b){ return a+b; }, 0);
-  var probs = exps.map(function(e){ return e / sumE; });
-
-  var p1 = probs.slice();
-
-  var p2 = probs.map(function(_, i){
-    var s = 0;
-    for(var j=0; j<n; j++){
-      if(j===i) continue;
-      var denom = 1 - probs[j];
-      if(denom < EPS) continue;
-      s += probs[j] * (probs[i] / denom);
-    }
-    return s;
-  });
-
-  var p3 = probs.map(function(_, i){
-    var s = 0;
-    for(var j=0; j<n; j++){
-      if(j===i) continue;
-      var d1 = 1 - probs[j];
-      if(d1 < EPS) continue;
-      for(var k=0; k<n; k++){
-        if(k===i || k===j) continue;
-        var d2 = 1 - probs[j] - probs[k];
-        if(d2 < EPS) continue;
-        s += probs[j] * (probs[k]/d1) * (probs[i]/d2);
-      }
-    }
-    return s;
-  });
-
-  var p123 = p1.map(function(v,i){ return Math.min(1, v + p2[i] + p3[i]); });
-
-  return { p1:p1, p2:p2, p3:p3, p123:p123 };
-}
-
 function buildResults(predictions) {
-  var scores = predictions.map(function(p) { return p.score_total || 0; });
-  var rates = calcRates(scores);
   var results = [];
   for (var i = 0; i < predictions.length; i++) {
+    var p = predictions[i];
+    var lane = Number(p.lane);
+    var rank1Key = 'c' + lane + '_rank1';
+    var countKey = 'c' + lane + '_count';
+    var fukushoKey = 'c' + lane + '_fukusho';
+    var cRank1 = p[rank1Key] != null ? Number(p[rank1Key]) : null;
+    var cCount = p[countKey] != null ? Number(p[countKey]) : null;
+    var cFukusho = p[fukushoKey] != null ? Number(p[fukushoKey]) : null;
+    var fukushoRate = p.fukusho_rate != null ? Number(p.fukusho_rate) : null;
+    var top3pct = null;
+    if (cFukusho != null) {
+      top3pct = (cFukusho * 100).toFixed(1);
+    } else if (fukushoRate != null) {
+      top3pct = (fukushoRate * 100).toFixed(1);
+    }
+    var r1pct = null;
+    if (cRank1 != null && cCount != null && cCount > 0) {
+      r1pct = (cRank1 / cCount * 100).toFixed(1);
+    }
     results.push({
-      lane: predictions[i].lane,
-      name: predictions[i].name,
-      grade: predictions[i].grade,
-      score: predictions[i].score_total,
-      score_ability: predictions[i].score_ability,
-      score_course: predictions[i].score_course,
-      score_today: predictions[i].score_today,
-      score_weather: predictions[i].score_weather,
-      top3pct: (rates.p123[i] * 100).toFixed(1),
-      r1pct: (rates.p1[i] * 100).toFixed(1),
-      r2pct: (rates.p2[i] * 100).toFixed(1),
-      r3pct: (rates.p3[i] * 100).toFixed(1)
+      lane: lane,
+      name: p.name,
+      grade: p.grade,
+      score: p.score_total,
+      score_ability: p.score_ability,
+      score_course: p.score_course,
+      score_today: p.score_today,
+      score_weather: p.score_weather,
+      top3pct: top3pct,
+      r1pct: r1pct
     });
   }
-  results.sort(function(a, b) { return parseFloat(b.top3pct) - parseFloat(a.top3pct) || parseFloat(b.r1pct) - parseFloat(a.r1pct); });
+  results.sort(function(a, b) {
+    var aVal = a.top3pct != null ? parseFloat(a.top3pct) : -1;
+    var bVal = b.top3pct != null ? parseFloat(b.top3pct) : -1;
+    if (bVal !== aVal) return bVal - aVal;
+    var aR1 = a.r1pct != null ? parseFloat(a.r1pct) : -1;
+    var bR1 = b.r1pct != null ? parseFloat(b.r1pct) : -1;
+    return bR1 - aR1;
+  });
   return results;
 }
 
@@ -364,10 +342,8 @@ function renderPredCard(r, rank) {
   var rates = document.createElement('div');
   rates.className = 'pred-rates';
   var boxes = [
-    { pct: r.top3pct + '%', isTop3: true },
-    { pct: r.r1pct + '%', isTop3: false },
-    { pct: r.r2pct + '%', isTop3: false },
-    { pct: r.r3pct + '%', isTop3: false }
+    { pct: r.top3pct != null ? r.top3pct + '%' : '-', isTop3: true },
+    { pct: r.r1pct != null ? r.r1pct + '%' : '-', isTop3: false }
   ];
   for (var b = 0; b < boxes.length; b++) {
     var box = document.createElement('div');
