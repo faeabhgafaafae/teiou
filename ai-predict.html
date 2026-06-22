@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>艇王 - AI予想</title>
+<title>艇王 - 予想</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
@@ -11,7 +11,7 @@ header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px;
 .header-left { display: flex; align-items: center; gap: 12px; }
 .back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
 .back-btn:hover { background: #e8f0fd; }
-.header-info h1 { font-size: 18px; font-weight: 700; color: #222; }
+.header-info h1 { font-size: 17px; font-weight: 700; color: #222; }
 .header-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
 .header-meta .date { font-size: 12px; color: #888; }
 .grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
@@ -27,7 +27,6 @@ header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px;
 .error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
 footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
-/* レースバー */
 .race-bar { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
 .race-bar-left { display: flex; align-items: center; gap: 14px; }
 .race-no-lg { font-size: 26px; font-weight: 800; color: #0055a4; }
@@ -37,21 +36,25 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .nav-btn { padding: 7px 14px; border: 1px solid #d0d5dd; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 600; color: #555; text-decoration: none; transition: all 0.15s; }
 .nav-btn:hover { border-color: #0055a4; color: #0055a4; }
 
-/* テーブルヘッダー */
-.pred-table-header { display: flex; align-items: center; padding: 8px 16px; background: #f7f8fa; border: 1px solid #e0e3e8; border-radius: 12px 12px 0 0; gap: 10px; font-size: 10px; font-weight: 700; color: #999; }
-.pred-th-waku { width: 26px; flex-shrink: 0; text-align: center; }
-.pred-th-name { min-width: 90px; }
-.pred-th-rates { flex: 1; display: flex; gap: 4px; }
-.pred-th-rates > div { flex: 1; text-align: center; }
-.pred-th-top3 { color: #0055a4; }
+.pred-table-header { display: flex; align-items: center; padding: 8px 12px; background: #f7f8fa; border: 1px solid #e0e3e8; border-radius: 12px 12px 0 0; gap: 8px; font-size: 10px; font-weight: 700; color: #999; }
+.th-waku { width: 28px; flex-shrink: 0; text-align: center; }
+.th-name { width: 90px; flex-shrink: 0; }
+.th-score { width: 50px; flex-shrink: 0; text-align: center; }
+.th-breakdown { width: 100px; flex-grow: 1; min-width: 80px; }
+.th-rates { display: flex; gap: 4px; flex-shrink: 0; }
+.th-rates > div { width: 52px; text-align: center; }
+.th-top3 { color: #0055a4; }
 
-/* 選手行 */
 .pred-card { background: #fff; border-left: 1px solid #e0e3e8; border-right: 1px solid #e0e3e8; border-bottom: 1px solid #e0e3e8; }
 .pred-card:last-child { border-radius: 0 0 12px 12px; }
-.pred-row { display: flex; align-items: center; padding: 12px 16px; gap: 10px; }
+.pred-card.rank-1 { border-left: 3px solid #d97706; }
+.pred-card.rank-2 { border-left: 3px solid #9ca3af; }
+.pred-card.rank-3 { border-left: 3px solid #92400e; }
+
+.pred-row { display: flex; align-items: center; padding: 10px 12px; gap: 8px; cursor: pointer; transition: background 0.1s; }
 .pred-row:hover { background: #fafbfc; }
 
-.waku { width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+.waku { width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
 .waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
 .waku-2 { background: #222; color: #fff; }
 .waku-3 { background: #e53e3e; color: #fff; }
@@ -59,29 +62,63 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .waku-5 { background: #eab308; color: #222; }
 .waku-6 { background: #16a34a; color: #fff; }
 
-.pred-name-area { min-width: 90px; }
-.pred-player-name { font-size: 14px; font-weight: 600; color: #222; }
+.pred-name-area { width: 90px; flex-shrink: 0; }
+.pred-player-name { font-size: 13px; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pred-player-sub { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
 .pred-player-grade { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
 .pg-A1 { background: #fff3cd; color: #b8860b; }
 .pg-A2 { background: #dbeafe; color: #2563eb; }
 .pg-B1 { background: #f3f4f6; color: #666; }
 .pg-B2 { background: #f3f4f6; color: #aaa; }
-.pred-score { font-size: 10px; color: #999; }
 
-.pred-rates { flex: 1; display: flex; gap: 4px; }
-.pred-rate-box { flex: 1; text-align: center; padding: 6px 2px; border-radius: 8px; background: #fafbfc; }
+.pred-score-total { width: 50px; flex-shrink: 0; text-align: center; font-size: 15px; font-weight: 700; color: #0055a4; }
+
+.score-stack-wrap { width: 100px; flex-grow: 1; min-width: 80px; display: flex; align-items: center; gap: 6px; }
+.score-stack { flex: 1; display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: #e9ecef; }
+.seg { height: 100%; }
+.seg-ability { background: #2563eb; }
+.seg-course { background: #16a34a; }
+.seg-daily { background: #e67e22; }
+.seg-weather { background: #00bcd4; }
+.accordion-chevron { font-size: 9px; color: #bbb; flex-shrink: 0; transition: color 0.15s; }
+.pred-row:hover .accordion-chevron { color: #666; }
+
+.pred-rates { display: flex; gap: 4px; flex-shrink: 0; }
+.pred-rate-box { width: 52px; text-align: center; padding: 4px 2px; border-radius: 6px; background: #fafbfc; }
 .pred-rate-box.top3 { background: #e8f0fd; }
-.pred-rate-pct { font-size: 16px; font-weight: 700; color: #222; line-height: 1.2; }
+.pred-rate-pct { font-size: 14px; font-weight: 700; color: #222; line-height: 1.2; }
 .pred-rate-box.top3 .pred-rate-pct { color: #0055a4; }
-.pred-rate-count { font-size: 10px; color: #999; margin-top: 2px; }
+.pred-rate-count { font-size: 9px; color: #999; margin-top: 1px; }
 
-/* ランクインジケーター */
-.pred-card.rank-1 { border-left: 3px solid #d97706; }
-.pred-card.rank-2 { border-left: 3px solid #9ca3af; }
-.pred-card.rank-3 { border-left: 3px solid #92400e; }
+.pred-detail { padding: 0 16px 14px 16px; background: #f9fafb; border-top: 1px dashed #e0e3e8; }
+.score-detail-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+.score-detail-row + .score-detail-row { border-top: 1px solid #f0f0f0; }
+.score-detail-label { width: 72px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: #555; }
+.score-detail-bar-wrap { flex: 1; min-width: 0; }
+.score-detail-bar-track { height: 12px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+.score-detail-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+.fill-ability { background: #2563eb; }
+.fill-course { background: #16a34a; }
+.fill-daily { background: #e67e22; }
+.fill-weather { background: #00bcd4; }
+.score-detail-value { width: 90px; flex-shrink: 0; font-size: 12px; color: #666; text-align: right; font-variant-numeric: tabular-nums; }
 
-/* アクション */
+.score-legend { display: flex; gap: 12px; padding: 10px 16px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #888; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+.odds-section { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-top: 16px; overflow: hidden; }
+.odds-title { font-size: 14px; font-weight: 700; color: #222; padding: 14px 16px; border-bottom: 1px solid #e0e3e8; }
+.odds-table { width: 100%; }
+.odds-row { display: flex; align-items: center; padding: 8px 16px; border-bottom: 1px solid #f5f5f5; gap: 10px; }
+.odds-row:last-child { border-bottom: none; }
+.odds-row.odds-header-row { background: #f7f8fa; font-size: 10px; font-weight: 700; color: #999; padding: 6px 16px; }
+.odds-rank { width: 28px; flex-shrink: 0; text-align: center; font-size: 12px; font-weight: 700; color: #888; }
+.odds-combo { flex: 1; font-size: 14px; font-weight: 600; color: #222; }
+.odds-combo-waku { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 3px; font-size: 12px; font-weight: 800; margin: 0 1px; }
+.odds-value { width: 70px; flex-shrink: 0; text-align: right; font-size: 14px; font-weight: 700; color: #0055a4; font-variant-numeric: tabular-nums; }
+.odds-empty { padding: 20px 16px; text-align: center; color: #999; font-size: 13px; }
+
 .bottom-actions { display: flex; gap: 6px; margin-top: 16px; }
 .bottom-btn { flex: 1; padding: 10px; border: 1px solid #e0e3e8; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 600; color: #555; text-align: center; text-decoration: none; transition: all 0.15s; }
 .bottom-btn:hover { border-color: #0055a4; color: #0055a4; }
@@ -91,11 +128,20 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .race-bar-right { width: 100%; }
   .nav-btn { flex: 1; text-align: center; }
   .pred-table-header { display: none; }
-  .pred-row { flex-wrap: wrap; padding: 10px 12px; gap: 6px; }
-  .pred-name-area { width: 100%; display: flex; align-items: center; gap: 8px; }
-  .pred-rates { width: 100%; }
-  .pred-rate-pct { font-size: 14px; }
+  .pred-row { flex-wrap: wrap; padding: 10px 10px; gap: 6px; }
+  .pred-name-area { width: auto; flex: 1; min-width: 0; }
+  .pred-score-total { width: auto; font-size: 14px; }
+  .score-stack-wrap { width: 100%; order: 10; }
+  .score-stack { height: 12px; }
+  .pred-rates { width: 100%; order: 11; }
+  .pred-rate-box { flex: 1; width: auto; }
+  .pred-rate-pct { font-size: 13px; }
   .waku { width: 24px; height: 24px; font-size: 12px; }
+  .pred-detail { padding: 0 10px 10px 10px; }
+  .score-detail-label { width: 60px; font-size: 11px; }
+  .score-detail-value { width: 80px; font-size: 11px; }
+  .header-info h1 { font-size: 15px; }
+  .odds-combo-waku { width: 20px; height: 20px; font-size: 11px; }
 }
 </style>
 </head>
@@ -105,7 +151,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   <div class="header-left">
     <a class="back-btn" id="backBtn" href="index.html">&larr;</a>
     <div class="header-info">
-      <h1 id="pageTitle">AI予想</h1>
+      <h1 id="pageTitle">予想</h1>
       <div class="header-meta">
         <span class="date" id="pageDate"></span>
         <span class="grade-badge" id="pageBadge"></span>
@@ -127,10 +173,12 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   </div>
 
   <div class="pred-table-header">
-    <div class="pred-th-waku">枠</div>
-    <div class="pred-th-name">レーサー</div>
-    <div class="pred-th-rates">
-      <div class="pred-th-top3">AI3連対率</div>
+    <div class="th-waku">枠</div>
+    <div class="th-name">レーサー</div>
+    <div class="th-score">スコア</div>
+    <div class="th-breakdown">スコア内訳</div>
+    <div class="th-rates">
+      <div class="th-top3">3連対率</div>
       <div>1着率</div>
       <div>2着率</div>
       <div>3着率</div>
@@ -139,6 +187,11 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
   <div id="predList">
     <div class="loading"><div class="loading-spinner"></div>予想データを取得中...</div>
+  </div>
+
+  <div class="odds-section" id="oddsSection" style="display:none">
+    <h3 class="odds-title">3連単オッズ TOP10</h3>
+    <div id="oddsList"></div>
   </div>
 
   <div class="bottom-actions" id="bottomActions" style="display:none">
@@ -157,17 +210,19 @@ var raceNo = parseInt(params.get('race_no') || '1', 10);
 
 function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
-var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','高松':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
+var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','びわこ':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
+var WAKU_STYLES = { 1:'background:#fff;color:#222;border:2px solid #ccc', 2:'background:#222;color:#fff', 3:'background:#e53e3e;color:#fff', 4:'background:#2563eb;color:#fff', 5:'background:#eab308;color:#222', 6:'background:#16a34a;color:#fff' };
 var vg = VENUE_GRADES[venue] || '一般';
 
-document.getElementById('pageTitle').textContent = venue + ' ' + raceNo + 'R AI予想';
-document.title = '艇王 - ' + venue + ' ' + raceNo + 'R AI予想';
+function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
+function formatName(n) { return n.replace(/[\s　]+/g, ' ').trim(); }
+
+document.getElementById('pageTitle').textContent = raceNo + 'R ' + venue + ' ' + fmtDate(date) + ' / 予想';
+document.title = '艇王 - ' + venue + ' ' + raceNo + 'R 予想';
 var badge = document.getElementById('pageBadge');
 badge.textContent = vg;
 badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
-
-function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
 document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
@@ -182,41 +237,54 @@ document.getElementById('btnNext').href = 'ai-predict.html?' + baseQ + '&race_no
 if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
 if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
 
-function formatName(n) { return n.replace(/[\s　]+/g, ' ').trim(); }
-
 function calcRates(predictions) {
   var scores = predictions.map(function(p) { return p.score_total || 0; });
   var maxS = Math.max.apply(null, scores);
   var exps = scores.map(function(s) { return Math.exp((s - maxS) / 8); });
   var sum = exps.reduce(function(a, b) { return a + b; }, 0);
   var probs = exps.map(function(e) { return e / sum; });
-  var EPS = 1e-12;
   var N = 10;
   var results = [];
-  for (var i = 0; i < probs.length; i++) {
+  for (var i = 0; i < predictions.length; i++) {
     var p1 = probs[i];
-    var p2 = 0;
-    for (var j = 0; j < probs.length; j++) {
-      if (j === i) continue;
-      var denom2 = 1 - probs[j];
-      if (denom2 < EPS) continue;
-      p2 += probs[j] * (probs[i] / denom2);
-    }
-    var p3 = 0;
-    for (var j = 0; j < probs.length; j++) {
-      if (j === i) continue;
-      for (var k = 0; k < probs.length; k++) {
-        if (k === i || k === j) continue;
-        var d1 = 1 - probs[j];
-        var d2 = 1 - probs[j] - probs[k];
-        if (d1 < EPS || d2 < EPS) continue;
-        p3 += probs[j] * (probs[k] / d1) * (probs[i] / d2);
+    var others = [];
+    for (var j = 0; j < probs.length; j++) { if (j !== i) others.push(probs[j]); }
+    var othersSum = others.reduce(function(a, b) { return a + b; }, 0);
+    var p2 = 0; var p3 = 0;
+    for (var k = 0; k < others.length; k++) {
+      var pWin = others[k] / othersSum;
+      var rem = [];
+      for (var l = 0; l < others.length; l++) { if (l !== k) rem.push(others[l]); }
+      var remSum = rem.reduce(function(a, b) { return a + b; }, 0);
+      p2 += pWin * (probs[i] / (probs[i] + remSum));
+      for (var m = 0; m < rem.length; m++) {
+        var pSec = rem[m] / remSum;
+        var rest = [];
+        for (var n2 = 0; n2 < rem.length; n2++) { if (n2 !== m) rest.push(rem[n2]); }
+        var restSum = rest.reduce(function(a, b) { return a + b; }, 0);
+        p3 += pWin * pSec * (probs[i] / (probs[i] + restSum));
       }
     }
-    var top3 = p1 + p2 + p3;
-    results.push({ lane: predictions[i].lane, name: predictions[i].name, grade: predictions[i].grade, score: predictions[i].score_total, r1: Math.round(p1 * N), r2: Math.round(p2 * N), r3: Math.round(p3 * N), top3: Math.round(top3 * N), top3pct: (top3 * 100).toFixed(1), r1pct: (p1 * 100).toFixed(1), r2pct: (p2 * 100).toFixed(1), r3pct: (p3 * 100).toFixed(1), N: N });
+    var r1 = Math.round(p1 * N); var r2 = Math.round(p2 * N); var r3 = Math.round(p3 * N);
+    results.push({
+      lane: predictions[i].lane,
+      name: predictions[i].name,
+      grade: predictions[i].grade,
+      score: predictions[i].score_total,
+      score_ability: predictions[i].score_ability,
+      score_course: predictions[i].score_course,
+      score_daily: predictions[i].score_daily,
+      score_weather: predictions[i].score_weather,
+      r1: r1, r2: r2, r3: r3,
+      top3: r1 + r2 + r3,
+      top3pct: ((r1 + r2 + r3) / N * 100).toFixed(1),
+      r1pct: (r1 / N * 100).toFixed(1),
+      r2pct: (r2 / N * 100).toFixed(1),
+      r3pct: (r3 / N * 100).toFixed(1),
+      N: N
+    });
   }
-  results.sort(function(a, b) { return (b.top3pct - a.top3pct) || (b.r1pct - a.r1pct); });
+  results.sort(function(a, b) { return b.top3 - a.top3 || b.r1 - a.r1; });
   return results;
 }
 
@@ -239,44 +307,192 @@ function renderPredCard(r, rank) {
   var sub = document.createElement('div');
   sub.className = 'pred-player-sub';
   var gr = document.createElement('span');
-  gr.className = 'pred-player-grade pg-' + r.grade.replace(/\s/g, '');
-  gr.textContent = r.grade;
-  var sc = document.createElement('span');
-  sc.className = 'pred-score';
-  sc.textContent = r.score != null ? r.score.toFixed(1) + '点' : '-';
+  gr.className = 'pred-player-grade pg-' + (r.grade || '').replace(/\s/g, '');
+  gr.textContent = r.grade || '';
   sub.appendChild(gr);
-  sub.appendChild(sc);
   nameArea.appendChild(nm);
   nameArea.appendChild(sub);
 
+  var scoreEl = document.createElement('div');
+  scoreEl.className = 'pred-score-total';
+  scoreEl.textContent = r.score != null ? Number(r.score).toFixed(1) : '-';
+
+  var sAbility = Number(r.score_ability) || 0;
+  var sCourse = Number(r.score_course) || 0;
+  var sDaily = Number(r.score_daily) || 0;
+  var sWeather = Number(r.score_weather) || 0;
+
+  var stackWrap = document.createElement('div');
+  stackWrap.className = 'score-stack-wrap';
+  var stack = document.createElement('div');
+  stack.className = 'score-stack';
+  var segs = [
+    { cls: 'seg-ability', val: sAbility },
+    { cls: 'seg-course', val: sCourse },
+    { cls: 'seg-daily', val: sDaily },
+    { cls: 'seg-weather', val: sWeather }
+  ];
+  for (var s = 0; s < segs.length; s++) {
+    if (segs[s].val > 0) {
+      var seg = document.createElement('div');
+      seg.className = 'seg ' + segs[s].cls;
+      seg.style.width = segs[s].val + '%';
+      stack.appendChild(seg);
+    }
+  }
+  stackWrap.appendChild(stack);
+  var chevron = document.createElement('div');
+  chevron.className = 'accordion-chevron';
+  chevron.innerHTML = '&#9660;';
+  stackWrap.appendChild(chevron);
+
   var rates = document.createElement('div');
   rates.className = 'pred-rates';
-
   var boxes = [
-    { pct: r.top3pct + '%', count: r.top3 + ' / ' + r.N + '回', isTop3: true },
+    { pct: r.top3pct + '%', count: r.top3 + '/' + r.N, isTop3: true },
     { pct: r.r1pct + '%', count: r.r1 + '回', isTop3: false },
     { pct: r.r2pct + '%', count: r.r2 + '回', isTop3: false },
     { pct: r.r3pct + '%', count: r.r3 + '回', isTop3: false }
   ];
-  for (var i = 0; i < boxes.length; i++) {
+  for (var b = 0; b < boxes.length; b++) {
     var box = document.createElement('div');
-    box.className = 'pred-rate-box' + (boxes[i].isTop3 ? ' top3' : '');
-    var pct = document.createElement('div');
-    pct.className = 'pred-rate-pct';
-    pct.textContent = boxes[i].pct;
-    var cnt = document.createElement('div');
-    cnt.className = 'pred-rate-count';
-    cnt.textContent = '(' + boxes[i].count + ')';
-    box.appendChild(pct);
-    box.appendChild(cnt);
+    box.className = 'pred-rate-box' + (boxes[b].isTop3 ? ' top3' : '');
+    var pctEl = document.createElement('div');
+    pctEl.className = 'pred-rate-pct';
+    pctEl.textContent = boxes[b].pct;
+    var cntEl = document.createElement('div');
+    cntEl.className = 'pred-rate-count';
+    cntEl.textContent = boxes[b].count;
+    box.appendChild(pctEl);
+    box.appendChild(cntEl);
     rates.appendChild(box);
   }
 
   row.appendChild(waku);
   row.appendChild(nameArea);
+  row.appendChild(scoreEl);
+  row.appendChild(stackWrap);
   row.appendChild(rates);
+
+  var detail = document.createElement('div');
+  detail.className = 'pred-detail';
+  detail.style.display = 'none';
+
+  var components = [
+    { label: '選手能力', val: sAbility, max: 40, cls: 'fill-ability' },
+    { label: 'コース補正', val: sCourse, max: 20, cls: 'fill-course' },
+    { label: '当日情報', val: sDaily, max: 35, cls: 'fill-daily' },
+    { label: '気象', val: sWeather, max: 5, cls: 'fill-weather' }
+  ];
+  for (var c = 0; c < components.length; c++) {
+    var comp = components[c];
+    var dRow = document.createElement('div');
+    dRow.className = 'score-detail-row';
+
+    var lbl = document.createElement('div');
+    lbl.className = 'score-detail-label';
+    lbl.textContent = comp.label;
+
+    var barWrap = document.createElement('div');
+    barWrap.className = 'score-detail-bar-wrap';
+    var track = document.createElement('div');
+    track.className = 'score-detail-bar-track';
+    var fill = document.createElement('div');
+    fill.className = 'score-detail-bar-fill ' + comp.cls;
+    var pct = comp.max > 0 ? (comp.val / comp.max * 100) : 0;
+    if (pct > 100) pct = 100;
+    fill.style.width = pct + '%';
+    track.appendChild(fill);
+    barWrap.appendChild(track);
+
+    var valEl = document.createElement('div');
+    valEl.className = 'score-detail-value';
+    valEl.textContent = comp.val.toFixed(1) + ' / ' + comp.max + '点';
+
+    dRow.appendChild(lbl);
+    dRow.appendChild(barWrap);
+    dRow.appendChild(valEl);
+    detail.appendChild(dRow);
+  }
+
+  row.onclick = function() {
+    if (detail.style.display === 'none') {
+      detail.style.display = 'block';
+      chevron.innerHTML = '&#9650;';
+    } else {
+      detail.style.display = 'none';
+      chevron.innerHTML = '&#9660;';
+    }
+  };
+
   card.appendChild(row);
+  card.appendChild(detail);
   return card;
+}
+
+function renderOdds(oddsData) {
+  var section = document.getElementById('oddsSection');
+  var list = document.getElementById('oddsList');
+  list.textContent = '';
+
+  if (!oddsData || oddsData.length === 0 || oddsData.error) {
+    var msg = document.createElement('div');
+    msg.className = 'odds-empty';
+    msg.textContent = 'オッズ未取得';
+    list.appendChild(msg);
+    section.style.display = 'block';
+    return;
+  }
+
+  var table = document.createElement('div');
+  table.className = 'odds-table';
+
+  var hdr = document.createElement('div');
+  hdr.className = 'odds-row odds-header-row';
+  var h1 = document.createElement('div'); h1.className = 'odds-rank'; h1.textContent = '#';
+  var h2 = document.createElement('div'); h2.className = 'odds-combo'; h2.textContent = '組み合わせ';
+  var h3 = document.createElement('div'); h3.className = 'odds-value'; h3.textContent = 'オッズ';
+  hdr.appendChild(h1); hdr.appendChild(h2); hdr.appendChild(h3);
+  table.appendChild(hdr);
+
+  for (var i = 0; i < oddsData.length; i++) {
+    var odd = oddsData[i];
+    var row = document.createElement('div');
+    row.className = 'odds-row';
+
+    var rk = document.createElement('div');
+    rk.className = 'odds-rank';
+    rk.textContent = i + 1;
+
+    var combo = document.createElement('div');
+    combo.className = 'odds-combo';
+    var lanes = [odd.first, odd.second, odd.third];
+    for (var j = 0; j < lanes.length; j++) {
+      var w = document.createElement('span');
+      w.className = 'odds-combo-waku';
+      w.style.cssText = WAKU_STYLES[lanes[j]] || '';
+      w.textContent = lanes[j];
+      combo.appendChild(w);
+      if (j < 2) {
+        var arrow = document.createElement('span');
+        arrow.textContent = '-';
+        arrow.style.cssText = 'margin:0 2px;color:#999;font-size:12px';
+        combo.appendChild(arrow);
+      }
+    }
+
+    var val = document.createElement('div');
+    val.className = 'odds-value';
+    val.textContent = Number(odd.odds).toFixed(1) + '倍';
+
+    row.appendChild(rk);
+    row.appendChild(combo);
+    row.appendChild(val);
+    table.appendChild(row);
+  }
+
+  list.appendChild(table);
+  section.style.display = 'block';
 }
 
 var API_HOST = 'https://' + '2410049.moo.jp';
@@ -284,7 +500,7 @@ var API_HOST = 'https://' + '2410049.moo.jp';
 async function loadData() {
   var list = document.getElementById('predList');
   try {
-    var url = API_HOST + '/predict.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
+    var url = API_HOST + '/get_prediction.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
     var res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
@@ -305,21 +521,61 @@ async function loadData() {
     var vs = document.createElement('strong');
     vs.textContent = venue;
     detail.appendChild(vs);
-    detail.appendChild(document.createTextNode(' ' + fmtDate(date) + ' / AI予想'));
+    detail.appendChild(document.createTextNode(' ' + fmtDate(date) + ' / 予想'));
     bar.style.display = 'flex';
     document.getElementById('bottomActions').style.display = 'flex';
 
     var rates = calcRates(data.predictions);
     list.textContent = '';
+
+    var legend = document.createElement('div');
+    legend.className = 'score-legend';
+    var legendItems = [
+      { color: '#2563eb', label: '選手能力' },
+      { color: '#16a34a', label: 'コース補正' },
+      { color: '#e67e22', label: '当日情報' },
+      { color: '#00bcd4', label: '気象' }
+    ];
+    for (var li = 0; li < legendItems.length; li++) {
+      var item = document.createElement('div');
+      item.className = 'legend-item';
+      var dot = document.createElement('div');
+      dot.className = 'legend-dot';
+      dot.style.background = legendItems[li].color;
+      var txt = document.createTextNode(legendItems[li].label);
+      item.appendChild(dot);
+      item.appendChild(txt);
+      legend.appendChild(item);
+    }
+    list.appendChild(legend);
+
     for (var i = 0; i < rates.length; i++) {
       list.appendChild(renderPredCard(rates[i], i + 1));
     }
+
+    if (data.race_id) {
+      loadOdds(data.race_id);
+    } else {
+      renderOdds(null);
+    }
   } catch(e) {
     list.textContent = '';
-    var err = document.createElement('div');
-    err.className = 'error-msg';
-    err.textContent = 'データの取得に失敗しました';
-    list.appendChild(err);
+    var err2 = document.createElement('div');
+    err2.className = 'error-msg';
+    err2.textContent = 'データの取得に失敗しました';
+    list.appendChild(err2);
+  }
+}
+
+async function loadOdds(raceId) {
+  try {
+    var url = API_HOST + '/get_odds.php?race_id=' + raceId;
+    var res = await fetch(url);
+    if (!res.ok) { renderOdds(null); return; }
+    var data = await res.json();
+    renderOdds(data);
+  } catch(e) {
+    renderOdds(null);
   }
 }
 
