@@ -25,12 +25,14 @@ if (!$race) {
 $raceId = (int)$race['id'];
 
 $stmt = $pdo->prepare('
-    SELECT lane, player_id, name, grade, score_total,
-           score_ability, score_course, score_today, score_weather,
-           predicted_rank
-    FROM predictions
-    WHERE race_id = ?
-    ORDER BY predicted_rank ASC
+    SELECT p.player_id, p.predicted_rank, p.score_total,
+           p.score_ability, p.score_course, p.score_today, p.score_weather,
+           e.lane, pl.name, pl.grade
+    FROM predictions p
+    JOIN entries e ON e.race_id = p.race_id AND e.player_id = p.player_id
+    JOIN players pl ON pl.id = p.player_id
+    WHERE p.race_id = ?
+    ORDER BY p.predicted_rank ASC
 ');
 $stmt->execute([$raceId]);
 $predictions = $stmt->fetchAll();
