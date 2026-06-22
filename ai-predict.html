@@ -237,35 +237,53 @@ document.getElementById('btnNext').href = 'ai-predict.html?' + baseQ + '&race_no
 if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
 if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
 
-function calcRates(predictions) {
-  var scores = predictions.map(function(p) { return p.score_total || 0; });
+function calcRates(scores) {
+  var n = scores.length;
+  var EPS = 1e-9;
   var maxS = Math.max.apply(null, scores);
-  var exps = scores.map(function(s) { return Math.exp((s - maxS) / 8); });
-  var sum = exps.reduce(function(a, b) { return a + b; }, 0);
-  var probs = exps.map(function(e) { return e / sum; });
-  var N = 10;
-  var results = [];
-  for (var i = 0; i < predictions.length; i++) {
-    var p1 = probs[i];
-    var others = [];
-    for (var j = 0; j < probs.length; j++) { if (j !== i) others.push(probs[j]); }
-    var othersSum = others.reduce(function(a, b) { return a + b; }, 0);
-    var p2 = 0; var p3 = 0;
-    for (var k = 0; k < others.length; k++) {
-      var pWin = others[k] / othersSum;
-      var rem = [];
-      for (var l = 0; l < others.length; l++) { if (l !== k) rem.push(others[l]); }
-      var remSum = rem.reduce(function(a, b) { return a + b; }, 0);
-      p2 += pWin * (probs[i] / (probs[i] + remSum));
-      for (var m = 0; m < rem.length; m++) {
-        var pSec = rem[m] / remSum;
-        var rest = [];
-        for (var n2 = 0; n2 < rem.length; n2++) { if (n2 !== m) rest.push(rem[n2]); }
-        var restSum = rest.reduce(function(a, b) { return a + b; }, 0);
-        p3 += pWin * pSec * (probs[i] / (probs[i] + restSum));
+  var exps = scores.map(function(s){ return Math.exp(s - maxS); });
+  var sumE = exps.reduce(function(a,b){ return a+b; }, 0);
+  var probs = exps.map(function(e){ return e / sumE; });
+
+  var p1 = probs.slice();
+
+  var p2 = probs.map(function(_, i){
+    var s = 0;
+    for(var j=0; j<n; j++){
+      if(j===i) continue;
+      var denom = 1 - probs[j];
+      if(denom < EPS) continue;
+      s += probs[j] * (probs[i] / denom);
+    }
+    return s;
+  });
+
+  var p3 = probs.map(function(_, i){
+    var s = 0;
+    for(var j=0; j<n; j++){
+      if(j===i) continue;
+      var d1 = 1 - probs[j];
+      if(d1 < EPS) continue;
+      for(var k=0; k<n; k++){
+        if(k===i || k===j) continue;
+        var d2 = 1 - probs[j] - probs[k];
+        if(d2 < EPS) continue;
+        s += probs[j] * (probs[k]/d1) * (probs[i]/d2);
       }
     }
-    var r1 = Math.round(p1 * N); var r2 = Math.round(p2 * N); var r3 = Math.round(p3 * N);
+    return s;
+  });
+
+  var p123 = p1.map(function(v,i){ return Math.min(1, v + p2[i] + p3[i]); });
+
+  return { p1:p1, p2:p2, p3:p3, p123:p123 };
+}
+
+function buildResults(predictions) {
+  var scores = predictions.map(function(p) { return p.score_total || 0; });
+  var rates = calcRates(scores);
+  var results = [];
+  for (var i = 0; i < predictions.length; i++) {
     results.push({
       lane: predictions[i].lane,
       name: predictions[i].name,
@@ -275,16 +293,13 @@ function calcRates(predictions) {
       score_course: predictions[i].score_course,
       score_today: predictions[i].score_today,
       score_weather: predictions[i].score_weather,
-      r1: r1, r2: r2, r3: r3,
-      top3: r1 + r2 + r3,
-      top3pct: ((r1 + r2 + r3) / N * 100).toFixed(1),
-      r1pct: (r1 / N * 100).toFixed(1),
-      r2pct: (r2 / N * 100).toFixed(1),
-      r3pct: (r3 / N * 100).toFixed(1),
-      N: N
+      top3pct: (rates.p123[i] * 100).toFixed(1),
+      r1pct: (rates.p1[i] * 100).toFixed(1),
+      r2pct: (rates.p2[i] * 100).toFixed(1),
+      r3pct: (rates.p3[i] * 100).toFixed(1)
     });
   }
-  results.sort(function(a, b) { return b.top3 - a.top3 || b.r1 - a.r1; });
+  results.sort(function(a, b) { return parseFloat(b.top3pct) - parseFloat(a.top3pct) || parseFloat(b.r1pct) - parseFloat(a.r1pct); });
   return results;
 }
 
@@ -349,10 +364,10 @@ function renderPredCard(r, rank) {
   var rates = document.createElement('div');
   rates.className = 'pred-rates';
   var boxes = [
-    { pct: r.top3pct + '%', count: r.top3 + '/' + r.N, isTop3: true },
-    { pct: r.r1pct + '%', count: r.r1 + '回', isTop3: false },
-    { pct: r.r2pct + '%', count: r.r2 + '回', isTop3: false },
-    { pct: r.r3pct + '%', count: r.r3 + '回', isTop3: false }
+    { pct: r.top3pct + '%', isTop3: true },
+    { pct: r.r1pct + '%', isTop3: false },
+    { pct: r.r2pct + '%', isTop3: false },
+    { pct: r.r3pct + '%', isTop3: false }
   ];
   for (var b = 0; b < boxes.length; b++) {
     var box = document.createElement('div');
@@ -360,11 +375,7 @@ function renderPredCard(r, rank) {
     var pctEl = document.createElement('div');
     pctEl.className = 'pred-rate-pct';
     pctEl.textContent = boxes[b].pct;
-    var cntEl = document.createElement('div');
-    cntEl.className = 'pred-rate-count';
-    cntEl.textContent = boxes[b].count;
     box.appendChild(pctEl);
-    box.appendChild(cntEl);
     rates.appendChild(box);
   }
 
@@ -525,7 +536,7 @@ async function loadData() {
     bar.style.display = 'flex';
     document.getElementById('bottomActions').style.display = 'flex';
 
-    var rates = calcRates(data.predictions);
+    var rates = buildResults(data.predictions);
     list.textContent = '';
 
     var legend = document.createElement('div');
