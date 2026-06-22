@@ -181,7 +181,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
     <div class="stats-box">
       <div class="stats-title">本日のレース数</div>
-      <div class="stats-badge">全 24場 / 11Rレース</div>
+      <div class="stats-badge" id="statsBadge">読み込み中...</div>
       <button class="btn-refresh">更新する</button>
     </div>
 
@@ -250,8 +250,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 <script>
 var ALL_VENUES = [
   '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
-  '蒲郡','常滑','津','三国','びわこ','住之江',
-  '尼崎','鳴門','丸亀','児島','宮島','徳山',
+  '蒲郡','常滑','津','三国','琵琶湖','住之江',
+  '尼崎','鳴門','高松','丸亀','児島','宮島','徳山',
   '下関','若松','芦屋','福岡','唐津','大村'
 ];
 
@@ -260,23 +260,10 @@ var GRADE_CLASSES = { 'SG': 'grade-sg', 'G1': 'grade-g1', 'G2': 'grade-g2', 'G3'
 var VENUE_GRADES = {
   '桐生': 'G3', '戸田': '一般', '江戸川': '一般', '平和島': 'G1', '多摩川': '一般',
   '浜名湖': '一般', '蒲郡': '一般', '常滑': '一般', '津': '一般', '三国': '一般',
-  'びわこ': '一般', '住之江': 'G2', '尼崎': 'G3', '鳴門': '一般', '丸亀': '一般',
+  '琵琶湖': '一般', '住之江': 'G2', '尼崎': 'G3', '鳴門': '一般', '高松': '一般', '丸亀': '一般',
   '児島': '一般', '宮島': '一般', '徳山': '一般', '下関': 'SG', '若松': '一般',
   '芦屋': '一般', '福岡': '一般', '唐津': '一般', '大村': '一般'
 };
-
-function generateDeadline(venueName, raceIndex) {
-  var hash = Array.prototype.slice.call(venueName).reduce(function(acc, c) { return acc + c.charCodeAt(0); }, 0);
-  var h = String(10 + Math.floor(hash % 8)).padStart(2, '0');
-  var m = String((hash * 7 + raceIndex * 27) % 60).padStart(2, '0');
-  return h + ':' + m;
-}
-
-function simulateCurrentRace(venueName, totalRaces) {
-  var hash = Array.prototype.slice.call(venueName).reduce(function(acc, c) { return acc + c.charCodeAt(0); }, 0);
-  var progress = (new Date().getHours() - 9) / 10;
-  return Math.max(1, Math.min(totalRaces, Math.floor(progress * totalRaces) + (hash % 3)));
-}
 
 function formatDate(dateStr) {
   var d = new Date(dateStr + 'T00:00:00');
@@ -313,8 +300,6 @@ function createVenueCard(venueName, venueData) {
   }
 
   var totalRaces = venueData.race_count;
-  var currentRace = simulateCurrentRace(venueName, totalRaces);
-  var deadline = generateDeadline(venueName, currentRace);
   var href = 'races.html?venue=' + encodeURIComponent(venueName) + '&date=' + apiDate;
 
   return '<div class="venue-card">' +
@@ -325,8 +310,7 @@ function createVenueCard(venueName, venueData) {
       '<div class="card-main-info">' +
         '<div class="card-text-side">' +
           '<div class="status-indicator">開催中</div>' +
-          '<div class="race-round">' + currentRace + 'R / ' + totalRaces + 'R</div>' +
-          '<div class="deadline-time">締切 ' + deadline + '</div>' +
+          '<div class="race-round">全' + totalRaces + 'R</div>' +
         '</div>' +
         '<div class="card-img-placeholder"></div>' +
       '</div>' +
@@ -354,15 +338,13 @@ function renderFeaturedBanner(venues) {
   featuredVenues.forEach(function(featured) {
     var grade = VENUE_GRADES[featured.venue];
     var gradeClass = GRADE_CLASSES[grade];
-    var currentRace = simulateCurrentRace(featured.venue, featured.race_count);
-    var deadline = generateDeadline(featured.venue, currentRace);
     var href = 'races.html?venue=' + encodeURIComponent(featured.venue) + '&date=' + apiDate;
 
     html += '<div class="featured-item">' +
         '<div class="featured-left">' +
           '<span class="venue-name">' + featured.venue + '</span>' +
           '<span class="grade-badge ' + gradeClass + '">' + grade + '</span>' +
-          '<span style="font-size:11px; color:#718096; font-weight:normal;">' + currentRace + 'R 締切 ' + deadline + '</span>' +
+          '<span style="font-size:11px; color:#718096; font-weight:normal;">' + featured.race_count + 'R開催</span>' +
         '</div>' +
         '<a href="' + href + '" class="btn-predict" style="text-decoration:none;">予測を見る</a>' +
       '</div>';
@@ -409,6 +391,10 @@ async function loadVenues() {
     if (data.venues) {
       data.venues.forEach(function(v) { venueMap[v.venue] = v; });
     }
+
+    var activeCount = data.venues ? data.venues.length : 0;
+    var sb = document.getElementById('statsBadge');
+    if (sb) sb.textContent = activeCount + '場 開催中 / 全' + ALL_VENUES.length + '場';
 
     if (data.venues && data.venues.length > 0) {
       renderFeaturedBanner(data.venues);
