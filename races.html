@@ -330,11 +330,15 @@ function renderRaceCard(race) {
   b2.href = 'predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
   b2.textContent = '直前情報';
 
-  var b3 = document.createElement('a'); b3.className = 'action-btn primary';
-  b3.href = 'ai-predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
-  b3.textContent = '予想';
+  var b3 = document.createElement('a'); b3.className = 'action-btn';
+  b3.href = 'odds.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
+  b3.textContent = 'オッズ';
 
-  actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3);
+  var b4 = document.createElement('a'); b4.className = 'action-btn primary';
+  b4.href = 'ai-predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno;
+  b4.textContent = '予想';
+
+  actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3); actions.appendChild(b4);
 
   card.appendChild(hdr);
   card.appendChild(panel1);

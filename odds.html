@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>艇王 - オッズ</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; gap: 14px; justify-content: space-between; }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
+.back-btn:hover { background: #e8f0fd; }
+.header-info h1 { font-size: 17px; font-weight: 700; color: #222; }
+.header-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.header-meta .date { font-size: 12px; color: #888; }
+.grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
+.grade-sg { background: #fff3cd; color: #b8860b; }
+.grade-g1 { background: #fee2e2; color: #c0392b; }
+.grade-g2 { background: #dbeafe; color: #2563eb; }
+.grade-g3 { background: #d1fae5; color: #16a34a; }
+.grade-ippan { background: #f3f4f6; color: #888; }
+.container { max-width: 860px; margin: 0 auto; padding: 20px 16px; }
+.loading { text-align: center; padding: 60px 20px; color: #999; }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
+footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
+
+.race-bar { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.race-bar-left { display: flex; align-items: center; gap: 14px; }
+.race-no-lg { font-size: 26px; font-weight: 800; color: #0055a4; }
+.race-bar-detail { font-size: 13px; color: #555; }
+.race-bar-detail strong { color: #222; }
+.race-bar-right { display: flex; gap: 6px; }
+.nav-btn { padding: 7px 14px; border: 1px solid #d0d5dd; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 600; color: #555; text-decoration: none; transition: all 0.15s; }
+.nav-btn:hover { border-color: #0055a4; color: #0055a4; }
+
+.mode-switch { display: flex; gap: 4px; margin-bottom: 12px; padding: 4px; background: #e9ecef; border-radius: 10px; }
+.mode-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; background: transparent; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; transition: all 0.15s; }
+.mode-btn:hover { color: #555; background: #dde0e4; }
+.mode-btn.active { background: #0055a4; color: #fff; }
+
+.matrix-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid #e0e3e8; background: #fff; }
+.odds-matrix { width: 100%; border-collapse: collapse; min-width: 520px; }
+.odds-matrix th, .odds-matrix td { border: 1px solid #e0e3e8; text-align: center; vertical-align: middle; }
+.corner { background: #f7f8fa; font-size: 10px; color: #888; padding: 8px 4px; width: 56px; white-space: nowrap; }
+.wh { padding: 8px 4px; font-weight: 800; font-size: 15px; min-width: 40px; }
+.matrix-cell { padding: 5px 6px; vertical-align: top; }
+.matrix-cell.diagonal { background: #f3f4f6; color: #ccc; font-size: 16px; padding: 20px 0; }
+.cell-odds { display: flex; align-items: center; gap: 3px; padding: 1px 0; }
+.wm { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 2px; font-weight: 800; font-size: 9px; flex-shrink: 0; }
+.cell-odds-val { flex: 1; text-align: right; font-size: 11px; font-variant-numeric: tabular-nums; color: #333; }
+
+.popular-list { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; overflow: hidden; }
+.popular-header { display: flex; align-items: center; padding: 8px 16px; background: #f7f8fa; border-bottom: 1px solid #e0e3e8; font-size: 10px; font-weight: 700; color: #999; gap: 10px; }
+.popular-header-rank { width: 32px; text-align: center; }
+.popular-header-combo { flex: 1; }
+.popular-header-odds { width: 70px; text-align: right; }
+.popular-row { display: flex; align-items: center; padding: 7px 16px; border-bottom: 1px solid #f5f5f5; gap: 10px; }
+.popular-row:last-child { border-bottom: none; }
+.popular-rank { width: 32px; text-align: center; font-size: 12px; font-weight: 700; color: #888; }
+.popular-combo { flex: 1; display: flex; align-items: center; gap: 2px; }
+.popular-sep { color: #999; font-size: 12px; margin: 0 1px; }
+.pw { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 3px; font-weight: 800; font-size: 12px; }
+.popular-odds { width: 70px; text-align: right; font-size: 14px; font-weight: 700; color: #0055a4; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 600px) {
+  .race-bar { flex-direction: column; align-items: flex-start; }
+  .race-bar-right { width: 100%; }
+  .nav-btn { flex: 1; text-align: center; }
+  .header-info h1 { font-size: 15px; }
+  .mode-btn { font-size: 12px; padding: 7px 4px; }
+  .cell-odds-val { font-size: 10px; }
+  .wm { width: 13px; height: 13px; font-size: 8px; }
+  .matrix-cell { padding: 3px 4px; }
+  .popular-row { padding: 6px 12px; }
+  .pw { width: 20px; height: 20px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <a class="back-btn" id="backBtn" href="index.html">&larr;</a>
+    <div class="header-info">
+      <h1 id="pageTitle">オッズ</h1>
+      <div class="header-meta">
+        <span class="date" id="pageDate"></span>
+        <span class="grade-badge" id="pageBadge"></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="race-bar" id="raceBar" style="display:none">
+    <div class="race-bar-left">
+      <div class="race-no-lg" id="raceNoLg"></div>
+      <div class="race-bar-detail" id="raceBarDetail"></div>
+    </div>
+    <div class="race-bar-right">
+      <a class="nav-btn" id="btnPrev">&#9664; 前R</a>
+      <a class="nav-btn" id="btnNext">次R &#9654;</a>
+    </div>
+  </div>
+
+  <div class="mode-switch" id="modeSwitch" style="display:none">
+    <button class="mode-btn active" id="btnMatrix">通常</button>
+    <button class="mode-btn" id="btnPopular">人気順</button>
+  </div>
+
+  <div id="oddsContent">
+    <div class="loading"><div class="loading-spinner"></div>オッズデータを取得中...</div>
+  </div>
+
+  <div id="matrixView" style="display:none"></div>
+  <div id="popularView" style="display:none"></div>
+</div>
+
+<footer>艇王 &copy; 2026</footer>
+
+<script>
+var params = new URLSearchParams(location.search);
+var venue = params.get('venue') || '';
+var date = params.get('date') || todayStr();
+var raceNo = parseInt(params.get('race_no') || '1', 10);
+
+function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','びわこ':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
+var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
+var WAKU_BG = { 1:'#fff', 2:'#222', 3:'#e53e3e', 4:'#2563eb', 5:'#eab308', 6:'#16a34a' };
+var WAKU_FG = { 1:'#222', 2:'#fff', 3:'#fff', 4:'#fff', 5:'#222', 6:'#fff' };
+var WAKU_BORDER = { 1:'2px solid #ccc', 2:'none', 3:'none', 4:'none', 5:'none', 6:'none' };
+var vg = VENUE_GRADES[venue] || '一般';
+
+function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
+
+document.getElementById('pageTitle').textContent = venue + ' ' + raceNo + 'R ' + fmtDate(date) + ' / オッズ';
+document.title = '艇王 - ' + venue + ' ' + raceNo + 'R オッズ';
+var badge = document.getElementById('pageBadge');
+badge.textContent = vg;
+badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
+document.getElementById('pageDate').textContent = fmtDate(date);
+
+var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
+document.getElementById('backBtn').href = 'races.html?' + baseQ;
+
+var prevNo = raceNo > 1 ? raceNo - 1 : 1;
+var nextNo = raceNo < 12 ? raceNo + 1 : 12;
+document.getElementById('btnPrev').href = 'odds.html?' + baseQ + '&race_no=' + prevNo;
+document.getElementById('btnNext').href = 'odds.html?' + baseQ + '&race_no=' + nextNo;
+if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
+if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
+
+function applyWaku(el, n) {
+  el.style.background = WAKU_BG[n] || '#fff';
+  el.style.color = WAKU_FG[n] || '#222';
+  el.style.border = WAKU_BORDER[n] || 'none';
+}
+
+function buildMatrix(oddsData) {
+  var oddsMap = {};
+  var allVals = [];
+  for (var i = 0; i < oddsData.length; i++) {
+    var o = oddsData[i];
+    var key = o.first + '-' + o.second + '-' + o.third;
+    var v = Number(o.odds);
+    oddsMap[key] = v;
+    allVals.push(v);
+  }
+  allVals.sort(function(a, b) { return a - b; });
+  var gMin = allVals.length > 0 ? allVals[0] : 0;
+  var gMax = allVals.length > 0 ? allVals[allVals.length - 1] : 1;
+  var range = gMax - gMin + 0.01;
+
+  var wrap = document.createElement('div');
+  wrap.className = 'matrix-wrap';
+  var table = document.createElement('table');
+  table.className = 'odds-matrix';
+
+  var thead = document.createElement('thead');
+  var hrow = document.createElement('tr');
+  var corner = document.createElement('th');
+  corner.className = 'corner';
+  corner.textContent = '1着＼2着';
+  hrow.appendChild(corner);
+  for (var j = 1; j <= 6; j++) {
+    var th = document.createElement('th');
+    th.className = 'wh';
+    applyWaku(th, j);
+    th.textContent = j;
+    hrow.appendChild(th);
+  }
+  thead.appendChild(hrow);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  for (var first = 1; first <= 6; first++) {
+    var row = document.createElement('tr');
+    var rh = document.createElement('th');
+    rh.className = 'wh';
+    applyWaku(rh, first);
+    rh.textContent = first;
+    row.appendChild(rh);
+
+    for (var second = 1; second <= 6; second++) {
+      var td = document.createElement('td');
+      if (first === second) {
+        td.className = 'matrix-cell diagonal';
+        td.textContent = '-';
+      } else {
+        td.className = 'matrix-cell';
+        var cellMin = Infinity;
+        for (var third = 1; third <= 6; third++) {
+          if (third === first || third === second) continue;
+          var key = first + '-' + second + '-' + third;
+          var odds = oddsMap[key];
+          var line = document.createElement('div');
+          line.className = 'cell-odds';
+          var badge2 = document.createElement('span');
+          badge2.className = 'wm';
+          applyWaku(badge2, third);
+          badge2.textContent = third;
+          line.appendChild(badge2);
+          var valSpan = document.createElement('span');
+          valSpan.className = 'cell-odds-val';
+          if (odds != null) {
+            valSpan.textContent = odds.toFixed(1);
+            if (odds < cellMin) cellMin = odds;
+          } else {
+            valSpan.textContent = '-';
+          }
+          line.appendChild(valSpan);
+          td.appendChild(line);
+        }
+        if (cellMin < Infinity) {
+          var ratio = (cellMin - gMin) / range;
+          if (ratio < 0.15) {
+            var alpha = ((1 - ratio / 0.15) * 0.35).toFixed(2);
+            td.style.background = 'rgba(255, 235, 59, ' + alpha + ')';
+          }
+        }
+      }
+      row.appendChild(td);
+    }
+    tbody.appendChild(row);
+  }
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  return wrap;
+}
+
+function buildPopularList(oddsData) {
+  var sorted = oddsData.slice().sort(function(a, b) { return Number(a.odds) - Number(b.odds); });
+  var list = document.createElement('div');
+  list.className = 'popular-list';
+
+  var hdr = document.createElement('div');
+  hdr.className = 'popular-header';
+  var hRank = document.createElement('div'); hRank.className = 'popular-header-rank'; hRank.textContent = '人気';
+  var hCombo = document.createElement('div'); hCombo.className = 'popular-header-combo'; hCombo.textContent = '組み合わせ';
+  var hOdds = document.createElement('div'); hOdds.className = 'popular-header-odds'; hOdds.textContent = 'オッズ';
+  hdr.appendChild(hRank); hdr.appendChild(hCombo); hdr.appendChild(hOdds);
+  list.appendChild(hdr);
+
+  for (var i = 0; i < sorted.length; i++) {
+    var o = sorted[i];
+    var row = document.createElement('div');
+    row.className = 'popular-row';
+
+    var rk = document.createElement('div');
+    rk.className = 'popular-rank';
+    rk.textContent = i + 1;
+
+    var combo = document.createElement('div');
+    combo.className = 'popular-combo';
+    var lanes = [Number(o.first), Number(o.second), Number(o.third)];
+    for (var j = 0; j < lanes.length; j++) {
+      var w = document.createElement('span');
+      w.className = 'pw';
+      applyWaku(w, lanes[j]);
+      w.textContent = lanes[j];
+      combo.appendChild(w);
+      if (j < 2) {
+        var sep = document.createElement('span');
+        sep.className = 'popular-sep';
+        sep.textContent = '-';
+        combo.appendChild(sep);
+      }
+    }
+
+    var val = document.createElement('div');
+    val.className = 'popular-odds';
+    val.textContent = Number(o.odds).toFixed(1) + '倍';
+
+    row.appendChild(rk);
+    row.appendChild(combo);
+    row.appendChild(val);
+    list.appendChild(row);
+  }
+  return list;
+}
+
+var API_HOST = 'https://' + '2410049.moo.jp';
+
+async function loadData() {
+  var content = document.getElementById('oddsContent');
+  try {
+    var url = API_HOST + '/get_odds.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo + '&all=1';
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+
+    if (data.error || !data.length || data.length === 0) {
+      content.textContent = '';
+      var msg = document.createElement('div');
+      msg.className = 'error-msg';
+      msg.textContent = 'オッズ未取得';
+      content.appendChild(msg);
+      return;
+    }
+
+    document.getElementById('raceNoLg').textContent = raceNo + 'R';
+    var detail = document.getElementById('raceBarDetail');
+    detail.textContent = '';
+    var vs = document.createElement('strong');
+    vs.textContent = venue;
+    detail.appendChild(vs);
+    detail.appendChild(document.createTextNode(' ' + fmtDate(date) + ' / オッズ'));
+    document.getElementById('raceBar').style.display = 'flex';
+    document.getElementById('modeSwitch').style.display = 'flex';
+    content.style.display = 'none';
+
+    var matrixView = document.getElementById('matrixView');
+    matrixView.textContent = '';
+    matrixView.appendChild(buildMatrix(data));
+    matrixView.style.display = 'block';
+
+    var popularView = document.getElementById('popularView');
+    popularView.textContent = '';
+    popularView.appendChild(buildPopularList(data));
+
+  } catch(e) {
+    content.textContent = '';
+    var err = document.createElement('div');
+    err.className = 'error-msg';
+    err.textContent = 'データの取得に失敗しました';
+    content.appendChild(err);
+  }
+}
+
+document.getElementById('btnMatrix').onclick = function() {
+  document.getElementById('btnMatrix').className = 'mode-btn active';
+  document.getElementById('btnPopular').className = 'mode-btn';
+  document.getElementById('matrixView').style.display = 'block';
+  document.getElementById('popularView').style.display = 'none';
+};
+document.getElementById('btnPopular').onclick = function() {
+  document.getElementById('btnPopular').className = 'mode-btn active';
+  document.getElementById('btnMatrix').className = 'mode-btn';
+  document.getElementById('matrixView').style.display = 'none';
+  document.getElementById('popularView').style.display = 'block';
+};
+
+loadData();
+</script>
+</body>
+</html>
