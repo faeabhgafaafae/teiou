@@ -273,7 +273,7 @@ function calcRates(predictions) {
       score: predictions[i].score_total,
       score_ability: predictions[i].score_ability,
       score_course: predictions[i].score_course,
-      score_daily: predictions[i].score_daily,
+      score_today: predictions[i].score_today,
       score_weather: predictions[i].score_weather,
       r1: r1, r2: r2, r3: r3,
       top3: r1 + r2 + r3,
@@ -319,7 +319,7 @@ function renderPredCard(r, rank) {
 
   var sAbility = Number(r.score_ability) || 0;
   var sCourse = Number(r.score_course) || 0;
-  var sDaily = Number(r.score_daily) || 0;
+  var sDaily = Number(r.score_today) || 0;
   var sWeather = Number(r.score_weather) || 0;
 
   var stackWrap = document.createElement('div');
