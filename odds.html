@@ -166,7 +166,7 @@ function buildMatrix(oddsData) {
   var allVals = [];
   for (var i = 0; i < oddsData.length; i++) {
     var o = oddsData[i];
-    var key = o.first + '-' + o.second + '-' + o.third;
+    var key = o.combo;
     var v = Number(o.odds);
     oddsMap[key] = v;
     allVals.push(v);
@@ -277,7 +277,8 @@ function buildPopularList(oddsData) {
 
     var combo = document.createElement('div');
     combo.className = 'popular-combo';
-    var lanes = [Number(o.first), Number(o.second), Number(o.third)];
+    var parts = o.combo.split('-');
+    var lanes = [Number(parts[0]), Number(parts[1]), Number(parts[2])];
     for (var j = 0; j < lanes.length; j++) {
       var w = document.createElement('span');
       w.className = 'pw';
@@ -314,7 +315,8 @@ async function loadData() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
 
-    if (data.error || !data.length || data.length === 0) {
+    var oddsArr = data.odds || [];
+    if (data.error || oddsArr.length === 0) {
       content.textContent = '';
       var msg = document.createElement('div');
       msg.className = 'error-msg';
@@ -336,12 +338,12 @@ async function loadData() {
 
     var matrixView = document.getElementById('matrixView');
     matrixView.textContent = '';
-    matrixView.appendChild(buildMatrix(data));
+    matrixView.appendChild(buildMatrix(oddsArr));
     matrixView.style.display = 'block';
 
     var popularView = document.getElementById('popularView');
     popularView.textContent = '';
-    popularView.appendChild(buildPopularList(data));
+    popularView.appendChild(buildPopularList(oddsArr));
 
   } catch(e) {
     content.textContent = '';

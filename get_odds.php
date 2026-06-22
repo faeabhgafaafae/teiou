@@ -26,12 +26,12 @@ if (!$race_id) {
 }
 
 if ($all) {
-    $sql = 'SELECT first, second, third, odds FROM odds_3t WHERE race_id = ? ORDER BY odds ASC';
+    $sql = 'SELECT combo, odds FROM odds_3t WHERE race_id = ? ORDER BY odds ASC';
 } else {
-    $sql = 'SELECT first, second, third, odds FROM odds_3t WHERE race_id = ? ORDER BY odds ASC LIMIT 10';
+    $sql = 'SELECT combo, odds FROM odds_3t WHERE race_id = ? ORDER BY odds ASC LIMIT 10';
 }
 $stmt = $pdo->prepare($sql);
 $stmt->execute([(int)$race_id]);
 $odds = $stmt->fetchAll();
 
-json_response($odds);
+json_response(['odds' => $odds]);

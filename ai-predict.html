@@ -460,7 +460,7 @@ function renderOdds(oddsData) {
   var list = document.getElementById('oddsList');
   list.textContent = '';
 
-  if (!oddsData || oddsData.length === 0 || oddsData.error) {
+  if (!oddsData || !oddsData.odds || oddsData.odds.length === 0 || oddsData.error) {
     var msg = document.createElement('div');
     msg.className = 'odds-empty';
     msg.textContent = 'オッズ未取得';
@@ -480,8 +480,10 @@ function renderOdds(oddsData) {
   hdr.appendChild(h1); hdr.appendChild(h2); hdr.appendChild(h3);
   table.appendChild(hdr);
 
-  for (var i = 0; i < oddsData.length; i++) {
-    var odd = oddsData[i];
+  var items = oddsData.odds;
+  for (var i = 0; i < items.length; i++) {
+    var odd = items[i];
+    var parts = odd.combo.split('-');
     var row = document.createElement('div');
     row.className = 'odds-row';
 
@@ -491,12 +493,11 @@ function renderOdds(oddsData) {
 
     var combo = document.createElement('div');
     combo.className = 'odds-combo';
-    var lanes = [odd.first, odd.second, odd.third];
-    for (var j = 0; j < lanes.length; j++) {
+    for (var j = 0; j < parts.length; j++) {
       var w = document.createElement('span');
       w.className = 'odds-combo-waku';
-      w.style.cssText = WAKU_STYLES[lanes[j]] || '';
-      w.textContent = lanes[j];
+      w.style.cssText = WAKU_STYLES[Number(parts[j])] || '';
+      w.textContent = parts[j];
       combo.appendChild(w);
       if (j < 2) {
         var arrow = document.createElement('span');
