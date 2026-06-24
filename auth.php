@@ -1,6 +1,7 @@
 <?php
 session_start();
 define('GEMINI_API_KEY', 'AQ.Ab8RN6JuHBfAkTG2QsXT3tXHs5N54oUyqyz8I7T3Otw7B_UqNg');
+define('GROQ_API_KEY', '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');
 
 function get_db(): PDO {
     $dsn = 'mysql:host=mysql323.phy.lolipop.lan;dbname=LAA1670504-12;charset=utf8mb4';
