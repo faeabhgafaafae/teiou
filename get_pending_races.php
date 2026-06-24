@@ -17,6 +17,7 @@ if ($api_key !== API_KEY) {
 
 $within = (int)($_GET['within'] ?? 40);
 $date   = $_GET['date'] ?? date('Y-m-d');
+$all    = ($_GET['all'] ?? '') === '1';
 
 try {
     $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
@@ -30,17 +31,29 @@ try {
     exit;
 }
 
-$stmt = $pdo->prepare('
-    SELECT id AS race_id, date, venue, race_no, scheduled_time
-    FROM races
-    WHERE date = :date
-      AND scheduled_time IS NOT NULL
-      AND CONCAT(date, " ", scheduled_time) >= NOW()
-      AND CONCAT(date, " ", scheduled_time) <= NOW() + INTERVAL :within MINUTE
-      AND NOT EXISTS (SELECT 1 FROM results WHERE results.race_id = races.id)
-    ORDER BY CONCAT(date, " ", scheduled_time) ASC
-');
-$stmt->execute([':date' => $date, ':within' => $within]);
+if ($all) {
+    $stmt = $pdo->prepare('
+        SELECT id AS race_id, date, venue, race_no, scheduled_time,
+               TIMESTAMPDIFF(MINUTE, NOW(), CONCAT(date, " ", scheduled_time)) AS minutes_until_deadline
+        FROM races
+        WHERE date = :date
+          AND scheduled_time IS NOT NULL
+        ORDER BY CONCAT(date, " ", scheduled_time) ASC
+    ');
+    $stmt->execute([':date' => $date]);
+} else {
+    $stmt = $pdo->prepare('
+        SELECT id AS race_id, date, venue, race_no, scheduled_time,
+               TIMESTAMPDIFF(MINUTE, NOW(), CONCAT(date, " ", scheduled_time)) AS minutes_until_deadline
+        FROM races
+        WHERE date = :date
+          AND scheduled_time IS NOT NULL
+          AND CONCAT(date, " ", scheduled_time) >= NOW() - INTERVAL 20 MINUTE
+          AND CONCAT(date, " ", scheduled_time) <= NOW() + INTERVAL :within MINUTE
+        ORDER BY CONCAT(date, " ", scheduled_time) ASC
+    ');
+    $stmt->execute([':date' => $date, ':within' => $within]);
+}
 $races = $stmt->fetchAll();
 
 echo json_encode([

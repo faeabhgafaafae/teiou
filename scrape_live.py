@@ -35,7 +35,9 @@ def get_pending_races() -> list:
     data = res.json()
     if 'error' in data:
         raise RuntimeError(f'get_pending_races error: {data["error"]}')
-    return data.get('races', [])
+    races = data.get('races', [])
+    # -20 <= minutes_until_deadline <= 30 のレースのみ対象
+    return [r for r in races if -20 <= r.get('minutes_until_deadline', 999) <= 30]
 
 
 def scrape_odds(jcd: str, rno: int, hd: str) -> dict | None:
@@ -176,9 +178,18 @@ def main():
         venue     = race['venue']
         race_no   = int(race['race_no'])
         sched     = race.get('scheduled_time', '??:??')
+        mins      = race.get('minutes_until_deadline')
         jcd       = VENUE_TO_JCD.get(venue)
 
-        print(f'\n  [{venue}] {race_no}R (締切{sched})')
+        label = f'締切{sched}'
+        if mins is not None:
+            if mins < 0:
+                label += f' (締切後{abs(mins)}分=確定オッズ)'
+            elif mins <= 10:
+                label += f' (残{mins}分=直前)'
+            else:
+                label += f' (残{mins}分)'
+        print(f'\n  [{venue}] {race_no}R ({label})')
 
         if not jcd:
             print(f'    [SKIP] 会場コード不明: {venue}')
