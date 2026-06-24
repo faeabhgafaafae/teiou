@@ -52,7 +52,15 @@ foreach ($rows as $r) {
     ];
 }
 
-$prompt = "あなたはボートレースの専門解説者です。\n以下のAI予想結果をもとに、なぜこの順位になったか・注意点を\n200文字程度で日本語で簡潔に解説してください。\n\n" . json_encode($players, JSON_UNESCAPED_UNICODE);
+$prompt = "あなたはボートレースの予想解説者です。\n"
+        . "以下のデータをもとに、日本語で200文字程度で解説してください。\n"
+        . "・なぜ1位の選手が有利なのか\n"
+        . "・注意すべき選手や逆転の可能性\n"
+        . "・専門用語は使わず初心者にもわかりやすく\n"
+        . "・「選手能力」「コース補正」「当日情報」「気象」という言葉を使う\n"
+        . "・英語は使わない\n\n"
+        . "予想データ:\n"
+        . json_encode($players, JSON_UNESCAPED_UNICODE);
 
 // Groq API呼び出し
 $url = 'https://api.groq.com/openai/v1/chat/completions';
