@@ -20,6 +20,8 @@
     .btn-back:hover { text-decoration: underline; }
     .plan-text-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #edf2f7; color: #4a5568; }
     .plan-text-badge.premium { background: #feebc8; color: #dd6b20; }
+    .plan-change-btn { display: inline-block; margin-left: 8px; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; color: #0055a4; background: #e8f0fd; text-decoration: none; transition: all 0.15s; }
+    .plan-change-btn:hover { background: #0055a4; color: #fff; }
   </style>
 </head>
 <body>
@@ -42,7 +44,7 @@
       <div class="profile-avatar" id="userAvatar">-</div>
       <div class="profile-title">
         <h2 id="profileName">読み込み中...</h2>
-        <div id="profilePlan" class="plan-text-badge">Free</div>
+        <div id="profilePlan" class="plan-text-badge">Free</div><a href="upgrade.html" class="plan-change-btn">プランを変更</a>
       </div>
     </div>
 
