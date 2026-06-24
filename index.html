@@ -1,166 +1,332 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>艇王 - ボートレース予想</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f4f6f9; color: #333; min-height: 100vh; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>艇王 - ボートレース予想</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* まもなく締切カード用のCSS */
+    .urgent-card-box {
+      background: var(--card-bg, #f8fafc);
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      padding: 10px;
+    }
+    .urgent-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .urgent-venue {
+      background: #0055a4;
+      color: #fff;
+      font-weight: bold;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .urgent-no {
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--text-main, #4a5568);
+    }
+    .urgent-time {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .urgent-time.time-red { color: #fff; background: #ef4444; }
+    .urgent-time.time-yellow { color: #451a03; background: #eab308; }
+    .urgent-time.time-green { color: #fff; background: #22c55e; }
+    
+    .urgent-players {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      background: var(--bg-nest, #fff);
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color, #edf2f7);
+      margin-bottom: 8px;
+    }
+    .urgent-player-dot {
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      background: var(--card-bg, #f1f5f9);
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: var(--text-main, #4a5568);
+    }
+    .w-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+    .wd-1 { background: #ccc; border: 1px solid #999; }
+    .wd-2 { background: #222; }
+    .wd-3 { background: #e53e3e; }
+    .wd-4 { background: #2563eb; }
+    .wd-5 { background: #eab308; }
+    .wd-6 { background: #16a34a; }
 
-/* --- ヘッダー --- */
-header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
-.logo h1 { font-size: 22px; font-weight: 800; color: #0055a4; display: inline-block; vertical-align: middle; }
-.logo-sub { font-size: 11px; color: #718096; margin-left: 8px; }
-.header-right { display: flex; align-items: center; gap: 16px; }
-.header-date { font-size: 13px; color: #4a5568; font-weight: 600; }
-.header-auth { display: flex; align-items: center; gap: 8px; }
+    .urgent-btn-group { display: flex; gap: 4px; }
+    .urgent-btn { flex: 1; text-align: center; font-size: 11px; padding: 5px 0; border: 1px solid var(--border-color, #e2e8f0); border-radius: 4px; color: var(--text-main, #4a5568); text-decoration: none; background: var(--bg-nest, #fff); }
+    .urgent-btn.main-btn { background: #0055a4; color: #fff; border-color: #0055a4; }
 
-/* ログイン・登録ボタン */
-.auth-link { font-size: 12px; color: #0055a4; text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; }
-.auth-link.register { background: #0055a4; color: #fff; border: none; }
+    /* ヘッダー構造の適正化 */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: var(--header-bg, #fff);
+      border-bottom: 1px solid var(--border-color, #e2e8f0);
+      position: relative;
+    }
+    .header-left-box {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
 
-/* --- ダッシュボードレイアウト --- */
-.dashboard-container { display: flex; max-width: 1600px; margin: 0 auto; padding: 20px; gap: 20px; }
+    /* ハンバーガーボタン */
+    .menu-toggle-btn {
+      display: none;
+      background: #0055a4;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .menu-toggle-btn:hover {
+      background: #004482;
+    }
 
-/* サイドバー */
-.sidebar {
-  width: 240px;
-  flex-shrink: 0;
-  padding-top: 10px; 
-  position: -webkit-sticky; /* Safari対応 */
-  position: sticky;
-  top: 20px; 
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
-}
-.sidebar::-webkit-scrollbar { width: 0px; }
+    /* ページトップへ戻るボタン */
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 46px;
+      height: 46px;
+      background-color: #0055a4;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s, transform 0.2s;
+    }
+    .scroll-top-btn.show { opacity: 1; visibility: visible; }
+    .scroll-top-btn:hover { background-color: #004482; transform: translateY(-3px); }
 
-.side-nav { background: #fff; border-radius: 12px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 16px; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #4a5568; text-decoration: none; font-size: 13px; font-weight: 600; border-radius: 8px; margin-bottom: 4px; }
-.nav-item:hover, .nav-item.active { background: #0055a4; color: #fff; }
-.nav-item .icon { width: 18px; text-align: center; font-size: 14px; }
+    /* サイドバー標準変数の割当 */
+    .sidebar {
+      background: var(--sidebar-bg, #fff);
+    }
+    .nav-item {
+      color: var(--text-main, #4a5568);
+    }
 
-/* プレミアム広告箱 */
-.premium-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-.premium-box h3 { font-size: 12px; color: #2d3748; margin-bottom: 10px; line-height: 1.4; }
-.premium-box ul { list-style: none; font-size: 11px; color: #718096; margin-bottom: 12px; }
-.premium-box li { margin-bottom: 4px; color: #319795; }
-.premium-box ul li i { margin-right: 6px; color: #319795; }
-.btn-primary { width: 100%; background: #0055a4; color: #fff; border: none; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    @media (min-width: 992px) {
+      .bottom-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+      .bottom-card { margin-bottom: 0 !important; }
+    }
 
-/* レース数統計箱 */
-.stats-box { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; text-align: center; margin-bottom: 16px; }
-.stats-title { font-size: 11px; color: #718096; margin-bottom: 6px; }
-.stats-badge { background: #ebf8ff; color: #2b6cb0; font-size: 12px; font-weight: bold; padding: 6px; border-radius: 6px; margin-bottom: 8px; }
-.btn-refresh { width: 100%; background: #0055a4; color: #fff; border: none; padding: 6px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+    @media (max-width: 991px) {
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 60px;
+        z-index: 9999;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        box-sizing: border-box;
+      }
+      .dashboard-container { padding-top: 60px; }
+      .menu-toggle-btn { display: flex; }
+      .sidebar {
+        position: fixed;
+        top: 60px;
+        left: -300px;
+        width: 280px;
+        height: calc(100vh - 60px);
+        z-index: 10000;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+        overflow-y: auto;
+        margin: 0 !important;
+        padding: 20px 15px !important;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        width: 100vw;
+        height: calc(100vh - 60px);
+        background: rgba(0,0,0,0.5);
+        z-index: 9998;
+      }
+      .sidebar-overlay.show { display: block; }
+    }
 
-.sidebar-footer { font-size: 11px; color: #a0aec0; line-height: 1.8; padding-left: 10px; }
-.sidebar-footer a { color: #a0aec0; text-decoration: none; margin-right: 8px; }
+    /* マイページ用テーマ切り替えBOXスタイル */
+    .mypage-mode-panel {
+      margin-bottom: 24px;
+      background: var(--bg-nest, #f7fafc);
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color, #e2e8f0);
+    }
+    .btn-mode-switch {
+      background: #0055a4;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-mode-switch:hover {
+      background: #004482;
+    }
 
-/* メインエリア */
-.main-content { flex: 1; min-width: 0; }
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.section-title { font-size: 18px; font-weight: 800; color: #1a202c; }
-.venue-count { font-size: 12px; color: #a0aec0; margin-left: 12px; }
+    /* 🌟 【超重要】全パーツを網羅した完璧なテーマカラー制御 */
+    
+    /* 1. ダークモード (完全版) */
+    body.dark-mode {
+      --bg-main: #121824;
+      --text-main: #f1f5f9;
+      --text-sub: #94a3b8;
+      --card-bg: #1e293b;
+      --bg-nest: #0f172a;
+      --border-color: #334155;
+      --header-bg: #1e293b;
+      --sidebar-bg: #1e293b;
+      background-color: var(--bg-main) !important;
+      color: var(--text-main) !important;
+    }
+    body.dark-mode header,
+    body.dark-mode .sidebar,
+    body.dark-mode .nav-item,
+    body.dark-mode .premium-box,
+    body.dark-mode .stats-box,
+    body.dark-mode .venue-card,
+    body.dark-mode .bottom-card,
+    body.dark-mode #favoriteVenueSection,
+    body.dark-mode .filter-bar,
+    body.dark-mode .main-content,
+    body.dark-mode #contentMypage > div {
+      background: var(--sidebar-bg) !important;
+      border-color: var(--border-color) !important;
+      color: var(--text-main) !important;
+    }
+    body.dark-mode .nav-item:hover,
+    body.dark-mode .nav-item.active {
+      background: var(--bg-nest) !important;
+      color: #fff !important;
+    }
+    body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode span, body.dark-mode label, body.dark-mode div {
+      color: var(--text-main);
+    }
+    body.dark-mode input, body.dark-mode select {
+      background: var(--bg-nest) !important;
+      border-color: var(--border-color) !important;
+      color: #fff !important;
+    }
 
-/* フィルターバー */
-.filter-bar { display: flex; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
-.filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.tab { background: #fff; border: 1px solid #e2e8f0; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #4a5568; cursor: pointer; }
-.tab.active { background: #0055a4; color: #fff; border-color: #0055a4; }
-.tab-date { background: #fff; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; color: #4a5568; cursor: pointer; }
-.tab-date i { margin-right: 4px; }
-.search-box input { background: #fff; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; width: 200px; }
-
-/* --- 会場グリッド＆カード --- */
-.venue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px; }
-.venue-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.15s, box-shadow 0.15s; }
-.venue-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-
-.card-main-info { display: flex; justify-content: space-between; margin-top: 8px; margin-bottom: 12px; gap: 8px; }
-.card-text-side { flex: 1; }
-.card-img-placeholder { width: 80px; height: 54px; background: #e2e8f0; border-radius: 6px; background-image: linear-gradient(45deg, #cbd5e0, #e2e8f0); flex-shrink: 0; }
-
-.venue-name { font-size: 16px; font-weight: 800; color: #2d3748; margin-right: 6px; }
-.status-indicator { font-size: 11px; color: #38a169; font-weight: bold; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
-.status-indicator::before { content: '●'; font-size: 9px; }
-.race-round { font-size: 13px; font-weight: 700; color: #1a202c; }
-.deadline-time { font-size: 11px; color: #718096; margin-top: 2px; }
-
-/* 各バッジ色 */
-.grade-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; }
-.grade-sg { background: #fed7d7; color: #e53e3e; }
-.grade-g1 { background: #feebc8; color: #dd6b20; }
-.grade-g2 { background: #ebf8ff; color: #2b6cb0; }
-.grade-g3 { background: #e6fffa; color: #319795; }
-.grade-ippan { background: #edf2f7; color: #718096; }
-
-/* カード内3連ボタン */
-.card-actions { display: flex; gap: 4px; border-top: 1px solid #f7fafc; padding-top: 8px; }
-.action-btn { flex: 1; text-align: center; background: #f7fafc; border: 1px solid #edf2f7; padding: 4px; border-radius: 4px; font-size: 10px; color: #4a5568; font-weight: 600; }
-.venue-card.inactive { opacity: 0.6; background: #f7fafc; }
-
-/* 下部セクションレイアウト */
-.bottom-row { display: flex; gap: 20px; flex-wrap: wrap; }
-.bottom-card { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; flex: 1; min-width: 300px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-.bottom-card h3 { font-size: 14px; font-weight: 800; color: #1a202c; margin-bottom: 12px; }
-.bottom-card h3 i { margin-right: 6px; }
-
-/* 注目レースアイテム */
-.featured-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f7fafc; border-radius: 8px; margin-bottom: 8px; text-decoration: none; color: inherit; }
-.featured-left { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: bold; }
-.btn-predict { background: #0055a4; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; }
-
-/* お知らせ一覧 */
-.info-list { list-style: none; font-size: 12px; }
-.info-list li { padding: 8px 0; border-bottom: 1px solid #edf2f7; display: flex; gap: 12px; }
-.info-list li:last-child { border: none; }
-.info-list .date { color: #a0aec0; font-variant-numeric: tabular-nums; }
-.info-list a { color: #4a5568; text-decoration: none; }
-.info-list a:hover { text-decoration: underline; }
-
-/* ユーザーメニュー等のドロップダウン */
-.user-menu { position: relative; }
-.user-btn { display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; }
-.dropdown { display: none; position: absolute; top: 100%; right: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); z-index: 10; min-width: 160px; }
-.dropdown.open { display: block; }
-.dropdown-item { width: 100%; padding: 8px 12px; border: none; background: none; text-align: left; font-size: 12px; cursor: pointer; }
-.dropdown-item:hover { background: #f7fafc; }
-
-/* エラー・ローディング */
-.loading { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #999; }
-.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; grid-column: 1 / -1; }
-footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
-
-/* レスポンシブ */
-@media (max-width: 900px) {
-  .dashboard-container { flex-direction: column; }
-  .sidebar { width: 100%; position: relative; top: 0; max-height: none; }
-}
-</style>
+    /* 2. アクアモード (海・水面モチーフ完全版) */
+    body.aqua-mode {
+      --bg-main: #e0f2fe;
+      --text-main: #0369a1;
+      --text-sub: #0284c7;
+      --card-bg: #ffffff;
+      --bg-nest: #f0f9ff;
+      --border-color: #bae6fd;
+      --header-bg: #0284c7;
+      --sidebar-bg: #ffffff;
+      background-color: var(--bg-main) !important;
+      color: var(--text-main) !important;
+    }
+    body.aqua-mode header {
+      background: var(--header-bg) !important;
+    }
+    body.aqua-mode header h1, body.aqua-mode header .logo-sub, body.aqua-mode header .header-right, body.aqua-mode header div {
+      color: #fff !important;
+    }
+    body.aqua-mode .sidebar {
+      background: var(--bg-nest) !important;
+      border-right: 1px solid var(--border-color);
+    }
+    body.aqua-mode .venue-card, body.aqua-mode .bottom-card, body.aqua-mode #favoriteVenueSection, body.aqua-mode #contentMypage > div {
+      background: var(--card-bg) !important;
+      border-color: var(--border-color) !important;
+      box-shadow: 0 4px 12px rgba(3, 105, 161, 0.06) !important;
+    }
+    body.aqua-mode .nav-item {
+      color: var(--text-main) !important;
+    }
+    body.aqua-mode .nav-item.active {
+      background: #0284c7 !important;
+      color: #fff !important;
+    }
+    body.aqua-mode h2, body.aqua-mode h3, body.aqua-mode h4, body.aqua-mode label {
+      color: var(--text-main) !important;
+    }
+  </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <h1>艇王</h1>
-    <span class="logo-sub">ボートレース予測</span>
+  <div class="header-left-box">
+    <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="メニューを開く">
+      <i class="fas fa-bars"></i>
+    </button>
+    
+    <div class="logo" id="headerLogo" style="cursor: pointer;">
+      <h1>艇王</h1>
+      <span class="logo-sub">ボートレース予測</span>
+    </div>
   </div>
+  
   <div class="header-right">
     <div class="header-date" id="headerDate"></div>
     <div class="header-auth" id="headerAuth"></div>
   </div>
 </header>
 
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <div class="dashboard-container">
   
-  <aside class="sidebar">
+  <aside class="sidebar" id="mainSidebar">
     <nav class="side-nav">
-      <a href="#" class="nav-item active"><i class="fas fa-home icon"></i> ホーム</a>
+      <a href="#" class="nav-item active" id="menuHome"><i class="fas fa-home icon"></i> ホーム</a>
+      <a href="#" class="nav-item" id="menuMypage"><i class="fas fa-user-cog icon"></i> マイページ</a>
       <a href="#" class="nav-item"><i class="fas fa-bullseye icon"></i> 予測レース</a>
       <a href="#" class="nav-item"><i class="fas fa-star icon"></i> お気に入り</a>
       <a href="#" class="nav-item"><i class="fas fa-chart-line icon"></i> 成績・回収率</a>
@@ -172,7 +338,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
       <h3>👑 プレミアム会員になると予測の精度がさらにアップ！</h3>
       <ul>
         <li><i class="fas fa-check"></i> 全レースの詳細予測</li>
-        <li><i class="fas fa-check"></i> AI分析レポート</li>
+        <li><i class="fas fa-check"></i> AI analysis</li>
         <li><i class="fas fa-check"></i> 回収率ランキング</li>
         <li><i class="fas fa-check"></i> 広告非表示</li>
       </ul>
@@ -194,285 +360,203 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
   <main class="main-content">
     
-    <div class="section-header">
-      <div class="title-group">
-        <h2 class="section-title">開催中のレース一覧</h2>
-        <span class="venue-count" id="venueCount">0場 開催中 / 全24場</span>
+    <div id="contentHome">
+      <div id="favoriteVenueSection" style="display: none; margin-bottom: 30px; background: #fffdf5; padding: 18px; border-radius: 12px; border: 1px solid #fef3c7;">
+        <h3>
+          <i class="fas fa-star" style="color: #d97706; margin-right: 6px;"></i> マイホールの本日のステータス（最上部固定）
+        </h3>
+        <div id="favoriteVenueGrid" class="venue-grid"></div>
       </div>
-    </div>
 
-    <div class="filter-bar">
-      <div class="filter-tabs" id="filterTabs">
-        <button class="tab active" data-grade="all">すべて</button>
-        <button class="tab" data-grade="G1">G1</button>
-        <button class="tab" data-grade="G2">G2</button>
-        <button class="tab" data-grade="G3">G3</button>
-        <button class="tab" data-grade="一般">一般</button>
-        <button class="tab" data-grade="SG">SG</button>
-        <button class="tab-date"><i class="far fa-calendar-alt"></i> 日付を選択</button>
+      <div class="section-header">
+        <div class="title-group">
+          <h2 class="section-title">開催中のレース一覧</h2>
+          <span class="venue-count" id="venueCount">0場 開催中 / 全24場</span>
+        </div>
       </div>
-      <div class="search-box">
-        <div style="position: relative;">
-          <i class="fas fa-search" style="position: absolute; left: 10px; top: 9px; color: #a0aec0; font-size: 12px;"></i>
-          <input type="text" id="searchInput" placeholder="会場名検索" style="padding-left: 28px;">
+
+      <div class="filter-bar">
+        <div class="filter-tabs" id="filterTabs">
+          <button class="tab active" data-grade="all">すべて</button>
+          <button class="tab" data-grade="G1">G1</button>
+          <button class="tab" data-grade="G2">G2</button>
+          <button class="tab" data-grade="G3">G3</button>
+          <button class="tab" data-grade="一般">一般</button>
+          <button class="tab" data-grade="SG">SG</button>
+          <button class="tab-date"><i class="far fa-calendar-alt"></i> 日付を選択</button>
+        </div>
+        <div class="search-box">
+          <div style="position: relative;">
+            <i class="fas fa-search" style="position: absolute; left: 10px; top: 9px; color: #a0aec0; font-size: 12px;"></i>
+            <input type="text" id="searchInput" placeholder="会場名検索" style="padding-left: 28px;">
+          </div>
+        </div>
+      </div>
+
+      <div id="venueGrid" class="venue-grid">
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          データを取得中...
+        </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="bottom-card featured-section">
+          <h3><i class="fas fa-crown" style="color: #ecc94b;"></i> 注目のレース</h3>
+          <div id="featuredBanner"></div>
+        </div>
+        
+        <div class="bottom-card" style="background:#fff; border-radius:12px; border:1px solid #e2e8f0; padding:24px;">
+          <h3><i class="fas fa-hourglass-half" style="color: #eab308;"></i> まもなく締切</h3>
+          <div id="urgentRaceList">
+            <div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">レースを集計中...</div>
+          </div>
+        </div>
+        
+        <div class="bottom-card info-section">
+          <h3><i class="fas fa-bullhorn" style="color: #3182ce;"></i> お知らせ</h3>
+          <ul class="info-list">
+            <li><span class="date">2026/06/20</span> <a href="#">【予告】下関SGグランドチャンピオンの予測を公開しました！</a></li>
+            <li><span class="date">2026/06/18</span> <a href="#">回収率ランキングを更新しました</a></li>
+            <li><span class="date">2026/06/15</span> <a href="#">サイトデザインをリニューアルしました</a></li>
+          </ul>
         </div>
       </div>
     </div>
 
-    <div id="venueGrid" class="venue-grid">
-      <div class="loading">
-        <div class="loading-spinner"></div>
-        データを取得中...
-      </div>
-    </div>
-
-    <div class="bottom-row">
-      <div class="bottom-card featured-section">
-        <h3><i class="fas fa-crown" style="color: #ecc94b;"></i> 注目のレース</h3>
-        <div id="featuredBanner"></div>
+    <div id="contentMypage" style="display: none;">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-user-cog" style="margin-right: 8px;"></i> マイページアカウント設定</h2>
       </div>
       
-      <div class="bottom-card info-section">
-        <h3><i class="fas fa-bullhorn" style="color: #3182ce;"></i> お知らせ</h3>
-        <ul class="info-list">
-          <li><span class="date">2026/06/20</span> <a href="#">【予告】下関SGグランドチャンピオンの予測を公開しました！</a></li>
-          <li><span class="date">2026/06/18</span> <a href="#">回収率ランキングを更新しました</a></li>
-          <li><span class="date">2026/06/15</span> <a href="#">サイトデザインをリニューアルしました</a></li>
-        </ul>
+      <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); max-width: 600px;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid #edf2f7; padding-bottom: 16px;">
+          <div id="userAvatar" style="width: 50px; height: 50px; background: #0055a4; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">-</div>
+          <div>
+            <h3 id="profileName" style="font-size: 18px; color: #2d3748;">ユーザー名</h3>
+            <span id="profilePlan" style="display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 8px; background: #edf2f7; color: #4a5568; border-radius: 4px; margin-top: 4px;">Free</span>
+          </div>
+        </div>
+
+        <div class="mypage-mode-panel">
+          <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 8px;">
+            <i class="fas fa-palette" style="margin-right: 4px;"></i> サイトのカラーテーマ設定
+          </label>
+          <button class="btn-mode-switch" id="btnThemeSwitch">
+            <i class="fas fa-sun"></i> 現在のテーマ: 通常(白)
+          </button>
+        </div>
+
+        <div style="margin-bottom: 24px; background: #f7fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 12px;">
+            <i class="fas fa-star" style="color: #ecc94b; margin-right: 4px;"></i> 現在のお気に入り競艇場
+          </label>
+          <div id="mypageFavoriteList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;"></div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 11px; font-weight: bold; color: #718096; margin-bottom: 6px;">メールアドレス</label>
+          <div id="profileEmail" style="background: #f7fafc; padding: 10px; border-radius: 6px; border: 1px solid #edf2f7; font-size: 14px;">-</div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; font-size: 11px; font-weight: bold; color: #718096; margin-bottom: 6px;">アカウント作成日</label>
+          <div id="profileDate" style="background: #f7fafc; padding: 10px; border-radius: 6px; border: 1px solid #edf2f7; font-size: 14px;">-</div>
+        </div>
+
+        <div style="border-top: 1px solid #edf2f7; padding-top: 20px;">
+          <h4 style="font-size: 14px; color: #2d3748; margin-bottom: 12px;"><i class="fas fa-lock" style="margin-right: 6px; color: #718096;"></i> パスワードの再設定</h4>
+          <div id="passwordMessage" style="display: none; font-size: 13px; padding: 10px; border-radius: 6px; margin-bottom: 12px;"></div>
+          <div style="margin-bottom: 12px;">
+            <input type="password" id="newPasswordInput" placeholder="新しいパスワード（8文字以上）" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 14px; box-sizing: border-box;">
+          </div>
+          <div style="margin-bottom: 16px;">
+            <input type="password" id="confirmPasswordInput" placeholder="新しいパスワード（確認用にもう一度入力）" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 14px; box-sizing: border-box;">
+          </div>
+          <button id="btnUpdatePassword" style="background: #0055a4; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer;">パスワードを変更する</button>
+        </div>
       </div>
     </div>
 
   </main>
 </div>
 
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="一番上に戻る">
+  <i class="fas fa-chevron-up"></i>
+</button>
+
 <footer>艇王 &copy; 2026</footer>
 
 <script>
-var ALL_VENUES = [
-  '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
-  '蒲郡','常滑','津','三国','琵琶湖','住之江',
-  '尼崎','鳴門','高松','丸亀','児島','宮島','徳山',
-  '下関','若松','芦屋','福岡','唐津','大村'
-];
+  document.addEventListener('DOMContentLoaded', function() {
+    // 1. ハンバーガーメニュー制御
+    var toggleBtn = document.getElementById('menuToggleBtn');
+    var sidebar = document.getElementById('mainSidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+    var navItems = document.querySelectorAll('.side-nav .nav-item');
 
-var GRADE_CLASSES = { 'SG': 'grade-sg', 'G1': 'grade-g1', 'G2': 'grade-g2', 'G3': 'grade-g3', '一般': 'grade-ippan' };
-
-var VENUE_GRADES = {
-  '桐生': 'G3', '戸田': '一般', '江戸川': '一般', '平和島': 'G1', '多摩川': '一般',
-  '浜名湖': '一般', '蒲郡': '一般', '常滑': '一般', '津': '一般', '三国': '一般',
-  '琵琶湖': '一般', '住之江': 'G2', '尼崎': 'G3', '鳴門': '一般', '高松': '一般', '丸亀': '一般',
-  '児島': '一般', '宮島': '一般', '徳山': '一般', '下関': 'SG', '若松': '一般',
-  '芦屋': '一般', '福岡': '一般', '唐津': '一般', '大村': '一般'
-};
-
-function formatDate(dateStr) {
-  var d = new Date(dateStr + 'T00:00:00');
-  var days = ['日','月','火','水','木','金','土'];
-  return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (' + days[d.getDay()] + ')';
-}
-
-var apiDate = '';
-var venueMap = {}; 
-var currentFilter = 'all'; 
-var currentSearch = '';    
-
-function createVenueCard(venueName, venueData) {
-  var isActive = !!venueData;
-  var grade = VENUE_GRADES[venueName] || '一般';
-  var gradeClass = GRADE_CLASSES[grade];
-
-  if (!isActive) {
-    return '<div class="venue-card inactive">' +
-        '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-          '<div><span class="venue-name">' + venueName + '</span><span class="grade-badge ' + gradeClass + '">' + grade + '</span></div>' +
-          '<span style="font-size:11px; color:#aaa;">☆</span>' +
-        '</div>' +
-        '<div class="card-main-info">' +
-          '<div class="card-text-side">' +
-            '<div style="color:#aaa; font-size:12px; margin-top:4px;">非開催</div>' +
-          '</div>' +
-          '<div class="card-img-placeholder"></div>' +
-        '</div>' +
-        '<div class="card-actions">' +
-          '<span class="action-btn">📊 データ</span>' +
-        '</div>' +
-      '</div>';
-  }
-
-  var totalRaces = venueData.race_count;
-  var href = 'races.html?venue=' + encodeURIComponent(venueName) + '&date=' + apiDate;
-
-  return '<div class="venue-card">' +
-      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-        '<div><span class="venue-name">' + venueName + '</span><span class="grade-badge ' + gradeClass + '">' + grade + '</span></div>' +
-        '<span style="font-size:11px; color:#aaa; cursor:pointer;">☆</span>' +
-      '</div>' +
-      '<div class="card-main-info">' +
-        '<div class="card-text-side">' +
-          '<div class="status-indicator">開催中</div>' +
-          '<div class="race-round">全' + totalRaces + 'R</div>' +
-        '</div>' +
-        '<div class="card-img-placeholder"></div>' +
-      '</div>' +
-      '<div class="card-actions">' +
-        '<a href="' + href + '" class="action-btn" style="text-decoration:none;">🔮 予測</a>' +
-        '<a href="#" class="action-btn" style="text-decoration:none;">🏁 結果</a>' +
-        '<a href="#" class="action-btn" style="text-decoration:none;">📊 データ</a>' +
-      '</div>' +
-    '</div>';
-}
-
-function renderFeaturedBanner(venues) {
-  var banner = document.getElementById('featuredBanner');
-  var featuredVenues = venues.filter(function(v) { 
-    var g = VENUE_GRADES[v.venue];
-    return g === 'SG' || g === 'G1' || g === 'G2'; 
-  }).slice(0, 3);
-
-  if (featuredVenues.length === 0) {
-    banner.innerHTML = '<div style="font-size:12px; color:#718096;">本日の注目レースはありません。</div>';
-    return;
-  }
-
-  var html = '';
-  featuredVenues.forEach(function(featured) {
-    var grade = VENUE_GRADES[featured.venue];
-    var gradeClass = GRADE_CLASSES[grade];
-    var href = 'races.html?venue=' + encodeURIComponent(featured.venue) + '&date=' + apiDate;
-
-    html += '<div class="featured-item">' +
-        '<div class="featured-left">' +
-          '<span class="venue-name">' + featured.venue + '</span>' +
-          '<span class="grade-badge ' + gradeClass + '">' + grade + '</span>' +
-          '<span style="font-size:11px; color:#718096; font-weight:normal;">' + featured.race_count + 'R開催</span>' +
-        '</div>' +
-        '<a href="' + href + '" class="btn-predict" style="text-decoration:none;">予測を見る</a>' +
-      '</div>';
-  });
-  
-  banner.innerHTML = html;
-}
-
-function renderVenueGrid() {
-  var grid = document.getElementById('venueGrid');
-  var filteredVenues = ALL_VENUES.filter(function(name) {
-    var grade = VENUE_GRADES[name] || '一般';
-    var matchesGrade = (currentFilter === 'all' || grade === currentFilter);
-    var matchesSearch = name.indexOf(currentSearch) !== -1;
-    return matchesGrade && matchesSearch;
-  });
-
-  var activeCount = filteredVenues.filter(function(name) {
-    return !!venueMap[name];
-  }).length;
-
-  document.getElementById('venueCount').textContent = activeCount + '場 開催中 / 該当' + filteredVenues.length + '場';
-
-  if (filteredVenues.length === 0) {
-    grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#a0aec0; padding:40px;">該当するレース場が見つかりません。</div>';
-  } else {
-    grid.innerHTML = filteredVenues.map(function(name) { 
-      return createVenueCard(name, venueMap[name]); 
-    }).join('');
-  }
-}
-
-async function loadVenues() {
-  var grid = document.getElementById('venueGrid');
-  try {
-    var res = await fetch('https://' + '2410049.moo.jp/venues.php');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var data = await res.json();
-
-    apiDate = data.date;
-    document.getElementById('headerDate').textContent = formatDate(data.date);
-
-    venueMap = {};
-    if (data.venues) {
-      data.venues.forEach(function(v) { venueMap[v.venue] = v; });
+    function toggleMenu() {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
     }
 
-    var activeCount = data.venues ? data.venues.length : 0;
-    var sb = document.getElementById('statsBadge');
-    if (sb) sb.textContent = activeCount + '場 開催中 / 全' + ALL_VENUES.length + '場';
-
-    if (data.venues && data.venues.length > 0) {
-      renderFeaturedBanner(data.venues);
+    function closeMenu() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
     }
 
-    renderVenueGrid();
-    setupFilterEvents();
+    if (toggleBtn && sidebar && overlay) {
+      toggleBtn.addEventListener('click', toggleMenu);
+      overlay.addEventListener('click', closeMenu);
+      navItems.forEach(function(item) {
+        item.addEventListener('click', closeMenu);
+      });
+    }
 
-  } catch (e) {
-    grid.innerHTML = '<div class="error-msg">データの取得に失敗しました<br><small>' + e.message + '</small></div>';
-  }
-}
+    // 2. 一番上に戻るボタン
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+    if (scrollTopBtn) {
+      window.addEventListener('scroll', function() {
+        if (window.pageYOffset > 200) {
+          scrollTopBtn.classList.add('show');
+        } else {
+          scrollTopBtn.classList.remove('show');
+        }
+      });
 
-function setupFilterEvents() {
-  var tabs = document.querySelectorAll('#filterTabs .tab');
-  tabs.forEach(function(tab) {
-    tab.addEventListener('click', function() {
-      tabs.forEach(function(t) { t.classList.remove('active'); });
-      tab.classList.add('active');
-      currentFilter = tab.getAttribute('data-grade');
-      renderVenueGrid();
-    });
+      scrollTopBtn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    // 3. 🌟 マイページ設置版 テーマ切り替え制御
+    var themeBtn = document.getElementById('btnThemeSwitch');
+    var currentMode = 0; 
+    var modes = [
+      { name: '通常(白)', class: '', icon: 'fas fa-sun' },
+      { name: 'ダーク(黒)', class: 'dark-mode', icon: 'fas fa-moon' },
+      { name: 'アクア(海)', class: 'aqua-mode', icon: 'fas fa-water' }
+    ];
+
+    if (themeBtn) {
+      themeBtn.addEventListener('click', function() {
+        if (modes[currentMode].class) {
+          document.body.classList.remove(modes[currentMode].class);
+        }
+
+        currentMode = (currentMode + 1) % modes.length;
+
+        if (modes[currentMode].class) {
+          document.body.classList.add(modes[currentMode].class);
+        }
+
+        themeBtn.innerHTML = '<i class="' + modes[currentMode].icon + '"></i> 現在のテーマ: ' + modes[currentMode].name;
+      });
+    }
   });
-
-  var searchInput = document.getElementById('searchInput');
-  if (searchInput) {
-    searchInput.addEventListener('input', function(e) {
-      currentSearch = e.target.value.trim();
-      renderVenueGrid();
-    });
-  }
-}
-
-loadVenues();
-
-async function checkAuth() {
-  var authEl = document.getElementById('headerAuth');
-  try {
-    var res = await fetch('me.php');
-    if (!res.ok) {
-      authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a>' +
-        '<a class="auth-link register" href="register.html">新規登録</a>';
-      return;
-    }
-    var data = await res.json();
-    var user = data.user;
-    var initial = user.name.charAt(0);
-    var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
-    var planClass = user.plan !== 'free' ? user.plan : '';
-
-    authEl.innerHTML = '<div class="user-menu">' +
-        '<button class="user-btn" id="userBtn">' +
-          '<span>' + user.name + '</span>' +
-          '<span class="plan-badge ' + planClass + '">' + (planLabel[user.plan] || 'Free') + '</span>' +
-        '</button>' +
-        '<div class="dropdown" id="userDropdown">' +
-          '<button class="dropdown-item logout" id="logoutBtn">ログアウト</button>' +
-        '</div>' +
-      '</div>';
-
-    document.getElementById('userBtn').addEventListener('click', function(e) {
-      e.stopPropagation();
-      document.getElementById('userDropdown').classList.toggle('open');
-    });
-    document.addEventListener('click', function() {
-      document.getElementById('userDropdown').classList.remove('open');
-    });
-    document.getElementById('logoutBtn').addEventListener('click', async function() {
-      await fetch('logout.php');
-      location.reload();
-    });
-  } catch(err) {
-    authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a>' +
-      '<a class="auth-link register" href="register.html">新規登録</a>';
-  }
-}
-
-checkAuth();
 </script>
+
+<script src="app.js" defer></script>
+<script src="home-races.js" defer></script>
 </body>
 </html>
