@@ -121,6 +121,12 @@ async function loadCurrentPlan() {
     btn.disabled = true;
     btn.textContent = '現在のプラン';
   }
+  var btnFree = document.getElementById('btnFree');
+  if (currentUserPlan === 'free') {
+    btnFree.style.display = '';
+  } else {
+    btnFree.style.display = 'none';
+  }
 }
 
 async function changePlan(plan) {
