@@ -24,7 +24,7 @@ import requests
 import argparse
 import tempfile
 import subprocess
-from datetime import date, timedelta
+from datetime import date, datetime, timezone, timedelta
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -242,7 +242,8 @@ def main():
     parser.add_argument('--download-only', action='store_true')
     args = parser.parse_args()
 
-    today = date.today()
+    JST = timezone(timedelta(hours=9))
+    today = datetime.now(JST).date()
     start = date.fromisoformat(args.start) if args.start else date(today.year - 2, today.month, today.day)
     end   = date.fromisoformat(args.end)   if args.end   else today - timedelta(days=1)
 
