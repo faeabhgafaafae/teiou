@@ -11,6 +11,20 @@ if (!$race_id) {
 
 $pdo = get_db();
 
+// キャッシュ確認
+$stmt = $pdo->prepare('SELECT explanation FROM predictions WHERE race_id = ? LIMIT 1');
+$stmt->execute([(int)$race_id]);
+$row = $stmt->fetch();
+
+if (!$row) {
+    json_response(['error' => '予想データが見つかりません'], 404);
+}
+
+if ($row['explanation'] !== null) {
+    json_response(['explanation' => $row['explanation'], 'cached' => true]);
+}
+
+// 選手データ取得
 $stmt = $pdo->prepare('
     SELECT p.predicted_rank, p.score_total,
            p.score_ability, p.score_course, p.score_today, p.score_weather,
@@ -23,10 +37,6 @@ $stmt = $pdo->prepare('
 ');
 $stmt->execute([(int)$race_id]);
 $rows = $stmt->fetchAll();
-
-if (empty($rows)) {
-    json_response(['error' => '予想データが見つかりません'], 404);
-}
 
 $players = [];
 foreach ($rows as $r) {
@@ -42,19 +52,25 @@ foreach ($rows as $r) {
     ];
 }
 
-$prompt = "以下はボートレースのAI予想結果です。各選手のスコア内訳をもとに、\nなぜこの順位になったか・注意点を200文字程度で日本語で解説してください。\n\n" . json_encode($players, JSON_UNESCAPED_UNICODE);
+$prompt = "あなたはボートレースの専門解説者です。\n以下のAI予想結果をもとに、なぜこの順位になったか・注意点を\n200文字程度で日本語で簡潔に解説してください。\n\n" . json_encode($players, JSON_UNESCAPED_UNICODE);
 
-$url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=' . GEMINI_API_KEY;
+// Groq API呼び出し
+$url = 'https://api.groq.com/openai/v1/chat/completions';
 
 $payload = json_encode([
-    'contents' => [
-        ['parts' => [['text' => $prompt]]]
-    ]
+    'model' => 'llama-3.1-8b-instant',
+    'messages' => [
+        ['role' => 'user', 'content' => $prompt]
+    ],
+    'max_tokens' => 500,
 ]);
 
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Content-Type: application/json',
+    'Authorization: Bearer ' . GROQ_API_KEY,
+]);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
@@ -64,18 +80,22 @@ $curlError = curl_error($ch);
 curl_close($ch);
 
 if ($curlError) {
-    json_response(['error' => 'Gemini API通信エラー: ' . $curlError], 500);
+    json_response(['error' => 'Groq API通信エラー: ' . $curlError], 500);
 }
 
 if ($httpCode !== 200) {
-    json_response(['error' => 'Gemini APIエラー (HTTP ' . $httpCode . ')'], 500);
+    json_response(['error' => 'Groq APIエラー (HTTP ' . $httpCode . ')'], 500);
 }
 
 $result = json_decode($response, true);
-$text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
+$text = $result['choices'][0]['message']['content'] ?? null;
 
 if (!$text) {
-    json_response(['error' => 'Gemini APIから解説を取得できませんでした'], 500);
+    json_response(['error' => 'Groq APIから解説を取得できませんでした'], 500);
 }
+
+// キャッシュ保存
+$stmt = $pdo->prepare('UPDATE predictions SET explanation = ? WHERE race_id = ?');
+$stmt->execute([$text, (int)$race_id]);
 
 json_response(['explanation' => $text]);
