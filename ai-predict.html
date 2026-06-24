@@ -202,6 +202,11 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     <div class="loading"><div class="loading-spinner"></div>予想データを取得中...</div>
   </div>
 
+  <div id="aiExplainSection" style="display:none; background:#fff; border:1px solid #e0e3e8; border-radius:12px; margin-top:16px; overflow:hidden;">
+    <h3 style="font-size:14px; font-weight:700; color:#222; padding:14px 16px; border-bottom:1px solid #e0e3e8; margin:0;">&#129302; AI&#35299;&#35500;</h3>
+    <div id="aiExplainBody" style="padding:14px 16px; font-size:13px; line-height:1.7; color:#333;">&#35299;&#35500;&#12434;&#29983;&#25104;&#20013;...</div>
+  </div>
+
   <div class="odds-section" id="oddsSection" style="display:none">
     <h3 class="odds-title">3連単オッズ TOP10</h3>
     <div id="oddsList"></div>
@@ -587,6 +592,7 @@ async function loadData() {
 
     if (data.race_id) {
       loadOdds(data.race_id);
+      loadExplain(data.race_id);
     } else {
       renderOdds(null);
     }
@@ -596,6 +602,29 @@ async function loadData() {
     err2.className = 'error-msg';
     err2.textContent = 'データの取得に失敗しました';
     list.appendChild(err2);
+  }
+}
+
+async function loadExplain(raceId) {
+  var section = document.getElementById('aiExplainSection');
+  var body = document.getElementById('aiExplainBody');
+  section.style.display = '';
+  body.textContent = '解説を生成中...';
+  try {
+    var url = API_HOST + '/gemini_explain.php?race_id=' + raceId;
+    var res = await fetch(url);
+    if (!res.ok) {
+      body.textContent = '解説を取得できませんでした';
+      return;
+    }
+    var data = await res.json();
+    if (data.error) {
+      body.textContent = '解説を取得できませんでした';
+      return;
+    }
+    body.textContent = data.explanation;
+  } catch(e) {
+    body.textContent = '解説を取得できませんでした';
   }
 }
 
