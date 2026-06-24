@@ -21,7 +21,7 @@ import sys
 import time
 import argparse
 import requests
-from datetime import date
+from datetime import datetime, timezone, timedelta
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -280,7 +280,8 @@ def main():
     parser.add_argument('--rno',  default=None, type=int)
     args = parser.parse_args()
 
-    hd = args.date or date.today().strftime('%Y%m%d')
+    JST = timezone(timedelta(hours=9))
+    hd = args.date or datetime.now(JST).strftime('%Y%m%d')
 
     if args.jcd:
         jcds = [args.jcd]
