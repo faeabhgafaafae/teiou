@@ -1,5 +1,6 @@
 <?php
 session_start();
+define('GEMINI_API_KEY', 'AQ.Ab8RN6Jv2essTIUfHJXe8gQLbul6T8Zt0ET84HjEX2BinE-ADQ');
 
 function get_db(): PDO {
     $dsn = 'mysql:host=mysql323.phy.lolipop.lan;dbname=LAA1670504-12;charset=utf8mb4';
