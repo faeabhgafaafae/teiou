@@ -19,9 +19,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .weather-info span { display: flex; align-items: center; gap: 4px; }
 .weather-info strong { color: #222; }
 
-.ai-comment { background: #e8f0fd; border-left: 4px solid #1a4a8a; border-radius: 0 8px 8px 0; padding: 12px 14px; margin-bottom: 12px; font-size: 13px; line-height: 1.6; color: #1a3a6a; }
-.ai-comment-label { font-size: 11px; font-weight: 700; color: #1a4a8a; margin-bottom: 4px; }
-
 .pred-table-wrap { overflow-x: auto; }
 .pred-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e0e3e8; border-radius: 8px; overflow: hidden; font-size: 13px; }
 .pred-table th { background: #f7f8fa; font-size: 11px; font-weight: 700; color: #888; padding: 8px 6px; text-align: center; border-bottom: 2px solid #e0e3e8; white-space: nowrap; }
@@ -69,11 +66,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   <div id="weatherWrap" class="weather-info" style="display:none">
     <span>&#127788;&#65039; 風速 <strong id="windSpeed">-</strong>m</span>
     <span>&#127754; 波高 <strong id="waveHeight">-</strong>cm</span>
-  </div>
-
-  <div id="aiComment" class="ai-comment" style="display:none">
-    <div class="ai-comment-label">&#129302; AI解説</div>
-    <div id="aiCommentText"></div>
   </div>
 
   <div id="predArea">
@@ -204,18 +196,6 @@ function buildTable(predictions) {
   area.appendChild(wrap);
 }
 
-async function loadAIComment(raceId) {
-  try {
-    var url = API_BASE + '/gemini_explain.php?race_id=' + raceId;
-    var res = await fetch(url);
-    if (!res.ok) return;
-    var data = await res.json();
-    if (data.error || !data.explanation) return;
-    document.getElementById('aiCommentText').textContent = data.explanation;
-    document.getElementById('aiComment').style.display = '';
-  } catch(e) {}
-}
-
 async function loadPrediction() {
   var area = document.getElementById('predArea');
   try {
@@ -241,10 +221,6 @@ async function loadPrediction() {
     }
 
     buildTable(data.predictions);
-
-    if (data.race_id) {
-      loadAIComment(data.race_id);
-    }
   } catch(e) {
     area.textContent = '';
     var err2 = document.createElement('div');
