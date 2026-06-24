@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>プラン変更 - 艇王</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.upgrade-wrapper { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+.btn-back { display: inline-flex; align-items: center; gap: 8px; color: #0055a4; text-decoration: none; font-size: 13px; font-weight: bold; margin-bottom: 20px; }
+.btn-back:hover { text-decoration: underline; }
+.current-plan { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; font-size: 14px; color: #4a5568; }
+.current-plan strong { color: #1a202c; }
+.plan-cards { display: flex; flex-direction: column; gap: 16px; }
+.plan-card { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 24px; transition: border-color 0.15s; }
+.plan-card:hover { border-color: #0055a4; }
+.plan-card h3 { font-size: 18px; font-weight: 800; color: #1a202c; margin-bottom: 4px; }
+.plan-card .plan-price { font-size: 13px; color: #718096; margin-bottom: 12px; }
+.plan-card ul { list-style: none; padding: 0; margin: 0 0 16px 0; }
+.plan-card ul li { font-size: 13px; color: #4a5568; padding: 4px 0; }
+.plan-card ul li:before { content: "✓ "; color: #22c55e; font-weight: bold; }
+.plan-btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+.plan-btn-standard { background: #0055a4; color: #fff; }
+.plan-btn-standard:hover { background: #003d7a; }
+.plan-btn-premium { background: #dd6b20; color: #fff; }
+.plan-btn-premium:hover { background: #c05621; }
+.plan-btn:disabled { background: #e2e8f0; color: #a0aec0; cursor: default; }
+@media (max-width: 600px) {
+  .upgrade-wrapper { margin: 20px auto; }
+  .plan-card { padding: 18px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" style="cursor: pointer;" onclick="location.href='index.html'">
+    <h1>艇王</h1>
+    <span class="logo-sub">ボートレース予測</span>
+  </div>
+</header>
+
+<div class="upgrade-wrapper">
+  <a href="mypage.php" class="btn-back">&larr; マイページに戻る</a>
+
+  <div class="current-plan" id="currentPlan">現在のプラン: <strong>読み込み中...</strong></div>
+
+  <div class="plan-cards">
+    <div class="plan-card">
+      <h3>Standard</h3>
+      <div class="plan-price">スタンダードプラン</div>
+      <ul>
+        <li>全レースAI予想</li>
+        <li>全体AI解説</li>
+        <li>個別選手AI解説</li>
+      </ul>
+      <button class="plan-btn plan-btn-standard" id="btnStandard" onclick="changePlan('standard')">Standardに変更</button>
+    </div>
+
+    <div class="plan-card">
+      <h3>Premium</h3>
+      <div class="plan-price">プレミアムプラン</div>
+      <ul>
+        <li>全レースAI予想</li>
+        <li>全体AI解説</li>
+        <li>個別選手AI解説</li>
+        <li>優先サポート</li>
+      </ul>
+      <button class="plan-btn plan-btn-premium" id="btnPremium" onclick="changePlan('premium')">Premiumに変更</button>
+    </div>
+  </div>
+</div>
+
+<footer>艇王 &copy; 2026</footer>
+
+<script>
+var currentUserPlan = 'free';
+
+async function loadCurrentPlan() {
+  try {
+    var res = await fetch('me.php');
+    if (!res.ok) {
+      location.href = 'login.html';
+      return;
+    }
+    var data = await res.json();
+    currentUserPlan = data.user.plan || 'free';
+    var labels = { free: 'Free', standard: 'Standard', premium: 'Premium' };
+    document.getElementById('currentPlan').innerHTML = '現在のプラン: <strong>' + (labels[currentUserPlan] || 'Free') + '</strong>';
+    if (currentUserPlan === 'standard') {
+      document.getElementById('btnStandard').disabled = true;
+      document.getElementById('btnStandard').textContent = '現在のプラン';
+    }
+    if (currentUserPlan === 'premium') {
+      document.getElementById('btnPremium').disabled = true;
+      document.getElementById('btnPremium').textContent = '現在のプラン';
+    }
+  } catch(e) {}
+}
+
+async function changePlan(plan) {
+  var labels = { standard: 'Standard', premium: 'Premium' };
+  try {
+    var res = await fetch('update_plan.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: plan })
+    });
+    var data = await res.json();
+    if (data.success) {
+      alert('プランを' + labels[plan] + 'に変更しました！');
+      location.reload();
+    } else {
+      alert('エラー: ' + (data.error || '変更に失敗しました'));
+    }
+  } catch(e) {
+    alert('通信エラーが発生しました');
+  }
+}
+
+loadCurrentPlan();
+</script>
+</body>
+</html>
