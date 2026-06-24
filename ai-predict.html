@@ -544,7 +544,7 @@ async function loadData() {
     var meRes = await fetch(API_HOST + '/me.php');
     if (meRes.ok) {
       var meData = await meRes.json();
-      if (meData && meData.plan) { userPlan = meData.plan; }
+      if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
     }
   } catch(e) {}
   var list = document.getElementById('predList');
