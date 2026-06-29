@@ -17,6 +17,29 @@
     .form-group label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px; }
     .form-group input[type="password"] { width: 100%; max-width: 400px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
     .alert-msg { padding: 10px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; display: none; }
+    /* プランカード */
+    .plan-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 8px; }
+    .plan-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 20px 16px; text-align: center; position: relative; transition: border-color 0.2s; }
+    .plan-card.current { border-color: #0055a4; background: #f0f7ff; }
+    .plan-card.premium-card { border-color: #d97706; }
+    .plan-card.premium-card.current { background: #fffbeb; }
+    .plan-card-name { font-size: 18px; font-weight: 800; color: #1a202c; margin-bottom: 4px; }
+    .plan-card-price { font-size: 22px; font-weight: 900; color: #0055a4; margin-bottom: 12px; }
+    .plan-card-price span { font-size: 13px; font-weight: 500; color: #718096; }
+    .plan-card-price.price-premium { color: #d97706; }
+    .plan-card-features { list-style: none; padding: 0; margin: 0 0 16px; text-align: left; font-size: 13px; color: #4a5568; }
+    .plan-card-features li { padding: 3px 0; }
+    .plan-card-features li::before { content: '✓ '; color: #22c55e; font-weight: bold; }
+    .plan-card-features li.disabled { color: #cbd5e1; }
+    .plan-card-features li.disabled::before { content: '✗ '; color: #cbd5e1; }
+    .plan-current-badge { display: inline-block; background: #0055a4; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-bottom: 8px; }
+    .plan-current-badge.badge-premium { background: #d97706; }
+    .btn-plan-change { width: 100%; padding: 9px 0; border-radius: 6px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background: #0055a4; color: #fff; transition: background 0.2s; }
+    .btn-plan-change:hover { background: #003f7d; }
+    .btn-plan-change.btn-premium { background: #d97706; }
+    .btn-plan-change.btn-premium:hover { background: #b45309; }
+    .btn-plan-change:disabled { background: #e2e8f0; color: #a0aec0; cursor: default; }
+    .plan-alert-msg { padding: 10px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; display: none; }
   </style>
 </head>
 <body>
@@ -67,6 +90,54 @@
         <button class="btn-primary" id="btnUpdatePassword" style="max-width: 200px; margin-top: 8px; padding: 10px;">パスワードを更新</button>
       </div>
 
+      <div class="mypage-card">
+        <h3 style="font-size: 15px; font-weight: 800; color: #1a202c; margin-bottom: 4px;"><i class="fas fa-crown" style="margin-right: 8px; color: #d97706;"></i>プランの変更</h3>
+        <p style="font-size: 13px; color: #718096; margin-bottom: 16px;">現在のプランを変更できます。</p>
+        <div class="plan-alert-msg" id="planMessage"></div>
+        <div class="plan-cards">
+
+          <div class="plan-card" id="planCardFree">
+            <div class="plan-card-name">Free</div>
+            <div class="plan-card-price">¥0 <span>/ 月</span></div>
+            <ul class="plan-card-features">
+              <li>レース場一覧の閲覧</li>
+              <li>お気に入りレース場 (3件)</li>
+              <li class="disabled">AI予測の閲覧</li>
+              <li class="disabled">詳細データ分析</li>
+              <li class="disabled">広告非表示</li>
+            </ul>
+            <button class="btn-plan-change" id="btnSelectFree" disabled>現在のプラン</button>
+          </div>
+
+          <div class="plan-card" id="planCardStandard">
+            <div class="plan-card-name">Standard</div>
+            <div class="plan-card-price">¥980 <span>/ 月</span></div>
+            <ul class="plan-card-features">
+              <li>レース場一覧の閲覧</li>
+              <li>お気に入りレース場 (無制限)</li>
+              <li>AI予測の閲覧</li>
+              <li class="disabled">詳細データ分析</li>
+              <li class="disabled">広告非表示</li>
+            </ul>
+            <button class="btn-plan-change" id="btnSelectStandard">このプランに変更</button>
+          </div>
+
+          <div class="plan-card premium-card" id="planCardPremium">
+            <div class="plan-card-name">Premium</div>
+            <div class="plan-card-price price-premium">¥1,980 <span>/ 月</span></div>
+            <ul class="plan-card-features">
+              <li>レース場一覧の閲覧</li>
+              <li>お気に入りレース場 (無制限)</li>
+              <li>AI予測の閲覧</li>
+              <li>詳細データ分析</li>
+              <li>広告非表示</li>
+            </ul>
+            <button class="btn-plan-change btn-premium" id="btnSelectPremium">このプランに変更</button>
+          </div>
+
+        </div>
+      </div>
+
       <div class="section-header" style="margin-top: 32px;">
         <h2 class="section-title"><i class="fas fa-star" style="color: #d97706; margin-right: 6px;"></i>お気に入りのレース場</h2>
       </div>
@@ -79,6 +150,7 @@
     var apiDate = '';
     var favoriteVenues = [];
     var venueMap = {};
+    var currentUserPlan = 'free';
 
     function formatDate(dateStr) {
       var d = new Date(dateStr + 'T00:00:00');
@@ -143,6 +215,8 @@
         var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
         var planClass = user.plan !== 'free' ? user.plan : '';
 
+        currentUserPlan = user.plan;
+
         if (document.getElementById('profileName')) document.getElementById('profileName').textContent = user.name;
         if (document.getElementById('userAvatar')) document.getElementById('userAvatar').textContent = user.name.charAt(0);
         if (document.getElementById('profileEmail')) document.getElementById('profileEmail').textContent = user.email;
@@ -151,6 +225,8 @@
           var d = new Date(user.created_at);
           document.getElementById('profileDate').textContent = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日';
         }
+
+        updatePlanCards(user.plan);
 
         authEl.innerHTML = '<div class="user-menu">' +
             '<button class="user-btn" id="userBtn">' +
@@ -178,6 +254,76 @@
       } catch(err) {
         authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
       }
+    }
+
+    function updatePlanCards(plan) {
+      var cards = { free: 'planCardFree', standard: 'planCardStandard', premium: 'planCardPremium' };
+      var btns  = { free: 'btnSelectFree', standard: 'btnSelectStandard', premium: 'btnSelectPremium' };
+
+      Object.keys(cards).forEach(function(p) {
+        var card = document.getElementById(cards[p]);
+        var btn  = document.getElementById(btns[p]);
+        if (!card || !btn) return;
+
+        var existingBadge = card.querySelector('.plan-current-badge');
+        if (existingBadge) existingBadge.remove();
+
+        if (p === plan) {
+          card.classList.add('current');
+          var badge = document.createElement('div');
+          badge.className = 'plan-current-badge' + (p === 'premium' ? ' badge-premium' : '');
+          badge.textContent = '現在のプラン';
+          card.insertBefore(badge, card.firstChild);
+          btn.disabled = true;
+          btn.textContent = '現在のプラン';
+        } else {
+          card.classList.remove('current');
+          btn.disabled = false;
+          btn.textContent = 'このプランに変更';
+        }
+      });
+    }
+
+    function setupPlanChange() {
+      ['standard', 'premium'].forEach(function(plan) {
+        var btnId = plan === 'standard' ? 'btnSelectStandard' : 'btnSelectPremium';
+        var btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.addEventListener('click', async function() {
+          var msgEl = document.getElementById('planMessage');
+          btn.disabled = true;
+          btn.textContent = '変更中...';
+          try {
+            var res = await fetch('update_plan.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ plan: plan })
+            });
+            var data = await res.json();
+            msgEl.style.display = 'block';
+            if (res.ok && data.success) {
+              currentUserPlan = plan;
+              var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
+              msgEl.style.background = '#c6f6d5'; msgEl.style.color = '#22543d';
+              msgEl.textContent = '✓ プランを ' + planLabel[plan] + ' に変更しました！';
+              if (document.getElementById('profilePlan')) {
+                document.getElementById('profilePlan').textContent = planLabel[plan] + ' 会員';
+              }
+              updatePlanCards(plan);
+            } else {
+              msgEl.style.background = '#fed7d7'; msgEl.style.color = '#c53030';
+              msgEl.textContent = data.error || 'プランの変更に失敗しました。';
+              updatePlanCards(currentUserPlan);
+            }
+          } catch (err) {
+            var msgEl2 = document.getElementById('planMessage');
+            msgEl2.style.display = 'block';
+            msgEl2.style.background = '#fed7d7'; msgEl2.style.color = '#c53030';
+            msgEl2.textContent = '通信エラーが発生しました。';
+            updatePlanCards(currentUserPlan);
+          }
+        });
+      });
     }
 
     function setupPasswordUpdate() {
@@ -227,6 +373,7 @@
     checkAuth();
     fetchFavoriteVenues();
     setupPasswordUpdate();
+    setupPlanChange();
   </script>
 </body>
 </html>
