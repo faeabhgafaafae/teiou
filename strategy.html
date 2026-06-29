@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>艇王 - 戦略別予想</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+
+header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; gap: 14px; justify-content: space-between; }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
+.back-btn:hover { background: #e8f0fd; }
+.header-info h1 { font-size: 17px; font-weight: 700; color: #222; }
+.header-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.header-meta .date { font-size: 12px; color: #888; }
+.grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
+.grade-sg { background: #fff3cd; color: #b8860b; }
+.grade-g1 { background: #fee2e2; color: #c0392b; }
+.grade-g2 { background: #dbeafe; color: #2563eb; }
+.grade-g3 { background: #d1fae5; color: #16a34a; }
+.grade-ippan { background: #f3f4f6; color: #888; }
+
+.container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
+footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
+.loading { text-align: center; padding: 60px 20px; color: #999; }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
+
+.note-box { background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: #1e40af; line-height: 1.6; }
+
+.period-tabs { display: flex; gap: 4px; margin-bottom: 16px; padding: 4px; background: #e9ecef; border-radius: 10px; }
+.period-tab { flex: 1; padding: 8px 4px; border: none; border-radius: 8px; background: transparent; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; text-align: center; transition: all 0.15s; }
+.period-tab:hover { color: #555; background: #dde0e4; }
+.period-tab.active { background: #1a56db; color: #fff; }
+
+.strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+.strategy-card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; overflow: hidden; }
+.strategy-card-bar { height: 4px; }
+.strategy-card-body { padding: 14px 16px; }
+.strategy-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.strategy-desc { font-size: 10px; color: #aaa; margin-bottom: 12px; }
+
+.strategy-main-stats { display: flex; gap: 8px; margin-bottom: 12px; }
+.stat-block { flex: 1; text-align: center; background: #f7f8fa; border-radius: 8px; padding: 8px 4px; }
+.stat-block-label { font-size: 10px; color: #999; font-weight: 600; margin-bottom: 4px; }
+.stat-block-value { font-size: 20px; font-weight: 800; line-height: 1.1; }
+.stat-block-unit { font-size: 11px; color: #888; margin-top: 2px; }
+.stat-positive { color: #16a34a; }
+.stat-negative { color: #dc2626; }
+.stat-neutral { color: #0055a4; }
+
+.strategy-sub-stats { display: flex; flex-direction: column; gap: 5px; }
+.sub-stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.sub-stat-label { color: #888; }
+.sub-stat-value { color: #333; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.card-pending { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 160px; gap: 8px; }
+.pending-type { font-size: 14px; font-weight: 700; color: #555; }
+.pending-msg { font-size: 12px; color: #bbb; }
+
+.bottom-actions { display: flex; gap: 6px; margin-top: 4px; }
+.bottom-btn { flex: 1; padding: 10px; border: 1px solid #e0e3e8; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 600; color: #555; text-align: center; text-decoration: none; transition: all 0.15s; }
+.bottom-btn:hover { border-color: #0055a4; color: #0055a4; }
+
+@media (max-width: 480px) {
+  .strategy-grid { grid-template-columns: 1fr; }
+  .stat-block-value { font-size: 18px; }
+  .header-info h1 { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <a class="back-btn" id="backBtn" href="index.html">&larr;</a>
+    <div class="header-info">
+      <h1 id="pageTitle">戦略別予想</h1>
+      <div class="header-meta">
+        <span class="date" id="pageDate"></span>
+        <span class="grade-badge" id="pageBadge"></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="note-box">
+    戦略ごとの買い目で過去レースを仮想購入した場合の実績です。1点100円換算。
+  </div>
+
+  <div class="period-tabs">
+    <button class="period-tab active" data-period="week">今週</button>
+    <button class="period-tab" data-period="month">今月</button>
+    <button class="period-tab" data-period="all">全期間</button>
+  </div>
+
+  <div id="strategyArea">
+    <div class="loading"><div class="loading-spinner"></div>集計データを取得中...</div>
+  </div>
+
+  <div class="bottom-actions" id="bottomActions" style="display:none">
+    <a class="bottom-btn" id="btnRacelist">出走表</a>
+    <a class="bottom-btn" id="btnPredict">直前情報</a>
+    <a class="bottom-btn" id="btnAiPredict">予想</a>
+  </div>
+</div>
+
+<footer>艇王 &copy; 2026</footer>
+
+<script>
+var params  = new URLSearchParams(location.search);
+var venue   = params.get('venue')   || '';
+var date    = params.get('date')    || todayStr();
+var raceNo  = params.get('race_no') || '1';
+
+var API_HOST = 'https://' + '2410049.moo.jp';
+var currentPeriod = 'week';
+
+var STRAT_DEFS = [
+  { type: '的中特化', color: '#2563eb', desc: '上位3艇の全順列（最大6点）' },
+  { type: 'バランス',   color: '#16a34a', desc: '上位2艇固定×上位4艇流し（最大12点）' },
+  { type: '一撃重視', color: '#dc2626', desc: '1位固定・穴狙い（最大6点）' },
+  { type: '絞り込み', color: '#7c3aed', desc: '1点勝負' }
+];
+
+var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','高松':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
+var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
+
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+function fmtDate(ds) {
+  var d = new Date(ds + 'T00:00:00');
+  var w = ['日','月','火','水','木','金','土'];
+  return (d.getMonth() + 1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')';
+}
+
+// ─── ヘッダー設定 ───────────────────────────────────────
+var vg = VENUE_GRADES[venue] || '一般';
+document.getElementById('pageTitle').textContent = (venue ? venue + ' ' + raceNo + 'R ' : '') + '戦略別予想';
+document.title = '艇王 - ' + (venue ? venue + ' ' : '') + '戦略別予想';
+var badge = document.getElementById('pageBadge');
+badge.textContent = vg;
+badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
+document.getElementById('pageDate').textContent = fmtDate(date);
+
+var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+document.getElementById('backBtn').href = 'races.html?venue=' + encodeURIComponent(venue) + '&date=' + date;
+document.getElementById('btnRacelist').href  = 'racelist.html?'  + baseQ;
+document.getElementById('btnPredict').href   = 'predict.html?'   + baseQ;
+document.getElementById('btnAiPredict').href = 'ai-predict.html?' + baseQ;
+document.getElementById('bottomActions').style.display = 'flex';
+
+// ─── 期間計算 ────────────────────────────────────────────
+function getPeriodDates(period) {
+  var now = new Date();
+  var todayS = todayStr();
+  if (period === 'week') {
+    var dow = now.getDay() || 7;
+    var mon = new Date(now);
+    mon.setDate(now.getDate() - dow + 1);
+    return { start: mon.getFullYear() + '-' + pad2(mon.getMonth() + 1) + '-' + pad2(mon.getDate()), end: todayS };
+  }
+  if (period === 'month') {
+    return { start: now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-01', end: todayS };
+  }
+  return { start: null, end: null };
+}
+
+// ─── カードレンダリング ───────────────────────────────────
+function makeStatBlock(label, value, unit, colorClass) {
+  var block = document.createElement('div');
+  block.className = 'stat-block';
+  var lbl = document.createElement('div');
+  lbl.className = 'stat-block-label';
+  lbl.textContent = label;
+  var val = document.createElement('div');
+  val.className = 'stat-block-value ' + colorClass;
+  val.textContent = value;
+  var u = document.createElement('div');
+  u.className = 'stat-block-unit';
+  u.textContent = unit;
+  block.appendChild(lbl);
+  block.appendChild(val);
+  block.appendChild(u);
+  return block;
+}
+
+function addSubRow(parent, label, value) {
+  var row = document.createElement('div');
+  row.className = 'sub-stat-row';
+  var lbl = document.createElement('span');
+  lbl.className = 'sub-stat-label';
+  lbl.textContent = label;
+  var val = document.createElement('span');
+  val.className = 'sub-stat-value';
+  val.textContent = value;
+  row.appendChild(lbl);
+  row.appendChild(val);
+  parent.appendChild(row);
+}
+
+function renderCard(def, stat) {
+  var card = document.createElement('div');
+  card.className = 'strategy-card';
+
+  var colorBar = document.createElement('div');
+  colorBar.className = 'strategy-card-bar';
+  colorBar.style.background = def.color;
+  card.appendChild(colorBar);
+
+  var body = document.createElement('div');
+  body.className = 'strategy-card-body';
+
+  // 集計中
+  if (!stat || !stat.total_races) {
+    var pending = document.createElement('div');
+    pending.className = 'card-pending';
+    var icon = document.createElement('div');
+    icon.style.cssText = 'font-size:28px';
+    icon.textContent = '⏳';
+    var nm = document.createElement('div');
+    nm.className = 'pending-type';
+    nm.style.color = def.color;
+    nm.textContent = def.type;
+    var msg = document.createElement('div');
+    msg.className = 'pending-msg';
+    msg.textContent = '集計中';
+    pending.appendChild(icon);
+    pending.appendChild(nm);
+    pending.appendChild(msg);
+    body.appendChild(pending);
+    card.appendChild(body);
+    return card;
+  }
+
+  var nm = document.createElement('div');
+  nm.className = 'strategy-name';
+  nm.style.color = def.color;
+  nm.textContent = def.type;
+
+  var desc = document.createElement('div');
+  desc.className = 'strategy-desc';
+  desc.textContent = def.desc;
+
+  var mainStats = document.createElement('div');
+  mainStats.className = 'strategy-main-stats';
+
+  var hitRate = Number(stat.hit_rate);
+  var roi     = Number(stat.roi);
+
+  var hitColor = hitRate >= 20 ? 'stat-positive' : hitRate >= 10 ? 'stat-neutral' : 'stat-negative';
+  var roiColor = roi >= 0 ? 'stat-positive' : 'stat-negative';
+  var roiStr   = roi >= 0 ? '+' + roi.toFixed(1) : roi.toFixed(1);
+
+  mainStats.appendChild(makeStatBlock('的中率', hitRate.toFixed(1), '%', hitColor));
+  mainStats.appendChild(makeStatBlock('回収率', roiStr, '%', roiColor));
+
+  var subStats = document.createElement('div');
+  subStats.className = 'strategy-sub-stats';
+
+  var avgCombos = stat.total_races > 0 ? (stat.total_cost / 100 / stat.total_races) : 0;
+  var profitStr = (stat.profit >= 0 ? '+' : '') + Number(stat.profit).toLocaleString() + '円';
+
+  addSubRow(subStats, '的中 / 総数', stat.hits + '回 / ' + stat.total_races + 'レース');
+  addSubRow(subStats, '平均購入点数', avgCombos.toFixed(1) + '点');
+  addSubRow(subStats, '損益', profitStr);
+
+  body.appendChild(nm);
+  body.appendChild(desc);
+  body.appendChild(mainStats);
+  body.appendChild(subStats);
+  card.appendChild(body);
+  return card;
+}
+
+function renderGrid(statsMap) {
+  var area = document.getElementById('strategyArea');
+  area.textContent = '';
+  var grid = document.createElement('div');
+  grid.className = 'strategy-grid';
+  for (var i = 0; i < STRAT_DEFS.length; i++) {
+    grid.appendChild(renderCard(STRAT_DEFS[i], statsMap[STRAT_DEFS[i].type] || null));
+  }
+  area.appendChild(grid);
+}
+
+// ─── データ取得 ──────────────────────────────────────────
+async function loadStats(period) {
+  var area = document.getElementById('strategyArea');
+  area.textContent = '';
+  var spinner = document.createElement('div');
+  spinner.className = 'loading';
+  var s = document.createElement('div');
+  s.className = 'loading-spinner';
+  spinner.appendChild(s);
+  spinner.appendChild(document.createTextNode('集計データを取得中...'));
+  area.appendChild(spinner);
+
+  var dates = getPeriodDates(period);
+  var url = API_HOST + '/strategy_stats.php';
+  if (dates.start) {
+    url += '?start_date=' + dates.start + '&end_date=' + dates.end;
+  }
+
+  try {
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    var statsMap = {};
+    var rows = data.stats || [];
+    for (var i = 0; i < rows.length; i++) {
+      statsMap[rows[i].strategy_type] = rows[i];
+    }
+    renderGrid(statsMap);
+  } catch(e) {
+    area.textContent = '';
+    var err = document.createElement('div');
+    err.className = 'error-msg';
+    err.textContent = 'データの取得に失敗しました';
+    area.appendChild(err);
+  }
+}
+
+// ─── タブ切り替え ────────────────────────────────────────
+var tabBtns = document.querySelectorAll('.period-tab');
+for (var ti = 0; ti < tabBtns.length; ti++) {
+  (function(btn) {
+    btn.addEventListener('click', function() {
+      for (var j = 0; j < tabBtns.length; j++) { tabBtns[j].className = 'period-tab'; }
+      btn.className = 'period-tab active';
+      currentPeriod = btn.getAttribute('data-period');
+      loadStats(currentPeriod);
+    });
+  })(tabBtns[ti]);
+}
+
+loadStats(currentPeriod);
+</script>
+</body>
+</html>
