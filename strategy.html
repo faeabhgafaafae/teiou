@@ -66,6 +66,26 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .bottom-btn { flex: 1; padding: 10px; border: 1px solid #e0e3e8; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 600; color: #555; text-align: center; text-decoration: none; transition: all 0.15s; }
 .bottom-btn:hover { border-color: #0055a4; color: #0055a4; }
 
+.combos-section { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+.combos-title { font-size: 14px; font-weight: 700; color: #222; padding: 14px 16px; border-bottom: 1px solid #e0e3e8; }
+.combo-group { border-bottom: 1px solid #f0f0f0; }
+.combo-group:last-child { border-bottom: none; }
+.combo-group-hdr { display: flex; align-items: center; padding: 10px 16px; gap: 10px; cursor: pointer; transition: background 0.1s; }
+.combo-group-hdr:hover { background: #fafbfc; }
+.combo-group-bar { width: 4px; height: 20px; border-radius: 2px; flex-shrink: 0; }
+.combo-group-name { font-size: 13px; font-weight: 700; flex: 1; }
+.combo-group-meta { font-size: 11px; color: #888; }
+.combo-group-chev { font-size: 10px; color: #bbb; margin-left: 4px; }
+.combo-list { padding: 2px 16px 10px; display: none; }
+.combo-row { display: flex; align-items: center; padding: 6px 8px; border-radius: 6px; gap: 6px; }
+.combo-row.combo-hl { background: #fffbea; }
+.combo-waku { width: 22px; height: 22px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.combo-sep { font-size: 11px; color: #bbb; }
+.combo-odds { flex: 1; text-align: right; font-size: 13px; font-weight: 700; color: #0055a4; font-variant-numeric: tabular-nums; }
+.combo-odds.odds-max { color: #d97706; }
+.combo-odds.odds-none { color: #bbb; font-weight: 400; }
+.combos-empty { padding: 24px 16px; text-align: center; color: #bbb; font-size: 13px; }
+
 @media (max-width: 480px) {
   .strategy-grid { grid-template-columns: 1fr; }
   .stat-block-value { font-size: 18px; }
@@ -102,6 +122,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   <div id="strategyArea">
     <div class="loading"><div class="loading-spinner"></div>集計データを取得中...</div>
   </div>
+
+  <div id="combosSection" style="display:none"></div>
 
   <div class="bottom-actions" id="bottomActions" style="display:none">
     <a class="bottom-btn" id="btnRacelist">出走表</a>
@@ -344,7 +366,137 @@ for (var ti = 0; ti < tabBtns.length; ti++) {
   })(tabBtns[ti]);
 }
 
+// ─── 買い目セクション ────────────────────────────────────
+var WAKU_STYLES = {
+  1: 'background:#fff;color:#222;border:2px solid #ccc',
+  2: 'background:#222;color:#fff',
+  3: 'background:#e53e3e;color:#fff',
+  4: 'background:#2563eb;color:#fff',
+  5: 'background:#eab308;color:#222',
+  6: 'background:#16a34a;color:#fff'
+};
+
+function makeWakuBadge(lane) {
+  var el = document.createElement('span');
+  el.className = 'combo-waku';
+  el.style.cssText = WAKU_STYLES[lane] || 'background:#eee;color:#333';
+  el.textContent = lane;
+  return el;
+}
+
+function renderComboGroup(strat, def) {
+  var group = document.createElement('div');
+  group.className = 'combo-group';
+
+  var hdr = document.createElement('div');
+  hdr.className = 'combo-group-hdr';
+  var bar = document.createElement('div');
+  bar.className = 'combo-group-bar';
+  bar.style.background = def ? def.color : '#888';
+  var nm = document.createElement('div');
+  nm.className = 'combo-group-name';
+  nm.style.color = def ? def.color : '#222';
+  nm.textContent = strat.strategy_type;
+  var meta = document.createElement('div');
+  meta.className = 'combo-group-meta';
+  meta.textContent = strat.combo_count + '点  合計' + strat.total_cost.toLocaleString() + '円';
+  var chev = document.createElement('div');
+  chev.className = 'combo-group-chev';
+  chev.textContent = '▼';
+  hdr.appendChild(bar);
+  hdr.appendChild(nm);
+  hdr.appendChild(meta);
+  hdr.appendChild(chev);
+
+  var list = document.createElement('div');
+  list.className = 'combo-list';
+
+  var maxOdds = null;
+  for (var i = 0; i < strat.combinations.length; i++) {
+    var o = strat.combinations[i].odds;
+    if (o !== null && (maxOdds === null || o > maxOdds)) { maxOdds = o; }
+  }
+
+  for (var i = 0; i < strat.combinations.length; i++) {
+    var item  = strat.combinations[i];
+    var parts = item.combo.split('-');
+    var isMax = maxOdds !== null && item.odds === maxOdds;
+    var row = document.createElement('div');
+    row.className = 'combo-row' + (isMax ? ' combo-hl' : '');
+    for (var j = 0; j < parts.length; j++) {
+      row.appendChild(makeWakuBadge(Number(parts[j])));
+      if (j < parts.length - 1) {
+        var sep = document.createElement('span');
+        sep.className = 'combo-sep';
+        sep.textContent = '-';
+        row.appendChild(sep);
+      }
+    }
+    var oddsEl = document.createElement('span');
+    if (item.odds !== null) {
+      oddsEl.className = 'combo-odds' + (isMax ? ' odds-max' : '');
+      oddsEl.textContent = Number(item.odds).toFixed(1) + '倍';
+    } else {
+      oddsEl.className = 'combo-odds odds-none';
+      oddsEl.textContent = '-';
+    }
+    row.appendChild(oddsEl);
+    list.appendChild(row);
+  }
+
+  hdr.onclick = function() {
+    if (list.style.display === '' || list.style.display === 'none') {
+      list.style.display = 'block';
+      chev.textContent = '▲';
+    } else {
+      list.style.display = 'none';
+      chev.textContent = '▼';
+    }
+  };
+
+  group.appendChild(hdr);
+  group.appendChild(list);
+  return group;
+}
+
+function renderCombosSection(strategies) {
+  var sec = document.getElementById('combosSection');
+  sec.textContent = '';
+  sec.style.display = '';
+  var box = document.createElement('div');
+  box.className = 'combos-section';
+  var title = document.createElement('div');
+  title.className = 'combos-title';
+  title.textContent = '今レースの買い目';
+  box.appendChild(title);
+  if (!strategies || !strategies.length) {
+    var empty = document.createElement('div');
+    empty.className = 'combos-empty';
+    empty.textContent = 'まだ買い目が生成されていません（予想を開くと生成されます）';
+    box.appendChild(empty);
+  } else {
+    var defMap = {};
+    for (var i = 0; i < STRAT_DEFS.length; i++) { defMap[STRAT_DEFS[i].type] = STRAT_DEFS[i]; }
+    for (var i = 0; i < strategies.length; i++) {
+      box.appendChild(renderComboGroup(strategies[i], defMap[strategies[i].strategy_type] || null));
+    }
+  }
+  sec.appendChild(box);
+}
+
+async function loadRaceCombos() {
+  if (!venue || !raceNo) return;
+  var url = API_HOST + '/strategy_detail.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+  try {
+    var res = await fetch(url);
+    if (!res.ok) return;
+    var data = await res.json();
+    renderCombosSection(data.strategies || []);
+  } catch(e) {}
+}
+
 loadStats(currentPeriod);
+if (venue && raceNo) { loadRaceCombos(); }
 </script>
 </body>
 </html>
