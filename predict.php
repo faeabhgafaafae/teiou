@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/generate_strategies.php';
+
 define('DB_HOST', 'mysql323.phy.lolipop.lan');
 define('DB_USER', 'LAA1670504');
 define('DB_PASS', 'teiou');
@@ -234,6 +236,13 @@ for ($i = 0; $i < count($scores); $i++) {
         ':score_today'    => $scores[$i]['score_today'],
         ':score_weather'  => $scores[$i]['score_weather'],
     ]);
+}
+
+// 予測生成のタイミングで戦略買い目を自動生成
+try {
+    generate_and_save_strategies($pdo, $race_id);
+} catch (Exception $e) {
+    // strategies テーブル未作成時など非致命的エラーは無視
 }
 
 echo json_encode([
