@@ -2,12 +2,13 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>艇王 - ボートレース予想</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>艇王 - ボートレース予測</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    /* まもなく締切カード用のCSS */
+    /* ==========================================
+       追加: まもなく締切レースカード用のCSS
+       ========================================== */
     .urgent-card-box {
       background: var(--card-bg, #f8fafc);
       border: 1px solid var(--border-color, #e2e8f0);
@@ -43,6 +44,7 @@
     .urgent-time.time-red { color: #fff; background: #ef4444; }
     .urgent-time.time-yellow { color: #451a03; background: #eab308; }
     .urgent-time.time-green { color: #fff; background: #22c55e; }
+    .urgent-time.closed { color: #fff; background: #718096; }
     
     .urgent-players {
       display: flex;
@@ -76,488 +78,135 @@
     .urgent-btn { flex: 1; text-align: center; font-size: 11px; padding: 5px 0; border: 1px solid var(--border-color, #e2e8f0); border-radius: 4px; color: var(--text-main, #4a5568); text-decoration: none; background: var(--bg-nest, #fff); }
     .urgent-btn.main-btn { background: #0055a4; color: #fff; border-color: #0055a4; }
 
-    /* ヘッダー構造の適正化 */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 20px;
-      background: var(--header-bg, #fff);
-      border-bottom: 1px solid var(--border-color, #e2e8f0);
-      position: relative;
-    }
-    .header-left-box {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    /* ハンバーガーボタン */
-    .menu-toggle-btn {
-      display: none;
-      background: #0055a4;
-      border: none;
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-      width: 40px;
-      height: 40px;
-      border-radius: 6px;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .menu-toggle-btn:hover {
-      background: #004482;
-    }
-
-    /* ページトップへ戻るボタン */
-    .scroll-top-btn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 46px;
-      height: 46px;
-      background-color: #0055a4;
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      z-index: 999;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s, transform 0.2s;
-    }
-    .scroll-top-btn.show { opacity: 1; visibility: visible; }
-    .scroll-top-btn:hover { background-color: #004482; transform: translateY(-3px); }
-
-    /* サイドバー標準変数の割当 */
-    .sidebar {
-      background: var(--sidebar-bg, #fff);
-    }
-    .nav-item {
-      color: var(--text-main, #4a5568);
-    }
-
+    /* 3カラム等幅に並べるためのメディアクエリ設定 */
     @media (min-width: 992px) {
       .bottom-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
       .bottom-card { margin-bottom: 0 !important; }
-    }
-
-    @media (max-width: 991px) {
-      header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 60px;
-        z-index: 9999;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        box-sizing: border-box;
-      }
-      .dashboard-container { padding-top: 60px; }
-      .menu-toggle-btn { display: flex; }
-      .sidebar {
-        position: fixed;
-        top: 60px;
-        left: -300px;
-        width: 280px;
-        height: calc(100vh - 60px);
-        z-index: 10000;
-        transition: left 0.3s ease;
-        box-shadow: 4px 0 15px rgba(0,0,0,0.15);
-        overflow-y: auto;
-        margin: 0 !important;
-        padding: 20px 15px !important;
-      }
-      .sidebar.open { left: 0; }
-      .sidebar-overlay {
-        display: none;
-        position: fixed;
-        top: 60px;
-        left: 0;
-        width: 100vw;
-        height: calc(100vh - 60px);
-        background: rgba(0,0,0,0.5);
-        z-index: 9998;
-      }
-      .sidebar-overlay.show { display: block; }
-    }
-
-    /* マイページ用テーマ切り替えBOXスタイル */
-    .mypage-mode-panel {
-      margin-bottom: 24px;
-      background: var(--bg-nest, #f7fafc);
-      padding: 16px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color, #e2e8f0);
-    }
-    .btn-mode-switch {
-      background: #0055a4;
-      color: #fff;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 14px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: background 0.2s;
-    }
-    .btn-mode-switch:hover {
-      background: #004482;
-    }
-
-    /* 🌟 【超重要】全パーツを網羅した完璧なテーマカラー制御 */
-    
-    /* 1. ダークモード (完全版) */
-    body.dark-mode {
-      --bg-main: #121824;
-      --text-main: #f1f5f9;
-      --text-sub: #94a3b8;
-      --card-bg: #1e293b;
-      --bg-nest: #0f172a;
-      --border-color: #334155;
-      --header-bg: #1e293b;
-      --sidebar-bg: #1e293b;
-      background-color: var(--bg-main) !important;
-      color: var(--text-main) !important;
-    }
-    body.dark-mode header,
-    body.dark-mode .sidebar,
-    body.dark-mode .nav-item,
-    body.dark-mode .premium-box,
-    body.dark-mode .stats-box,
-    body.dark-mode .venue-card,
-    body.dark-mode .bottom-card,
-    body.dark-mode #favoriteVenueSection,
-    body.dark-mode .filter-bar,
-    body.dark-mode .main-content,
-    body.dark-mode #contentMypage > div {
-      background: var(--sidebar-bg) !important;
-      border-color: var(--border-color) !important;
-      color: var(--text-main) !important;
-    }
-    body.dark-mode .nav-item:hover,
-    body.dark-mode .nav-item.active {
-      background: var(--bg-nest) !important;
-      color: #fff !important;
-    }
-    body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode span, body.dark-mode label, body.dark-mode div {
-      color: var(--text-main);
-    }
-    body.dark-mode input, body.dark-mode select {
-      background: var(--bg-nest) !important;
-      border-color: var(--border-color) !important;
-      color: #fff !important;
-    }
-
-    /* 2. アクアモード (海・水面モチーフ完全版) */
-    body.aqua-mode {
-      --bg-main: #e0f2fe;
-      --text-main: #0369a1;
-      --text-sub: #0284c7;
-      --card-bg: #ffffff;
-      --bg-nest: #f0f9ff;
-      --border-color: #bae6fd;
-      --header-bg: #0284c7;
-      --sidebar-bg: #ffffff;
-      background-color: var(--bg-main) !important;
-      color: var(--text-main) !important;
-    }
-    body.aqua-mode header {
-      background: var(--header-bg) !important;
-    }
-    body.aqua-mode header h1, body.aqua-mode header .logo-sub, body.aqua-mode header .header-right, body.aqua-mode header div {
-      color: #fff !important;
-    }
-    body.aqua-mode .sidebar {
-      background: var(--bg-nest) !important;
-      border-right: 1px solid var(--border-color);
-    }
-    body.aqua-mode .venue-card, body.aqua-mode .bottom-card, body.aqua-mode #favoriteVenueSection, body.aqua-mode #contentMypage > div {
-      background: var(--card-bg) !important;
-      border-color: var(--border-color) !important;
-      box-shadow: 0 4px 12px rgba(3, 105, 161, 0.06) !important;
-    }
-    body.aqua-mode .nav-item {
-      color: var(--text-main) !important;
-    }
-    body.aqua-mode .nav-item.active {
-      background: #0284c7 !important;
-      color: #fff !important;
-    }
-    body.aqua-mode h2, body.aqua-mode h3, body.aqua-mode h4, body.aqua-mode label {
-      color: var(--text-main) !important;
     }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="header-left-box">
-    <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="メニューを開く">
-      <i class="fas fa-bars"></i>
-    </button>
-    
+  <header>
     <div class="logo" id="headerLogo" style="cursor: pointer;">
       <h1>艇王</h1>
       <span class="logo-sub">ボートレース予測</span>
     </div>
-  </div>
-  
-  <div class="header-right">
-    <div class="header-date" id="headerDate"></div>
-    <div class="header-auth" id="headerAuth"></div>
-  </div>
-</header>
-
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-<div class="dashboard-container">
-  
-  <aside class="sidebar" id="mainSidebar">
-    <nav class="side-nav">
-      <a href="#" class="nav-item active" id="menuHome"><i class="fas fa-home icon"></i> ホーム</a>
-      <a href="#" class="nav-item" id="menuMypage"><i class="fas fa-user-cog icon"></i> マイページ</a>
-      <a href="#" class="nav-item"><i class="fas fa-bullseye icon"></i> 予測レース</a>
-      <a href="#" class="nav-item"><i class="fas fa-star icon"></i> お気に入り</a>
-      <a href="#" class="nav-item"><i class="fas fa-chart-line icon"></i> 成績・回収率</a>
-      <a href="#" class="nav-item"><i class="fas fa-database icon"></i> データ分析</a>
-      <a href="#" class="nav-item"><i class="fas fa-newspaper icon"></i> ニュース・コラム</a>
-    </nav>
-
-    <div class="premium-box">
-      <h3>👑 プレミアム会員になると予測の精度がさらにアップ！</h3>
-      <ul>
-        <li><i class="fas fa-check"></i> 全レースの詳細予測</li>
-        <li><i class="fas fa-check"></i> AI analysis</li>
-        <li><i class="fas fa-check"></i> 回収率ランキング</li>
-        <li><i class="fas fa-check"></i> 広告非表示</li>
-      </ul>
-      <button class="btn-primary">詳しく見る</button>
+    <div class="header-right">
+      <div class="header-date" id="headerDate">----年--月--日 (-)</div>
+      <div class="header-auth" id="headerAuth"></div>
     </div>
+  </header>
 
-    <div class="stats-box">
-      <div class="stats-title">本日のレース数</div>
-      <div class="stats-badge" id="statsBadge">読み込み中...</div>
-      <button class="btn-refresh">更新する</button>
-    </div>
-
-    <div class="sidebar-footer">
-      <a href="#">ヘルプ</a> <a href="#">お問い合わせ</a><br>
-      <a href="#">利用規約</a> <a href="#">プライバシー</a>
-      <p>艇王 © 2026</p>
-    </div>
-  </aside>
-
-  <main class="main-content">
+  <div class="dashboard-container">
     
-    <div id="contentHome">
-      <div id="favoriteVenueSection" style="display: none; margin-bottom: 30px; background: #fffdf5; padding: 18px; border-radius: 12px; border: 1px solid #fef3c7;">
-        <h3>
-          <i class="fas fa-star" style="color: #d97706; margin-right: 6px;"></i> マイホールの本日のステータス（最上部固定）
-        </h3>
-        <div id="favoriteVenueGrid" class="venue-grid"></div>
+    <aside class="sidebar">
+      <nav class="side-nav">
+        <a href="#" class="nav-item active" id="menuHome"><i class="fas fa-home icon"></i> ホーム</a>
+        <a href="mypage.php" class="nav-item" id="menuMypage"><i class="fas fa-user-cog icon"></i> マイページ</a>
+        <a href="#" class="nav-item"><i class="fas fa-bullseye icon"></i> 予測レース</a>
+        <a href="#" class="nav-item"><i class="fas fa-star icon"></i> お気に入り</a>
+        <a href="#" class="nav-item"><i class="fas fa-chart-line icon"></i> 成績・回収率</a>
+        <a href="#" class="nav-item"><i class="fas fa-database icon"></i> データ分析</a>
+        <a href="#" class="nav-item"><i class="fas fa-newspaper icon"></i> ニュース・コラム</a>
+      </nav>
+
+      <div class="premium-box">
+        <h3>プレミアム会員になると予測の精度がさらにアップ！</h3>
+        <ul>
+          <li><i class="fas fa-check"></i> 全レースのAI予想紐解き</li>
+          <li><i class="fas fa-check"></i> AI analysis</li>
+          <li><i class="fas fa-check"></i> 回収率ランキング</li>
+          <li><i class="fas fa-check"></i> 広告非表示</li>
+        </ul>
+        <button class="btn-primary">詳しく見る</button>
       </div>
 
-      <div class="section-header">
-        <div class="title-group">
-          <h2 class="section-title">開催中のレース一覧</h2>
-          <span class="venue-count" id="venueCount">0場 開催中 / 全24場</span>
-        </div>
+      <div class="stats-box">
+        <div class="stats-title">本日のレース数</div>
+        <div class="stats-badge" id="statsBadge">--場 開催中 / 全24場</div>
+        <button class="btn-refresh" onclick="location.reload();">更新する</button>
       </div>
 
-      <div class="filter-bar">
-        <div class="filter-tabs" id="filterTabs">
-          <button class="tab active" data-grade="all">すべて</button>
-          <button class="tab" data-grade="G1">G1</button>
-          <button class="tab" data-grade="G2">G2</button>
-          <button class="tab" data-grade="G3">G3</button>
-          <button class="tab" data-grade="一般">一般</button>
-          <button class="tab" data-grade="SG">SG</button>
-          <button class="tab-date"><i class="far fa-calendar-alt"></i> 日付を選択</button>
-        </div>
-        <div class="search-box">
-          <div style="position: relative;">
-            <i class="fas fa-search" style="position: absolute; left: 10px; top: 9px; color: #a0aec0; font-size: 12px;"></i>
-            <input type="text" id="searchInput" placeholder="会場名検索" style="padding-left: 28px;">
-          </div>
-        </div>
+      <div class="sidebar-footer">
+        <a href="#">ヘルプ</a><a href="#">お問い合わせ</a><br>
+        <a href="#">利用規約</a><a href="#">プライバシー</a><br>
+        © 2026 艇王
       </div>
+    </aside>
 
-      <div id="venueGrid" class="venue-grid">
-        <div class="loading">
-          <div class="loading-spinner"></div>
-          データを取得中...
-        </div>
-      </div>
-
-      <div class="bottom-row">
-        <div class="bottom-card featured-section">
-          <h3><i class="fas fa-crown" style="color: #ecc94b;"></i> 注目のレース</h3>
-          <div id="featuredBanner"></div>
-        </div>
-        
-        <div class="bottom-card" style="background:#fff; border-radius:12px; border:1px solid #e2e8f0; padding:24px;">
-          <h3><i class="fas fa-hourglass-half" style="color: #eab308;"></i> まもなく締切</h3>
-          <div id="urgentRaceList">
-            <div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">レースを集計中...</div>
-          </div>
-        </div>
-        
-        <div class="bottom-card info-section">
-          <h3><i class="fas fa-bullhorn" style="color: #3182ce;"></i> お知らせ</h3>
-          <ul class="info-list">
-            <li><span class="date">2026/06/20</span> <a href="#">【予告】下関SGグランドチャンピオンの予測を公開しました！</a></li>
-            <li><span class="date">2026/06/18</span> <a href="#">回収率ランキングを更新しました</a></li>
-            <li><span class="date">2026/06/15</span> <a href="#">サイトデザインをリニューアルしました</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div id="contentMypage" style="display: none;">
-      <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-user-cog" style="margin-right: 8px;"></i> マイページアカウント設定</h2>
-      </div>
+    <main class="main-content">
       
-      <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); max-width: 600px;">
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid #edf2f7; padding-bottom: 16px;">
-          <div id="userAvatar" style="width: 50px; height: 50px; background: #0055a4; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">-</div>
-          <div>
-            <h3 id="profileName" style="font-size: 18px; color: #2d3748;">ユーザー名</h3>
-            <span id="profilePlan" style="display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 8px; background: #edf2f7; color: #4a5568; border-radius: 4px; margin-top: 4px;">Free</span>
-            <div style="margin-top: 8px;"><a href="upgrade.html" style="display: inline-block; padding: 6px 16px; border: 2px solid #0055a4; border-radius: 6px; font-size: 12px; font-weight: 700; color: #0055a4; background: #fff; text-decoration: none;">プランを変更する</a></div>
+      <div id="contentHome">
+        
+        <section id="favoriteVenueSection" style="display: none; margin-bottom: 24px;">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-star" style="color: #d97706; margin-right: 6px;"></i>お気に入りレース場</h2>
+          </div>
+          <div class="venue-grid" id="favoriteVenueGrid"></div>
+        </section>
+
+        <div class="section-header">
+          <h2 class="section-title">開催中のレース場 <span class="venue-count" id="venueCount">0場 開催中</span></h2>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-tabs" id="filterTabs">
+            <button class="tab active" data-grade="all">すべて</button>
+            <button class="tab" data-grade="G1">G1</button>
+            <button class="tab" data-grade="G2">G2</button>
+            <button class="tab" data-grade="G3">G3</button>
+            <button class="tab" data-grade="一般">一般</button>
+            <button class="tab" data-grade="SG">SG</button>
+            <button class="tab-date"><i class="fas fa-calendar-alt"></i> 日付を選択</button>
+          </div>
+          <div class="search-box">
+            <input type="text" id="searchInput" placeholder="会場名検索">
           </div>
         </div>
 
-        <div class="mypage-mode-panel">
-          <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 8px;">
-            <i class="fas fa-palette" style="margin-right: 4px;"></i> サイトのカラーテーマ設定
-          </label>
-          <button class="btn-mode-switch" id="btnThemeSwitch">
-            <i class="fas fa-sun"></i> 現在のテーマ: 通常(白)
-          </button>
-        </div>
-
-        <div style="margin-bottom: 24px; background: #f7fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-          <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 12px;">
-            <i class="fas fa-star" style="color: #ecc94b; margin-right: 4px;"></i> 現在のお気に入り競艇場
-          </label>
-          <div id="mypageFavoriteList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;"></div>
-        </div>
-
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 11px; font-weight: bold; color: #718096; margin-bottom: 6px;">メールアドレス</label>
-          <div id="profileEmail" style="background: #f7fafc; padding: 10px; border-radius: 6px; border: 1px solid #edf2f7; font-size: 14px;">-</div>
-        </div>
-
-        <div style="margin-bottom: 24px;">
-          <label style="display: block; font-size: 11px; font-weight: bold; color: #718096; margin-bottom: 6px;">アカウント作成日</label>
-          <div id="profileDate" style="background: #f7fafc; padding: 10px; border-radius: 6px; border: 1px solid #edf2f7; font-size: 14px;">-</div>
-        </div>
-
-        <div style="border-top: 1px solid #edf2f7; padding-top: 20px;">
-          <h4 style="font-size: 14px; color: #2d3748; margin-bottom: 12px;"><i class="fas fa-lock" style="margin-right: 6px; color: #718096;"></i> パスワードの再設定</h4>
-          <div id="passwordMessage" style="display: none; font-size: 13px; padding: 10px; border-radius: 6px; margin-bottom: 12px;"></div>
-          <div style="margin-bottom: 12px;">
-            <input type="password" id="newPasswordInput" placeholder="新しいパスワード（8文字以上）" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 14px; box-sizing: border-box;">
+        <div class="venue-grid" id="venueGrid">
+          <div class="loading">
+            <div class="loading-spinner"></div>
+            データを読み込み中...
           </div>
-          <div style="margin-bottom: 16px;">
-            <input type="password" id="confirmPasswordInput" placeholder="新しいパスワード（確認用にもう一度入力）" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 14px; box-sizing: border-box;">
-          </div>
-          <button id="btnUpdatePassword" style="background: #0055a4; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer;">パスワードを変更する</button>
         </div>
+
+        <div class="bottom-row">
+          <div class="bottom-card">
+            <h3><i class="fas fa-fire" style="color: #e53e3e;"></i>注目のレース</h3>
+            <div id="featuredBanner">
+              <div style="font-size:12px; color:#718096;">データを読み込み中...</div>
+            </div>
+          </div>
+
+          <div class="bottom-card">
+            <h3><i class="fas fa-hourglass-half" style="color: #eab308;"></i>まもなく締切</h3>
+            <div id="urgentRaceList">
+              <div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">レースを集計中...</div>
+            </div>
+          </div>
+
+          <div class="bottom-card">
+            <h3><i class="fas fa-info-circle" style="color: #0055a4;"></i>お知らせ</h3>
+            <ul class="info-list">
+              <li><span class="date">2026/06/24</span><a href="#">AI予測モデルのアルゴリズムをアップデートしました</a></li>
+              <li><span class="date">2026/06/20</span><a href="#">SG開催期間中のサーバーメンテナンスについて</a></li>
+              <li><span class="date">2026/06/15</span><a href="#">プレミアムプランの新規登録キャンペーン実施中！</a></li>
+            </ul>
+          </div>
+        </div>
+
       </div>
-    </div>
 
-  </main>
-</div>
+      <div id="contentMypage" style="display: none; padding: 20px; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <p>マイページへ遷移します...</p>
+      </div>
 
-<button class="scroll-top-btn" id="scrollTopBtn" aria-label="一番上に戻る">
-  <i class="fas fa-chevron-up"></i>
-</button>
+    </main>
+  </div>
 
-<footer>艇王 &copy; 2026</footer>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // 1. ハンバーガーメニュー制御
-    var toggleBtn = document.getElementById('menuToggleBtn');
-    var sidebar = document.getElementById('mainSidebar');
-    var overlay = document.getElementById('sidebarOverlay');
-    var navItems = document.querySelectorAll('.side-nav .nav-item');
-
-    function toggleMenu() {
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('show');
-    }
-
-    function closeMenu() {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-    }
-
-    if (toggleBtn && sidebar && overlay) {
-      toggleBtn.addEventListener('click', toggleMenu);
-      overlay.addEventListener('click', closeMenu);
-      navItems.forEach(function(item) {
-        item.addEventListener('click', closeMenu);
-      });
-    }
-
-    // 2. 一番上に戻るボタン
-    var scrollTopBtn = document.getElementById('scrollTopBtn');
-    if (scrollTopBtn) {
-      window.addEventListener('scroll', function() {
-        if (window.pageYOffset > 200) {
-          scrollTopBtn.classList.add('show');
-        } else {
-          scrollTopBtn.classList.remove('show');
-        }
-      });
-
-      scrollTopBtn.addEventListener('click', function() {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
-
-    // 3. 🌟 マイページ設置版 テーマ切り替え制御
-    var themeBtn = document.getElementById('btnThemeSwitch');
-    var currentMode = 0; 
-    var modes = [
-      { name: '通常(白)', class: '', icon: 'fas fa-sun' },
-      { name: 'ダーク(黒)', class: 'dark-mode', icon: 'fas fa-moon' },
-      { name: 'アクア(海)', class: 'aqua-mode', icon: 'fas fa-water' }
-    ];
-
-    if (themeBtn) {
-      themeBtn.addEventListener('click', function() {
-        if (modes[currentMode].class) {
-          document.body.classList.remove(modes[currentMode].class);
-        }
-
-        currentMode = (currentMode + 1) % modes.length;
-
-        if (modes[currentMode].class) {
-          document.body.classList.add(modes[currentMode].class);
-        }
-
-        themeBtn.innerHTML = '<i class="' + modes[currentMode].icon + '"></i> 現在のテーマ: ' + modes[currentMode].name;
-      });
-    }
-  });
-</script>
-
-<script src="app.js" defer></script>
-<script src="home-races.js" defer></script>
+  <script src="app.js"></script>
+  <script src="home-races.js" defer></script>
 </body>
 </html>
