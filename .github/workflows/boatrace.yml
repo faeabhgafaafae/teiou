@@ -38,7 +38,7 @@ jobs:
       - name: 当日全オッズ取得
         env:
           API_PENDING: ${{ secrets.API_PENDING }}
-          API_ODDS: ${{ secrets.API_ODDS }}
+          API_ODDS: ${{ secrets.API_URL_ODDS }}
           API_KEY: ${{ secrets.API_KEY }}
         run: python scrape_odds_all.py
 
