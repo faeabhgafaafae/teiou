@@ -20,6 +20,8 @@ import re
 import sys
 import time
 import glob
+import shutil
+import platform
 import requests
 import argparse
 import tempfile
@@ -32,7 +34,13 @@ from urllib3.util.retry import Retry
 API_URL   = os.environ.get('API_URL', 'https://2410049.moo.jp/import_results.php')
 API_KEY   = os.environ.get('API_KEY', 'teio2025')
 SLEEP_SEC = 3
-SEVENZIP  = r'C:\Program Files\7-Zip\7z.exe'
+
+def get_7zip():
+    if platform.system() != 'Windows':
+        return shutil.which('7z') or '7z'
+    return r'C:\Program Files\7-Zip\7z.exe'
+
+SEVENZIP = get_7zip()
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
