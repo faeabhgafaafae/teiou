@@ -31,7 +31,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
 .note-box { background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: #1e40af; line-height: 1.6; }
 
-/* ─── 統計グリッド ──────────────────────────────────── */
+/* ─── 統計グリッド ─────────────────────────────────── */
 .period-tabs { display: flex; gap: 4px; margin-bottom: 16px; padding: 4px; background: #e9ecef; border-radius: 10px; }
 .period-tab { flex: 1; padding: 8px 4px; border: none; border-radius: 8px; background: transparent; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; text-align: center; transition: all 0.15s; }
 .period-tab:hover { color: #555; background: #dde0e4; }
@@ -59,7 +59,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .pending-type { font-size: 14px; font-weight: 700; color: #555; }
 .pending-msg { font-size: 12px; color: #bbb; }
 
-/* ─── 買い目セクション ──────────────────────────────── */
+/* ─── 買い目セクション ─────────────────────────────── */
 .combos-section { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
 .combos-title { font-size: 14px; font-weight: 700; color: #222; padding: 14px 16px; border-bottom: 1px solid #e0e3e8; }
 .combo-group { border-bottom: 1px solid #f0f0f0; }
@@ -73,13 +73,37 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .combo-list { display: none; }
 .combos-empty { padding: 24px 16px; text-align: center; color: #bbb; font-size: 13px; }
 
-/* ─── 買い目テーブル ────────────────────────────────── */
+/* ─── 結果バナー ───────────────────────────────────── */
+.result-banner { padding: 12px 16px 10px; border-bottom: 1px solid rgba(0,0,0,0.07); }
+.banner-hit { background: #fff0f5; }
+.banner-miss { background: #f5f5f5; }
+.banner-pos-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 6px; }
+.banner-hit .banner-pos-lbl { color: #c2185b; }
+.banner-miss .banner-pos-lbl { color: #999; }
+.banner-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.banner-title { font-size: 20px; font-weight: 900; }
+.banner-hit .banner-title { color: #e91e8c; }
+.banner-miss .banner-title { color: #aaa; }
+.banner-combo-row { display: flex; align-items: center; gap: 3px; }
+.banner-payout-txt { font-size: 14px; font-weight: 700; color: #e91e8c; }
+.banner-miss-combo { font-size: 12px; color: #aaa; margin-top: 4px; }
+
+/* ─── フィルターバー ───────────────────────────────── */
+.filter-bar { display: flex; gap: 8px; padding: 8px 12px; background: #f9fafb; border-bottom: 1px solid #ebebeb; flex-wrap: wrap; align-items: center; }
+.filter-group { display: flex; align-items: center; gap: 3px; }
+.filter-pos-lbl { font-size: 11px; font-weight: 700; color: #555; margin-right: 2px; white-space: nowrap; }
+.filter-btn { width: 26px; height: 26px; border-radius: 4px; border: 1px solid #ddd; background: #f0f0f0; color: #888; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.filter-btn:hover { border-color: #aaa; }
+.filter-divider { width: 1px; height: 20px; background: #e0e0e0; margin: 0 2px; }
+
+/* ─── 買い目テーブル ───────────────────────────────── */
 .ct-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ct-table { min-width: 360px; width: 100%; }
 .ct-hdr { display: flex; padding: 5px 16px; background: #f7f8fa; gap: 4px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
 .ct-row { display: flex; padding: 7px 16px; border-bottom: 1px solid #f5f5f5; gap: 4px; align-items: center; }
 .ct-row:last-child { border-bottom: none; }
 .ct-row.ct-hl { background: #fffbea; }
+.ct-row.ct-hit { background: #fffde7; border-left: 3px solid #f59e0b; padding-left: 13px; }
 .ct-col-combo  { flex: 1; min-width: 108px; display: flex; align-items: center; gap: 3px; }
 .ct-col-odds   { width: 80px; text-align: right; flex-shrink: 0; }
 .ct-col-cost   { width: 52px; text-align: right; flex-shrink: 0; }
@@ -95,8 +119,9 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .ct-cost-val { font-size: 12px; color: #aaa; }
 .ct-payout-val { font-size: 12px; font-weight: 600; color: #333; font-variant-numeric: tabular-nums; }
 .ct-rate-val { font-size: 12px; color: #6b7280; font-variant-numeric: tabular-nums; }
+.ct-hit-mark { font-size: 14px; margin-right: 2px; }
 
-/* ─── ボトムナビ ────────────────────────────────────── */
+/* ─── ボトムナビ ───────────────────────────────────── */
 .bottom-actions { display: flex; gap: 6px; margin-top: 4px; }
 .bottom-btn { flex: 1; padding: 10px; border: 1px solid #e0e3e8; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 600; color: #555; text-align: center; text-decoration: none; transition: all 0.15s; }
 .bottom-btn:hover { border-color: #0055a4; color: #0055a4; }
@@ -106,6 +131,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .stat-block-value { font-size: 18px; }
   .header-info h1 { font-size: 15px; }
   .ct-col-cost { display: none; }
+  .filter-bar { gap: 6px; }
 }
 </style>
 </head>
@@ -189,7 +215,7 @@ function fmtDate(ds) {
   return (d.getMonth() + 1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')';
 }
 
-// ─── ヘッダー設定 ────────────────────────────────────────
+// ─── ヘッダー設定 ──────────────────────────────────────
 var vg = VENUE_GRADES[venue] || '一般';
 document.getElementById('pageTitle').textContent = (venue ? venue + ' ' + raceNo + 'R ' : '') + '戦略別予想';
 document.title = '艇王 - ' + (venue ? venue + ' ' : '') + '戦略別予想';
@@ -205,7 +231,7 @@ document.getElementById('btnPredict').href   = 'predict.html?'   + baseQ;
 document.getElementById('btnAiPredict').href = 'ai-predict.html?' + baseQ;
 document.getElementById('bottomActions').style.display = 'flex';
 
-// ─── 期間計算 ─────────────────────────────────────────────
+// ─── 期間計算 ───────────────────────────────────────────
 function getPeriodDates(period) {
   var now = new Date();
   var todayS = todayStr();
@@ -221,7 +247,7 @@ function getPeriodDates(period) {
   return { start: null, end: null };
 }
 
-// ─── 統計カードレンダリング ───────────────────────────────
+// ─── 統計カードレンダリング ──────────────────────────────
 function makeStatBlock(label, value, unit, colorClass) {
   var block = document.createElement('div');
   block.className = 'stat-block';
@@ -295,7 +321,7 @@ function renderGrid(statsMap) {
   area.appendChild(grid);
 }
 
-// ─── 統計データ取得 ───────────────────────────────────────
+// ─── 統計データ取得 ──────────────────────────────────────
 async function loadStats(period) {
   var area = document.getElementById('strategyArea');
   area.textContent = '';
@@ -325,7 +351,7 @@ async function loadStats(period) {
   }
 }
 
-// ─── タブ切り替え ─────────────────────────────────────────
+// ─── タブ切り替え ──────────────────────────────────────
 var tabBtns = document.querySelectorAll('.period-tab');
 for (var ti = 0; ti < tabBtns.length; ti++) {
   (function(btn) {
@@ -338,7 +364,7 @@ for (var ti = 0; ti < tabBtns.length; ti++) {
   })(tabBtns[ti]);
 }
 
-// ─── 買い目テーブル ───────────────────────────────────────
+// ─── 枠バッジ ──────────────────────────────────────────
 function makeWakuBadge(lane) {
   var el = document.createElement('span');
   el.className = 'ct-waku';
@@ -354,34 +380,274 @@ function makeTh(cls, text) {
   return el;
 }
 
-function renderComboGroup(strat, def) {
-  var group = document.createElement('div');
-  group.className = 'combo-group';
+// ─── 結果バナー ────────────────────────────────────────
+function makeBanner(stratIsHit, hitCombo, hitOdds, hitPayout) {
+  var banner = document.createElement('div');
+  banner.className = 'result-banner ' + (stratIsHit ? 'banner-hit' : 'banner-miss');
 
-  // ── ヘッダー
-  var hdr = document.createElement('div');
-  hdr.className = 'combo-group-hdr';
+  if (stratIsHit && hitCombo) {
+    var posLbl = document.createElement('div'); posLbl.className = 'banner-pos-lbl';
+    posLbl.textContent = '的中！';
+    banner.appendChild(posLbl);
 
+    var main = document.createElement('div'); main.className = 'banner-main';
+
+    var titleEl = document.createElement('div'); titleEl.className = 'banner-title';
+    titleEl.textContent = '的中';
+    main.appendChild(titleEl);
+
+    var comboRow = document.createElement('div'); comboRow.className = 'banner-combo-row';
+    var parts = hitCombo.split('-');
+    for (var j = 0; j < parts.length; j++) {
+      comboRow.appendChild(makeWakuBadge(Number(parts[j])));
+      if (j < parts.length - 1) {
+        var sep = document.createElement('span'); sep.className = 'ct-sep'; sep.textContent = '-';
+        comboRow.appendChild(sep);
+      }
+    }
+    main.appendChild(comboRow);
+
+    if (hitOdds !== null && hitOdds !== undefined) {
+      var oddsEl = document.createElement('div'); oddsEl.className = 'banner-payout-txt';
+      oddsEl.textContent = Number(hitOdds).toFixed(1) + '倍';
+      main.appendChild(oddsEl);
+    }
+    if (hitPayout !== null && hitPayout !== undefined) {
+      var payEl = document.createElement('div'); payEl.className = 'banner-payout-txt';
+      payEl.textContent = '▶ ' + Number(hitPayout).toLocaleString() + '円';
+      main.appendChild(payEl);
+    }
+    banner.appendChild(main);
+  } else {
+    var posLbl2 = document.createElement('div'); posLbl2.className = 'banner-pos-lbl';
+    posLbl2.textContent = '今回の結果';
+    banner.appendChild(posLbl2);
+
+    var main2 = document.createElement('div'); main2.className = 'banner-main';
+    var titleEl2 = document.createElement('div'); titleEl2.className = 'banner-title';
+    titleEl2.textContent = '不的中';
+    main2.appendChild(titleEl2);
+
+    if (hitCombo) {
+      var winRow = document.createElement('div'); winRow.className = 'banner-combo-row';
+      var parts2 = hitCombo.split('-');
+      for (var k = 0; k < parts2.length; k++) {
+        winRow.appendChild(makeWakuBadge(Number(parts2[k])));
+        if (k < parts2.length - 1) {
+          var sep2 = document.createElement('span'); sep2.className = 'ct-sep'; sep2.textContent = '-';
+          winRow.appendChild(sep2);
+        }
+      }
+      main2.appendChild(winRow);
+      if (hitPayout !== null && hitPayout !== undefined) {
+        var payEl2 = document.createElement('div'); payEl2.className = 'ct-odds-none';
+        payEl2.style.cssText = 'font-size:12px;margin-left:4px';
+        payEl2.textContent = Number(hitPayout).toLocaleString() + '円';
+        main2.appendChild(payEl2);
+      }
+    }
+    banner.appendChild(main2);
+  }
+
+  return banner;
+}
+
+// ─── フィルターバー ────────────────────────────────────
+function makeFilterBar(combosArr, rowEls) {
+  var bar = document.createElement('div'); bar.className = 'filter-bar';
+
+  var selected = [[], [], []];
+
+  var POS_LABELS = ['1着🔴', '2着⚪', '3着🔵'];
+
+  function applyFilter() {
+    for (var ri = 0; ri < rowEls.length; ri++) {
+      var parts = combosArr[ri].split('-');
+      var show = true;
+      for (var pi = 0; pi < 3; pi++) {
+        if (selected[pi].length > 0) {
+          var laneNum = parseInt(parts[pi], 10);
+          var found = false;
+          for (var si = 0; si < selected[pi].length; si++) {
+            if (selected[pi][si] === laneNum) { found = true; break; }
+          }
+          if (!found) { show = false; break; }
+        }
+      }
+      rowEls[ri].style.display = show ? '' : 'none';
+    }
+  }
+
+  for (var pi = 0; pi < 3; pi++) {
+    (function(posIdx) {
+      if (posIdx > 0) {
+        var div = document.createElement('div'); div.className = 'filter-divider';
+        bar.appendChild(div);
+      }
+      var group = document.createElement('div'); group.className = 'filter-group';
+      var lbl = document.createElement('span'); lbl.className = 'filter-pos-lbl';
+      lbl.textContent = POS_LABELS[posIdx];
+      group.appendChild(lbl);
+
+      for (var lane = 1; lane <= 6; lane++) {
+        (function(laneNum) {
+          var btn = document.createElement('button');
+          btn.className = 'filter-btn';
+          btn.textContent = laneNum;
+
+          btn.onclick = function() {
+            var idx = -1;
+            for (var si = 0; si < selected[posIdx].length; si++) {
+              if (selected[posIdx][si] === laneNum) { idx = si; break; }
+            }
+            if (idx >= 0) {
+              selected[posIdx].splice(idx, 1);
+              btn.style.cssText = '';
+              btn.className = 'filter-btn';
+            } else {
+              selected[posIdx].push(laneNum);
+              btn.style.cssText = WAKU_STYLES[laneNum] || '';
+              btn.className = 'filter-btn active';
+            }
+            applyFilter();
+          };
+
+          group.appendChild(btn);
+        })(lane);
+      }
+
+      bar.appendChild(group);
+    })(pi);
+  }
+
+  return bar;
+}
+
+// ─── 買い目テーブル行 ──────────────────────────────────
+function makeComboRow(item, maxOdds, isFinished) {
+  var parts  = item.combo.split('-');
+  var isMax  = maxOdds !== null && item.odds !== null && item.odds === maxOdds;
+  var isHit  = isFinished && item.is_hit;
+
+  var rowClass = 'ct-row';
+  if (isHit)      { rowClass += ' ct-hit'; }
+  else if (isMax) { rowClass += ' ct-hl'; }
+
+  var row = document.createElement('div'); row.className = rowClass;
+
+  // 3連単セル
+  var comboCell = document.createElement('div'); comboCell.className = 'ct-col-combo';
+  if (isHit) {
+    var mark = document.createElement('span'); mark.className = 'ct-hit-mark'; mark.textContent = '⭐';
+    comboCell.appendChild(mark);
+  }
+  for (var j = 0; j < parts.length; j++) {
+    comboCell.appendChild(makeWakuBadge(Number(parts[j])));
+    if (j < parts.length - 1) {
+      var sep = document.createElement('span'); sep.className = 'ct-sep'; sep.textContent = '-';
+      comboCell.appendChild(sep);
+    }
+  }
+
+  // オッズセル
+  var oddsCell = document.createElement('div'); oddsCell.className = 'ct-col-odds';
+  if (item.odds !== null) {
+    var oddsVal = document.createElement('span');
+    oddsVal.className = 'ct-odds-val' + (isMax && !isHit ? ' ct-max' : '');
+    oddsVal.textContent = Number(item.odds).toFixed(1) + '倍';
+    oddsCell.appendChild(oddsVal);
+    if (isMax && !isHit) {
+      var icon = document.createElement('span'); icon.className = 'ct-icon'; icon.textContent = '⭐';
+      oddsCell.appendChild(icon);
+    }
+  } else {
+    var oddsNone = document.createElement('span'); oddsNone.className = 'ct-odds-none'; oddsNone.textContent = '-';
+    oddsCell.appendChild(oddsNone);
+  }
+
+  // 購入金額セル
+  var costCell = document.createElement('div'); costCell.className = 'ct-col-cost';
+  var costVal = document.createElement('span'); costVal.className = 'ct-cost-val'; costVal.textContent = '100円';
+  costCell.appendChild(costVal);
+
+  // 払戻セル
+  var payoutCell = document.createElement('div'); payoutCell.className = 'ct-col-payout';
+  if (item.odds !== null) {
+    var payoutVal = document.createElement('span'); payoutVal.className = 'ct-payout-val';
+    payoutVal.textContent = Math.floor(item.odds * 100).toLocaleString() + '円';
+    payoutCell.appendChild(payoutVal);
+  } else {
+    var payoutNone = document.createElement('span'); payoutNone.className = 'ct-odds-none'; payoutNone.textContent = '-';
+    payoutCell.appendChild(payoutNone);
+  }
+
+  // 的中率セル
+  var rateCell = document.createElement('div'); rateCell.className = 'ct-col-rate';
+  if (item.odds !== null && item.odds > 0) {
+    var rateVal = document.createElement('span'); rateVal.className = 'ct-rate-val';
+    var pct = 100 / item.odds;
+    rateVal.textContent = pct < 1 ? pct.toFixed(2) + '%' : pct.toFixed(1) + '%';
+    rateCell.appendChild(rateVal);
+  } else {
+    var rateNone = document.createElement('span'); rateNone.className = 'ct-odds-none'; rateNone.textContent = '-';
+    rateCell.appendChild(rateNone);
+  }
+
+  row.appendChild(comboCell); row.appendChild(oddsCell); row.appendChild(costCell);
+  row.appendChild(payoutCell); row.appendChild(rateCell);
+  return row;
+}
+
+// ─── 戦略グループレンダリング ──────────────────────────
+function renderComboGroup(strat, def, ctx) {
+  var isFinished     = ctx ? ctx.isFinished     : false;
+  var hitCombination = ctx ? ctx.hitCombination : null;
+  var hitOdds        = ctx ? ctx.hitOdds        : null;
+  var hitPayout      = ctx ? ctx.hitPayout      : null;
+
+  var group = document.createElement('div'); group.className = 'combo-group';
+
+  // ヘッダー
+  var hdr = document.createElement('div'); hdr.className = 'combo-group-hdr';
   var bar = document.createElement('div'); bar.className = 'combo-group-bar';
   bar.style.background = def ? def.color : '#888';
-
   var nm = document.createElement('div'); nm.className = 'combo-group-name';
   nm.style.color = def ? def.color : '#222'; nm.textContent = strat.strategy_type;
-
   var meta = document.createElement('div'); meta.className = 'combo-group-meta';
   meta.textContent = strat.combo_count + '点  合計' + strat.total_cost.toLocaleString() + '円';
-
   var chev = document.createElement('div'); chev.className = 'combo-group-chev';
   chev.textContent = '▲';
-
   hdr.appendChild(bar); hdr.appendChild(nm); hdr.appendChild(meta); hdr.appendChild(chev);
 
-  // ── テーブル
-  var wrap = document.createElement('div');
-  wrap.className = 'ct-wrap';
+  // コンテンツエリア（デフォルト展開）
+  var list = document.createElement('div'); list.className = 'combo-list'; list.style.display = 'block';
 
-  var table = document.createElement('div');
-  table.className = 'ct-table';
+  // 結果バナー
+  if (isFinished) {
+    list.appendChild(makeBanner(strat.is_hit, hitCombination, hitOdds, hitPayout));
+  }
+
+  // 行を先に生成してフィルターに渡す
+  var maxOdds = null;
+  for (var i = 0; i < strat.combinations.length; i++) {
+    var o = strat.combinations[i].odds;
+    if (o !== null && (maxOdds === null || o > maxOdds)) { maxOdds = o; }
+  }
+
+  var rowEls    = [];
+  var combosArr = [];
+  for (var i = 0; i < strat.combinations.length; i++) {
+    var row = makeComboRow(strat.combinations[i], maxOdds, isFinished);
+    rowEls.push(row);
+    combosArr.push(strat.combinations[i].combo);
+  }
+
+  // フィルターバー
+  list.appendChild(makeFilterBar(combosArr, rowEls));
+
+  // テーブル
+  var wrap = document.createElement('div'); wrap.className = 'ct-wrap';
+  var table = document.createElement('div'); table.className = 'ct-table';
 
   var thdr = document.createElement('div'); thdr.className = 'ct-hdr';
   thdr.appendChild(makeTh('ct-col-combo', '3連単'));
@@ -391,86 +657,8 @@ function renderComboGroup(strat, def) {
   thdr.appendChild(makeTh('ct-col-rate',  '的中率'));
   table.appendChild(thdr);
 
-  // 最大オッズを探す
-  var maxOdds = null;
-  for (var i = 0; i < strat.combinations.length; i++) {
-    var o = strat.combinations[i].odds;
-    if (o !== null && (maxOdds === null || o > maxOdds)) { maxOdds = o; }
-  }
-
-  for (var i = 0; i < strat.combinations.length; i++) {
-    var item  = strat.combinations[i];
-    var parts = item.combo.split('-');
-    var isMax = maxOdds !== null && item.odds !== null && item.odds === maxOdds;
-
-    var row = document.createElement('div');
-    row.className = 'ct-row' + (isMax ? ' ct-hl' : '');
-
-    // 3連単セル（枠バッジ）
-    var comboCell = document.createElement('div'); comboCell.className = 'ct-col-combo';
-    for (var j = 0; j < parts.length; j++) {
-      comboCell.appendChild(makeWakuBadge(Number(parts[j])));
-      if (j < parts.length - 1) {
-        var sep = document.createElement('span'); sep.className = 'ct-sep'; sep.textContent = '-';
-        comboCell.appendChild(sep);
-      }
-    }
-
-    // オッズセル
-    var oddsCell = document.createElement('div'); oddsCell.className = 'ct-col-odds';
-    if (item.odds !== null) {
-      var oddsVal = document.createElement('span');
-      oddsVal.className = 'ct-odds-val' + (isMax ? ' ct-max' : '');
-      oddsVal.textContent = Number(item.odds).toFixed(1) + '倍';
-      oddsCell.appendChild(oddsVal);
-      if (isMax) {
-        var icon = document.createElement('span'); icon.className = 'ct-icon'; icon.textContent = '⭐';
-        oddsCell.appendChild(icon);
-      }
-    } else {
-      var oddsNone = document.createElement('span'); oddsNone.className = 'ct-odds-none'; oddsNone.textContent = '-';
-      oddsCell.appendChild(oddsNone);
-    }
-
-    // 購入金額セル（固定 100円）
-    var costCell = document.createElement('div'); costCell.className = 'ct-col-cost';
-    var costVal = document.createElement('span'); costVal.className = 'ct-cost-val'; costVal.textContent = '100円';
-    costCell.appendChild(costVal);
-
-    // 払戻セル（オッズ×100）
-    var payoutCell = document.createElement('div'); payoutCell.className = 'ct-col-payout';
-    if (item.odds !== null) {
-      var payoutVal = document.createElement('span'); payoutVal.className = 'ct-payout-val';
-      payoutVal.textContent = Math.floor(item.odds * 100).toLocaleString() + '円';
-      payoutCell.appendChild(payoutVal);
-    } else {
-      var payoutNone = document.createElement('span'); payoutNone.className = 'ct-odds-none'; payoutNone.textContent = '-';
-      payoutCell.appendChild(payoutNone);
-    }
-
-    // 的中率セル（100÷オッズ%）
-    var rateCell = document.createElement('div'); rateCell.className = 'ct-col-rate';
-    if (item.odds !== null && item.odds > 0) {
-      var rateVal = document.createElement('span'); rateVal.className = 'ct-rate-val';
-      var pct = 100 / item.odds;
-      rateVal.textContent = pct < 1 ? pct.toFixed(2) + '%' : pct.toFixed(1) + '%';
-      rateCell.appendChild(rateVal);
-    } else {
-      var rateNone = document.createElement('span'); rateNone.className = 'ct-odds-none'; rateNone.textContent = '-';
-      rateCell.appendChild(rateNone);
-    }
-
-    row.appendChild(comboCell); row.appendChild(oddsCell); row.appendChild(costCell);
-    row.appendChild(payoutCell); row.appendChild(rateCell);
-    table.appendChild(row);
-  }
-
+  for (var i = 0; i < rowEls.length; i++) { table.appendChild(rowEls[i]); }
   wrap.appendChild(table);
-
-  // リストコンテナ（デフォルト展開）
-  var list = document.createElement('div');
-  list.className = 'combo-list';
-  list.style.display = 'block';
   list.appendChild(wrap);
 
   var expanded = true;
@@ -486,7 +674,8 @@ function renderComboGroup(strat, def) {
   return group;
 }
 
-function renderCombosSection(strategies) {
+// ─── 買い目セクション全体 ─────────────────────────────
+function renderCombosSection(strategies, ctx) {
   var sec = document.getElementById('combosSection');
   sec.textContent = ''; sec.style.display = '';
   var box = document.createElement('div'); box.className = 'combos-section';
@@ -502,12 +691,13 @@ function renderCombosSection(strategies) {
     var defMap = {};
     for (var i = 0; i < STRAT_DEFS.length; i++) { defMap[STRAT_DEFS[i].type] = STRAT_DEFS[i]; }
     for (var i = 0; i < strategies.length; i++) {
-      box.appendChild(renderComboGroup(strategies[i], defMap[strategies[i].strategy_type] || null));
+      box.appendChild(renderComboGroup(strategies[i], defMap[strategies[i].strategy_type] || null, ctx));
     }
   }
   sec.appendChild(box);
 }
 
+// ─── API取得 ──────────────────────────────────────────
 async function loadRaceCombos() {
   if (!venue || !raceNo) return;
   var url = API_HOST + '/strategy_detail.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
@@ -515,7 +705,13 @@ async function loadRaceCombos() {
     var res = await fetch(url);
     if (!res.ok) return;
     var data = await res.json();
-    renderCombosSection(data.strategies || []);
+    var ctx = {
+      isFinished:     data.is_finished     || false,
+      hitCombination: data.hit_combination || null,
+      hitOdds:        data.hit_odds        || null,
+      hitPayout:      data.hit_payout      || null,
+    };
+    renderCombosSection(data.strategies || [], ctx);
   } catch(e) {}
 }
 

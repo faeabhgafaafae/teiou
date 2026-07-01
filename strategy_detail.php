@@ -39,6 +39,32 @@ if (!$race) {
 }
 $race_id = (int)$race['id'];
 
+// レース結果を取得（1〜3着の艇番）
+$stmt = $pdo->prepare('SELECT actual_rank, lane FROM results WHERE race_id = ? AND actual_rank IN (1, 2, 3)');
+$stmt->execute([$race_id]);
+$result_rows = $stmt->fetchAll();
+
+$finish = [];
+foreach ($result_rows as $r) {
+    $finish[(int)$r['actual_rank']] = (int)$r['lane'];
+}
+
+$is_finished     = isset($finish[1], $finish[2], $finish[3]);
+$hit_combination = null;
+$hit_payout      = null;
+$hit_odds        = null;
+
+if ($is_finished) {
+    $hit_combination = $finish[1] . '-' . $finish[2] . '-' . $finish[3];
+    $stmt2 = $pdo->prepare('SELECT odds FROM odds_3t WHERE race_id = ? AND combo = ? LIMIT 1');
+    $stmt2->execute([$race_id, $hit_combination]);
+    $odds_row = $stmt2->fetch();
+    if ($odds_row) {
+        $hit_odds   = (float)$odds_row['odds'];
+        $hit_payout = (int)floor($hit_odds * 100);
+    }
+}
+
 // このレースの戦略を取得
 $stmt = $pdo->prepare("
     SELECT strategy_type, combinations
@@ -50,7 +76,14 @@ $stmt->execute([$race_id]);
 $strats = $stmt->fetchAll();
 
 if (!$strats) {
-    echo json_encode(['race_id' => $race_id, 'strategies' => []], JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'race_id'         => $race_id,
+        'is_finished'     => $is_finished,
+        'hit_combination' => $hit_combination,
+        'hit_payout'      => $hit_payout,
+        'hit_odds'        => $hit_odds,
+        'strategies'      => [],
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -78,11 +111,15 @@ if ($combo_keys) {
 // レスポンス構築
 $result = [];
 foreach ($strats_data as $s) {
-    $items = [];
+    $items      = [];
+    $strat_hit  = false;
     foreach ($s['combos'] as $c) {
+        $is_hit = $is_finished && ($c === $hit_combination);
+        if ($is_hit) { $strat_hit = true; }
         $items[] = [
-            'combo' => $c,
-            'odds'  => isset($odds_map[$c]) ? $odds_map[$c] : null,
+            'combo'  => $c,
+            'odds'   => isset($odds_map[$c]) ? $odds_map[$c] : null,
+            'is_hit' => $is_hit,
         ];
     }
     $result[] = [
@@ -90,13 +127,18 @@ foreach ($strats_data as $s) {
         'combinations'  => $items,
         'combo_count'   => count($s['combos']),
         'total_cost'    => count($s['combos']) * 100,
+        'is_hit'        => $strat_hit,
     ];
 }
 
 echo json_encode([
-    'race_id'    => $race_id,
-    'venue'      => $venue,
-    'date'       => $date,
-    'race_no'    => $race_no,
-    'strategies' => $result,
+    'race_id'         => $race_id,
+    'venue'           => $venue,
+    'date'            => $date,
+    'race_no'         => $race_no,
+    'is_finished'     => $is_finished,
+    'hit_combination' => $hit_combination,
+    'hit_odds'        => $hit_odds,
+    'hit_payout'      => $hit_payout,
+    'strategies'      => $result,
 ], JSON_UNESCAPED_UNICODE);
