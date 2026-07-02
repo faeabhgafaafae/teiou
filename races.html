@@ -415,13 +415,12 @@ function renderRaceCard(race) {
   panel1.appendChild(ld);
 
   var actions = document.createElement('div'); actions.className = 'race-actions';
-  var b1 = document.createElement('a'); b1.className = 'action-btn'; b1.href = 'racelist.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b1.textContent = '出走表';
+  var b1 = document.createElement('a'); b1.className = 'action-btn'; b1.href = 'racelist.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b1.textContent = '出走表';
   function fill(v){ return encodeURIComponent(v); }
   var b2 = document.createElement('a'); b2.className = 'action-btn'; b2.href = 'predict.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b2.textContent = '直前情報';
-  var b3 = document.createElement('a'); b3.className = 'action-btn'; b3.href = 'odds.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b3.textContent = 'オッズ';
-  var b4 = document.createElement('a'); b4.className = 'action-btn primary'; b4.href = 'ai-predict.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b4.textContent = '予想';
-  var b5 = document.createElement('a'); b5.className = 'action-btn'; b5.href = 'strategy.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b5.textContent = '戦略';
-  actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3); actions.appendChild(b4); actions.appendChild(b5);
+  var b3 = document.createElement('a'); b3.className = 'action-btn'; b3.href = 'odds.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b3.textContent = 'オッズ';
+  var b4 = document.createElement('a'); b4.className = 'action-btn primary'; b4.href = 'ai-predict.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b4.textContent = '予想';
+  actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3); actions.appendChild(b4);
 
   card.appendChild(hdr); card.appendChild(panel1); card.appendChild(actions);
   return card;
