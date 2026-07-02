@@ -46,8 +46,9 @@ foreach ($records as $r) {
     $race_groups[$key][] = $r;
 }
 
-$ok   = 0;
-$skip = 0;
+$ok        = 0;
+$skip      = 0;
+$first_err = null;
 
 $stmt_race_upsert = $pdo->prepare('
     INSERT INTO races (date, venue, race_no, wind_speed, wind_dir, wave_height)
@@ -94,7 +95,7 @@ foreach ($race_groups as $race_records) {
 
     $stmt_race_sel->execute([$date, $venue, $race_no]);
     $race = $stmt_race_sel->fetch();
-    if (!$race) { $skip++; continue; }
+    if (!$race) { $skip += count($race_records); continue; }
     $race_id = (int)$race['id'];
 
     // 成績 upsert・着順収集
@@ -113,6 +114,9 @@ foreach ($race_groups as $race_records) {
             $ok++;
         } catch (PDOException $e) {
             $skip++;
+            if ($first_err === null) {
+                $first_err = '[race_id=' . $race_id . ' player_id=' . (int)$r['player_id'] . '] ' . $e->getMessage();
+            }
         }
         $finish[(int)$r['actual_rank']] = (int)$r['lane'];
     }
@@ -140,4 +144,4 @@ foreach ($race_groups as $race_records) {
     }
 }
 
-echo json_encode(['ok' => $ok, 'skip' => $skip], JSON_UNESCAPED_UNICODE);
+echo json_encode(['ok' => $ok, 'skip' => $skip, 'first_error' => $first_err], JSON_UNESCAPED_UNICODE);

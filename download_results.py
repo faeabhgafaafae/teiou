@@ -237,6 +237,8 @@ def send_records(records, target_date):
             print(f'  [API ERROR] {data["error"]}')
             return False
         print(f'  → {data.get("ok", 0)}件登録 / {data.get("skip", 0)}件スキップ')
+        if data.get('first_error'):
+            print(f'  [FIRST ERROR] {data["first_error"]}')
         return True
     except Exception as e:
         print(f'  [SEND ERROR] {e}')
