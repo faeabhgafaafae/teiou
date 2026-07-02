@@ -1,6 +1,9 @@
 (function() {
   var VENUES = ['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','琵琶湖','住之江','尼崎','鳴門','高松','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
-  var date = new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0') + '-' + String(new Date().getDate()).padStart(2,'0');
+  var _now = new Date();
+  var today = _now.getFullYear() + '-' + String(_now.getMonth()+1).padStart(2,'0') + '-' + String(_now.getDate()).padStart(2,'0');
+  var date = (window.PAGE_DATE && window.PAGE_DATE <= today) ? window.PAGE_DATE : today;
+  var isToday = (date === today);
   var API_HOST = 'https://2410049.moo.jp';
 
   function getDiffMs(scheduledTime) {
@@ -23,11 +26,11 @@
   function renderRaceCard(race) {
     var diffMs = getDiffMs(race.scheduled_time);
     var countdown = getCountdownInfo(diffMs);
-    
+
     var card = document.createElement('div');
     card.className = 'urgent-card-box';
-    
-    card.innerHTML = 
+
+    card.innerHTML =
       '<div class="urgent-header">' +
         '<span class="urgent-venue">' + race.venue + '</span>' +
         '<span class="urgent-no">' + race.race_no + 'R</span>' +
@@ -40,7 +43,7 @@
         '<a class="urgent-btn" href="racelist.php?venue=' + encodeURIComponent(race.venue) + '&date=' + date + '&race_no=' + race.race_no + '">出走表</a>' +
         '<a class="urgent-btn main-btn" href="ai-predict.php?venue=' + encodeURIComponent(race.venue) + '&date=' + date + '&race_no=' + race.race_no + '">AI予想</a>' +
       '</div>';
-      
+
     return card;
   }
 
@@ -50,16 +53,14 @@
       if (!res.ok) return;
       var data = await res.json();
       if (!data.predictions) return;
-      
-      // 🌟 アロー関数を function 構文に修正
+
       var sorted = data.predictions.sort(function(a, b) {
         return a.lane - b.lane;
       });
-      
+
       var pBox = document.getElementById('urg-p-' + venue + '-' + raceNo);
       if (pBox) {
         pBox.innerHTML = '';
-        // 🌟 forEach内も安全な通常構文に修正
         sorted.forEach(function(p) {
           var name = p.name.replace(/[\s ]+/g, '').substring(0,3);
           pBox.innerHTML += '<span class="urgent-player-dot"><span class="w-dot wd-' + p.lane + '"></span>' + name + '</span>';
@@ -71,6 +72,8 @@
   async function init() {
     var container = document.getElementById('urgentRaceList');
     if (!container) return;
+    if (!isToday) return;
+
     var allRaces = [];
 
     await Promise.all(VENUES.map(async function(v) {
@@ -88,13 +91,12 @@
       } catch(e){}
     }));
 
-    // 🌟 締切ソート部分も安全な function 構文に修正
     var active = allRaces.filter(function(r) {
       return getDiffMs(r.scheduled_time) > 0;
     }).sort(function(a, b) {
       return getDiffMs(a.scheduled_time) - getDiffMs(b.scheduled_time);
     });
-    
+
     var top3 = active.slice(0, 3);
 
     if (top3.length === 0) {
@@ -110,6 +112,7 @@
   }
 
   window.addEventListener('DOMContentLoaded', function() {
+    if (!isToday) return;
     init();
     setInterval(init, 60000);
   });
