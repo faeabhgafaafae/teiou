@@ -4,104 +4,45 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>艇王 - レース一覧</title>
-<!-- 共通ヘッダーの呼び出し -->
-<script src="common-header.js" data-page-type="races" data-back="true"></script>
 
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; padding-top: 130px; /* ヘッダーとナビの高さ分余白を追加 */ }
 
-.container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
-.loading { text-align: center; padding: 60px 20px; color: #999; }
-.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
-footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
+/* --- ヘッダー全体を上部に固定 --- */
+header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; height: 71px; /* ヘッダーの高さを固定 */ }
 
-.venue-banner { background: linear-gradient(135deg, #0055a4, #0070cc); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
-.venue-banner-left h2 { font-size: 18px; font-weight: 700; }
-.venue-banner-left p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
-.venue-banner-right { text-align: right; }
-.venue-banner-right .race-total { font-size: 22px; font-weight: 800; }
-.venue-banner-right .race-total-label { font-size: 10px; opacity: 0.7; }
+/* 左：ロゴ ＆ レース場情報エリア */
+.header-left { display: flex; align-items: center; gap: 20px; }
+.logo img { height: 44px; width: auto; display: block; cursor: pointer; }
 
-.race-card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
-.race-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #eee; }
-.race-header-left { display: flex; align-items: center; gap: 10px; }
-.race-no { font-size: 16px; font-weight: 800; color: #0055a4; min-width: 36px; }
+.header-venue-info { display: flex; flex-direction: column; }
+.header-venue-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.header-page-title { font-size: 18px; font-weight: 800; color: #1a202c; }
+.gh-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+.header-main-date { font-size: 14px; color: #4a5568; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* 時間表示ブロック */
-.race-time-block { display: flex; flex-direction: column; gap: 2px; }
-.race-time { font-size: 14px; color: #333; font-weight: 700; font-variant-numeric: tabular-nums; }
-.race-time-label { font-size: 10px; color: #999; font-weight: 400; margin-right: 2px; }
+/* 右：ログイン・新規登録ボタン */
+.header-right { display: flex; align-items: center; gap: 16px; }
+.header-auth { display: flex; align-items: center; gap: 8px; }
+.auth-link { font-size: 12px; color: #0055a4; text-decoration: none; font-weight: 600; padding: 6px 14px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; transition: background 0.2s; }
+.auth-link:hover { background: #f8fafc; }
+.auth-link.register { background: #0055a4; color: #fff; border: none; }
+.auth-link.register:hover { background: #004488; }
 
-/* 🌟 背景色はハッキリ元の4色、文字色を優しくしたスタイル */
-.time-remaining { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
-
-/* ① 1時間超：明るめの緑（パキッとした白文字から、少し柔らかなオフホワイトに変更） */
-.time-remaining.time-bright-green { color: #f8fafc; background: #22c55e; }
-
-/* ② 1時間以下：薄めの緑（真っ黒文字から、なじみの良い上品なダークグリーンに変更） */
-.time-remaining.time-light-green { color: #064e3b; background: #86efac; }
-
-/* ③ 30分以下：黄色（真っ黒文字から、コントラストが強すぎない深みのある茶色に変更） */
-.time-remaining.time-yellow { color: #451a03; background: #eab308; }
-
-/* ④ 10分以下：赤（パキッとした白文字から、少し柔らかなオフホワイトに変更・点滅維持） */
-.time-remaining.time-red { color: #f8fafc; background: #ef4444; animation: pulse 1s infinite alternate; }
-
-/* 締切済 */
-.time-remaining.closed { color: #6b7280; background: #f3f4f6; }
-
-@keyframes pulse {
-  0% { opacity: 0.85; }
-  100% { opacity: 1; }
-}
-
-.race-header-right { display: flex; align-items: center; gap: 8px; }
-.status-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
-.status-yosen { background: #e0f2fe; color: #0369a1; }
-.status-kakutei { background: #f3f4f6; color: #6b7280; }
-.status-live { background: #fee2e2; color: #dc2626; }
-
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
-
-/* --- 選手一覧 --- */
-.player-row { display: flex; align-items: center; padding: 7px 16px; border-bottom: 1px solid #f5f5f5; gap: 8px; }
-.player-row:last-child { border-bottom: none; }
-.player-row:hover { background: #fafbfc; }
-.waku { width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
-.waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
-.waku-2 { background: #222; color: #fff; }
-.waku-3 { background: #e53e3e; color: #fff; }
-.waku-4 { background: #2563eb; color: #fff; }
-.waku-5 { background: #eab308; color: #222; }
-.waku-6 { background: #16a34a; color: #fff; }
-.player-id { font-size: 11px; color: #999; min-width: 36px; flex-shrink: 0; }
-.player-name { flex: 1; font-size: 14px; font-weight: 600; color: #222; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.player-grade { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
-.pg-A1 { background: #fff3cd; color: #b8860b; }
-.pg-A2 { background: #dbeafe; color: #2563eb; }
-.pg-B1 { background: #f3f4f6; color: #666; }
-.pg-B2 { background: #f3f4f6; color: #aaa; }
-.player-stats { display: flex; gap: 12px; flex-shrink: 0; }
-.player-stat { font-size: 11px; color: #999; text-align: right; }
-.player-stat strong { color: #333; font-weight: 600; }
-.player-stat-label { font-size: 9px; color: #bbb; display: block; }
-.player-loading { padding: 24px 16px; text-align: center; color: #bbb; font-size: 13px; }
-
-/* --- アクションボタン --- */
-.race-actions { display: flex; gap: 6px; padding: 8px 16px; border-top: 1px solid #f0f0f0; }
-.action-btn { flex: 1; padding: 8px 2px; border: 1px solid #e0e3e8; border-radius: 8px; background: #fff; font-size: 11px; font-weight: 600; color: #555; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.15s; }
-.action-btn:hover { border-color: #0055a4; color: #0055a4; background: #f0f5ff; }
-.action-btn.primary { background: #0055a4; color: #fff; border-color: #0055a4; }
-.action-btn.primary:hover { background: #003d7a; }
+/* グレード badge カラーマスタ */
+.grade-sg { background: #fed7d7; color: #e53e3e; }
+.grade-g1 { background: #feebc8; color: #dd6b20; }
+.grade-g2 { background: #ebf8ff; color: #2b6cb0; }
+.grade-g3 { background: #e6fffa; color: #319795; }
+.grade-ippan { background: #edf2f7; color: #718096; }
 
 /* --- R数クイックナビ --- */
 .race-nav-sticky {
-  position: sticky;
-  top: 65px;
+  position: fixed;
+  top: 71px; /* ヘッダーの下に配置 */
+  left: 0;
+  width: 100%;
   background: #ffffff;
   z-index: 1000;
   border-bottom: 2px solid #0055a4;
@@ -164,7 +105,98 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   100% { transform: scale(1); opacity: 1; }
 }
 
+.container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
+.loading { text-align: center; padding: 60px 20px; color: #999; }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
+footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
+
+.venue-banner { background: linear-gradient(135deg, #0055a4, #0070cc); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+.venue-banner-left h2 { font-size: 18px; font-weight: 700; }
+.venue-banner-left p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+.venue-banner-right { text-align: right; }
+.venue-banner-right .race-total { font-size: 22px; font-weight: 800; }
+.venue-banner-right .race-total-label { font-size: 10px; opacity: 0.7; }
+
+.race-card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.race-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #eee; }
+.race-header-left { display: flex; align-items: center; gap: 10px; }
+.race-no { font-size: 16px; font-weight: 800; color: #0055a4; min-width: 36px; }
+
+/* 時間表示ブロック */
+.race-time-block { display: flex; flex-direction: column; gap: 2px; }
+.race-time { font-size: 14px; color: #333; font-weight: 700; font-variant-numeric: tabular-nums; }
+.race-time-label { font-size: 10px; color: #999; font-weight: 400; margin-right: 2px; }
+
+.time-remaining { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
+.time-remaining.time-bright-green { color: #f8fafc; background: #22c55e; }
+.time-remaining.time-light-green { color: #064e3b; background: #86efac; }
+.time-remaining.time-yellow { color: #451a03; background: #eab308; }
+.time-remaining.time-red { color: #f8fafc; background: #ef4444; animation: pulse 1s infinite alternate; }
+.time-remaining.closed { color: #6b7280; background: #f3f4f6; }
+
+@keyframes pulse {
+  0% { opacity: 0.85; }
+  100% { opacity: 1; }
+}
+
+.race-header-right { display: flex; align-items: center; gap: 8px; }
+.status-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+.status-yosen { background: #e0f2fe; color: #0369a1; }
+.status-kakutei { background: #f3f4f6; color: #6b7280; }
+.status-live { background: #fee2e2; color: #dc2626; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* --- 選手一覧 --- */
+.player-row { display: flex; align-items: center; padding: 7px 16px; border-bottom: 1px solid #f5f5f5; gap: 8px; }
+.player-row:last-child { border-bottom: none; }
+.player-row:hover { background: #fafbfc; }
+.waku { width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+.waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
+.waku-2 { background: #222; color: #fff; }
+.waku-3 { background: #e53e3e; color: #fff; }
+.waku-4 { background: #2563eb; color: #fff; }
+.waku-5 { background: #eab308; color: #222; }
+.waku-6 { background: #16a34a; color: #fff; }
+.player-id { font-size: 11px; color: #999; min-width: 36px; flex-shrink: 0; }
+.player-name { flex: 1; font-size: 14px; font-weight: 600; color: #222; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-grade { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
+.pg-A1 { background: #fff3cd; color: #b8860b; }
+.pg-A2 { background: #dbeafe; color: #2563eb; }
+.pg-B1 { background: #f3f4f6; color: #666; }
+.pg-B2 { background: #f3f4f6; color: #aaa; }
+.player-stats { display: flex; gap: 12px; flex-shrink: 0; }
+.player-stat { font-size: 11px; color: #999; text-align: right; }
+.player-stat strong { color: #333; font-weight: 600; }
+.player-stat-label { font-size: 9px; color: #bbb; display: block; }
+.player-loading { padding: 24px 16px; text-align: center; color: #bbb; font-size: 13px; }
+
+/* --- アクションボタン --- */
+.race-actions { display: flex; gap: 6px; padding: 8px 16px; border-top: 1px solid #f0f0f0; }
+.action-btn { flex: 1; padding: 8px 2px; border: 1px solid #e0e3e8; border-radius: 8px; background: #fff; font-size: 11px; font-weight: 600; color: #555; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.15s; }
+.action-btn:hover { border-color: #0055a4; color: #0055a4; background: #f0f5ff; }
+.action-btn.primary { background: #0055a4; color: #fff; border-color: #0055a4; }
+.action-btn.primary:hover { background: #003d7a; }
+
+@media (max-width: 820px) {
+  header { padding: 12px 16px; height: 110px; /* タブレットサイズは高さを変更 */ flex-direction: column; }
+  .header-left { gap: 12px; }
+  .logo img { height: 36px; }
+  .header-page-title { font-size: 15px; }
+  .header-main-date { font-size: 12px; }
+  .header-date { display: none; }
+  .race-nav-sticky { top: 110px; }
+  body { padding-top: 170px; }
+}
+
 @media (max-width: 600px) {
+  header { flex-wrap: wrap; justify-content: space-between; padding: 10px 12px; gap: 8px; }
+  .header-left { width: auto; order: 1; }
+  .header-right { width: auto; order: 2; gap: 8px; }
+  .header-venue-info { flex-direction: row; align-items: center; width: 100%; order: 3; padding-top: 4px; border-top: 1px dashed #e2e8f0; justify-content: center; gap: 8px; }
   .venue-banner { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px 16px; }
   .venue-banner-right { text-align: left; }
   .player-row { padding: 6px 12px; gap: 6px; }
@@ -173,10 +205,34 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .race-actions { gap: 4px; padding: 8px 12px; }
   .action-btn { font-size: 10px; padding: 7px 1px; }
   .page-top-btn { bottom: 16px; right: 16px; width: 40px; height: 40px; font-size: 16px; }
+  .race-nav-btn { min-width: 44px; padding: 6px 10px; font-size: 12px; }
 }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+
+<header>
+  <div class="header-left">
+    <div class="logo" id="headerLogo" onclick="location.href='index.php'">
+      <img src="艇王.jpg" alt="艇王 BOATRACE ROYAL">
+    </div>
+    <div class="header-venue-info">
+      <div class="header-venue-row">
+        <h1 id="pageTitle" class="header-page-title"></h1>
+        <span id="pageBadge" style="display: none;"></span>
+      </div>
+      <div class="header-main-date" id="pageDate">--/-- (-)</div>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="header-auth" id="headerAuth">
+      <a class="auth-link" href="login.html">ログイン</a>
+      <a class="auth-link register" href="register.html">新規登録</a>
+    </div>
+  </div>
+</header>
 
 <div id="raceTopNav" class="race-nav-sticky" style="display: none;"></div>
 
@@ -359,11 +415,12 @@ function renderRaceCard(race) {
   panel1.appendChild(ld);
 
   var actions = document.createElement('div'); actions.className = 'race-actions';
-  var b1 = document.createElement('a'); b1.className = 'action-btn'; b1.href = 'racelist.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno; b1.textContent = '出走表';
-  var b2 = document.createElement('a'); b2.className = 'action-btn'; b2.href = 'predict.html?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno; b2.textContent = '直前情報';
-  var b3 = document.createElement('a'); b3.className = 'action-btn'; b3.href = 'odds.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno; b3.textContent = 'オッズ';
-  var b4 = document.createElement('a'); b4.className = 'action-btn primary'; b4.href = 'ai-predict.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno; b4.textContent = '予想';
-  var b5 = document.createElement('a'); b5.className = 'action-btn'; b5.href = 'strategy.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + rno; b5.textContent = '戦略';
+  var b1 = document.createElement('a'); b1.className = 'action-btn'; b1.href = 'racelist.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b1.textContent = '出走表';
+  function fill(v){ return encodeURIComponent(v); }
+  var b2 = document.createElement('a'); b2.className = 'action-btn'; b2.href = 'predict.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b2.textContent = '直前情報';
+  var b3 = document.createElement('a'); b3.className = 'action-btn'; b3.href = 'odds.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b3.textContent = 'オッズ';
+  var b4 = document.createElement('a'); b4.className = 'action-btn primary'; b4.href = 'ai-predict.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b4.textContent = '予想';
+  var b5 = document.createElement('a'); b5.className = 'action-btn'; b5.href = 'strategy.html?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b5.textContent = '戦略';
   actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3); actions.appendChild(b4); actions.appendChild(b5);
 
   card.appendChild(hdr); card.appendChild(panel1); card.appendChild(actions);
