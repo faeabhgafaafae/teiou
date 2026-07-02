@@ -11,8 +11,8 @@ $prevDate = date('Y-m-d', strtotime($pageDate . ' -1 day'));
 $nextDate = date('Y-m-d', strtotime($pageDate . ' +1 day'));
 $nextDisabled = ($nextDate > $today);
 $weekDays = array('日', '月', '火', '水', '木', '金', '土');
-$displayDate = date('n月j日', strtotime($pageDate)) . '（' . $weekDays[date('w', strtotime($pageDate))] . '）';
-if ($pageDate === $today) { $displayDate = '今日・' . $displayDate; }
+$displayDay  = date('n月j日', strtotime($pageDate));
+$displayDow  = $weekDays[date('w', strtotime($pageDate))];
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -104,37 +104,56 @@ if ($pageDate === $today) { $displayDate = '今日・' . $displayDate; }
     .date-nav {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 12px;
+      justify-content: space-between;
       margin-bottom: 16px;
-      padding: 10px 16px;
-      background: var(--card-bg, #f8fafc);
+      padding: 14px 20px;
+      background: var(--card-bg, #ffffff);
       border: 1px solid var(--border-color, #e2e8f0);
-      border-radius: 8px;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    .date-nav-btn {
+    .date-nav-arrow {
       display: inline-flex;
       align-items: center;
-      padding: 6px 14px;
-      background: #0055a4;
-      color: #fff;
-      border-radius: 6px;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      background: var(--bg-nest, #f8fafc);
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 50%;
+      color: #0055a4;
       text-decoration: none;
-      font-size: 13px;
-      font-weight: bold;
+      font-size: 14px;
+      flex-shrink: 0;
     }
-    .date-nav-btn.disabled {
-      background: #e2e8f0;
-      color: #a0aec0;
+    .date-nav-arrow.disabled {
+      color: #cbd5e0;
       cursor: not-allowed;
       pointer-events: none;
     }
-    .date-nav-label {
-      font-size: 15px;
+    .date-nav-center {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .date-nav-today-badge {
+      background: #0055a4;
+      color: #fff;
+      font-size: 10px;
       font-weight: bold;
-      color: var(--text-main, #2d3748);
-      min-width: 160px;
-      text-align: center;
+      padding: 2px 8px;
+      border-radius: 10px;
+      letter-spacing: 0.5px;
+    }
+    .date-nav-date {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--text-main, #1a202c);
+    }
+    .date-nav-dow {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-sub, #718096);
     }
     .badge-past {
       display: inline-block;
@@ -202,12 +221,17 @@ if ($pageDate === $today) { $displayDate = '今日・' . $displayDate; }
         </section>
 
         <div class="date-nav">
-          <a class="date-nav-btn" href="?date=<?php echo $prevDate; ?>">&#8592; 前日</a>
-          <span class="date-nav-label"><?php echo htmlspecialchars($displayDate, ENT_QUOTES, 'UTF-8'); ?></span>
+          <a class="date-nav-arrow" href="?date=<?php echo $prevDate; ?>"><i class="fas fa-chevron-left"></i></a>
+          <div class="date-nav-center">
+            <i class="fas fa-calendar-alt" style="color:#0055a4; font-size:15px;"></i>
+            <?php if ($pageDate === $today): ?><span class="date-nav-today-badge">今日</span><?php endif; ?>
+            <span class="date-nav-date"><?php echo htmlspecialchars($displayDay, ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="date-nav-dow">（<?php echo $displayDow; ?>）</span>
+          </div>
           <?php if ($nextDisabled): ?>
-            <span class="date-nav-btn disabled">翌日 &#8594;</span>
+            <span class="date-nav-arrow disabled"><i class="fas fa-chevron-right"></i></span>
           <?php else: ?>
-            <a class="date-nav-btn" href="?date=<?php echo $nextDate; ?>">翌日 &#8594;</a>
+            <a class="date-nav-arrow" href="?date=<?php echo $nextDate; ?>"><i class="fas fa-chevron-right"></i></a>
           <?php endif; ?>
         </div>
 

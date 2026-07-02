@@ -2,8 +2,8 @@
   var VENUES = ['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','琵琶湖','住之江','尼崎','鳴門','高松','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
   var _now = new Date();
   var today = _now.getFullYear() + '-' + String(_now.getMonth()+1).padStart(2,'0') + '-' + String(_now.getDate()).padStart(2,'0');
-  var date = (window.PAGE_DATE && window.PAGE_DATE <= today) ? window.PAGE_DATE : today;
-  var isToday = (date === today);
+  var currentDate = (window.PAGE_DATE && window.PAGE_DATE <= today) ? window.PAGE_DATE : today;
+  var isToday = (currentDate === today);
   var API_HOST = 'https://2410049.moo.jp';
 
   function getDiffMs(scheduledTime) {
@@ -40,8 +40,8 @@
         '<div style="font-size:10px; color:#bbb;">選手読込中...</div>' +
       '</div>' +
       '<div class="urgent-btn-group">' +
-        '<a class="urgent-btn" href="racelist.php?venue=' + encodeURIComponent(race.venue) + '&date=' + date + '&race_no=' + race.race_no + '">出走表</a>' +
-        '<a class="urgent-btn main-btn" href="ai-predict.php?venue=' + encodeURIComponent(race.venue) + '&date=' + date + '&race_no=' + race.race_no + '">AI予想</a>' +
+        '<a class="urgent-btn" href="racelist.php?venue=' + encodeURIComponent(race.venue) + '&date=' + currentDate + '&race_no=' + race.race_no + '">出走表</a>' +
+        '<a class="urgent-btn main-btn" href="ai-predict.php?venue=' + encodeURIComponent(race.venue) + '&date=' + currentDate + '&race_no=' + race.race_no + '">AI予想</a>' +
       '</div>';
 
     return card;
@@ -49,7 +49,7 @@
 
   async function loadPlayers(venue, raceNo) {
     try {
-      var res = await fetch(API_HOST + '/predict.php?date=' + date + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo);
+      var res = await fetch(API_HOST + '/predict.php?date=' + currentDate + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo);
       if (!res.ok) return;
       var data = await res.json();
       if (!data.predictions) return;
@@ -78,7 +78,7 @@
 
     await Promise.all(VENUES.map(async function(v) {
       try {
-        var res = await fetch(API_HOST + '/races.php?date=' + date + '&venue=' + encodeURIComponent(v));
+        var res = await fetch(API_HOST + '/races.php?date=' + currentDate + '&venue=' + encodeURIComponent(v));
         if (res.ok) {
           var data = await res.json();
           if (data.races) {
@@ -111,8 +111,34 @@
     });
   }
 
+  // 過去日付選択時、会場グリッド内のリンクに ?date= を付与する
+  function patchDateLinks(container) {
+    if (!container) return;
+    var links = container.querySelectorAll('a[href]');
+    Array.prototype.forEach.call(links, function(a) {
+      var href = a.getAttribute('href');
+      if (!href || href.charAt(0) === '#' || href.indexOf('date=') !== -1) return;
+      var sep = href.indexOf('?') !== -1 ? '&' : '?';
+      a.setAttribute('href', href + sep + 'date=' + currentDate);
+    });
+  }
+
+  function watchVenueLinks() {
+    var ids = ['venueGrid', 'favoriteVenueGrid', 'featuredBanner'];
+    ids.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      patchDateLinks(el);
+      var obs = new MutationObserver(function() { patchDateLinks(el); });
+      obs.observe(el, { childList: true, subtree: true });
+    });
+  }
+
   window.addEventListener('DOMContentLoaded', function() {
-    if (!isToday) return;
+    if (!isToday) {
+      watchVenueLinks();
+      return;
+    }
     init();
     setInterval(init, 60000);
   });
