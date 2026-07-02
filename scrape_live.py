@@ -20,7 +20,7 @@ API_PENDING    = os.environ.get('API_PENDING',    'https://2410049.moo.jp/get_pe
 API_BEFOREINFO = os.environ.get('API_URL',        'https://2410049.moo.jp/import_beforeinfo.php')
 API_ODDS       = os.environ.get('API_ODDS',       'https://2410049.moo.jp/import_odds.php')
 API_KEY        = os.environ.get('API_KEY',         'teio2025')
-WITHIN         = int(os.environ.get('WITHIN',      '40'))
+WITHIN         = int(os.environ.get('WITHIN',      '60'))
 SLEEP_SEC      = 3
 
 VENUE_TO_JCD = {v: k for k, v in VENUES.items()}
@@ -28,17 +28,37 @@ ODDS_SLEEP_SEC = 1
 
 
 def get_pending_races() -> list:
+    """当日の全レースを取得し、締切前かつ締切までWITHIN分以内のレースのみ対象とする"""
     res = requests.get(API_PENDING, params={
         'api_key': API_KEY,
-        'within':  WITHIN,
+        'all':     '1',
     }, timeout=15)
     res.raise_for_status()
     data = res.json()
     if 'error' in data:
         raise RuntimeError(f'get_pending_races error: {data["error"]}')
     races = data.get('races', [])
-    # -20 <= minutes_until_deadline <= 30 のレースのみ対象
-    return [r for r in races if -20 <= r.get('minutes_until_deadline', 999) <= 30]
+
+    target = []
+    for r in races:
+        venue   = r.get('venue', '?')
+        race_no = r.get('race_no', '?')
+        sched   = r.get('scheduled_time', '??:??')
+        mins    = r.get('minutes_until_deadline')
+
+        if mins is None:
+            print(f'  [SKIP] [{venue}] {race_no}R (締切時刻不明)')
+            continue
+        if mins < 0:
+            print(f'  [SKIP] [{venue}] {race_no}R (締切{sched} 締切済み=結果確定済み)')
+            continue
+        if mins > WITHIN:
+            print(f'  [SKIP] [{venue}] {race_no}R (締切{sched} 残り{mins}分 > {WITHIN}分)')
+            continue
+
+        target.append(r)
+
+    return target
 
 
 def scrape_odds(jcd: str, rno: int, hd: str) -> dict | None:
@@ -425,12 +445,7 @@ def main():
 
         label = f'締切{sched}'
         if mins is not None:
-            if mins < 0:
-                label += f' (締切後{abs(mins)}分=確定オッズ)'
-            elif mins <= 10:
-                label += f' (残{mins}分=直前)'
-            else:
-                label += f' (残{mins}分)'
+            label += f' (残{mins}分=直前)' if mins <= 10 else f' (残{mins}分)'
         print(f'\n  [{venue}] {race_no}R ({label})')
 
         if not jcd:
