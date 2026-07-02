@@ -1,3 +1,19 @@
+<?php
+$today = date('Y-m-d');
+$rawDate = isset($_GET['date']) ? trim($_GET['date']) : $today;
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawDate) || $rawDate > $today) {
+    $pageDate = $today;
+} else {
+    $pageDate = $rawDate;
+}
+$isPast = ($pageDate < $today);
+$prevDate = date('Y-m-d', strtotime($pageDate . ' -1 day'));
+$nextDate = date('Y-m-d', strtotime($pageDate . ' +1 day'));
+$nextDisabled = ($nextDate > $today);
+$weekDays = array('日', '月', '火', '水', '木', '金', '土');
+$displayDate = date('n月j日', strtotime($pageDate)) . '（' . $weekDays[date('w', strtotime($pageDate))] . '）';
+if ($pageDate === $today) { $displayDate = '今日・' . $displayDate; }
+?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -45,7 +61,7 @@
     .urgent-time.time-yellow { color: #451a03; background: #eab308; }
     .urgent-time.time-green { color: #fff; background: #22c55e; }
     .urgent-time.closed { color: #fff; background: #718096; }
-    
+
     .urgent-players {
       display: flex;
       flex-wrap: wrap;
@@ -83,6 +99,54 @@
       .bottom-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
       .bottom-card { margin-bottom: 0 !important; }
     }
+
+    /* 日付ナビゲーション */
+    .date-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 10px 16px;
+      background: var(--card-bg, #f8fafc);
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 8px;
+    }
+    .date-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 14px;
+      background: #0055a4;
+      color: #fff;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .date-nav-btn.disabled {
+      background: #e2e8f0;
+      color: #a0aec0;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .date-nav-label {
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--text-main, #2d3748);
+      min-width: 160px;
+      text-align: center;
+    }
+    .badge-past {
+      display: inline-block;
+      background: #718096;
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -90,7 +154,7 @@
   <?php include 'header.php'; ?>
 
   <div class="dashboard-container">
-    
+
     <aside class="sidebar">
       <nav class="side-nav">
         <a href="#" class="nav-item active" id="menuHome"><i class="fas fa-home icon"></i> ホーム</a>
@@ -127,9 +191,9 @@
     </aside>
 
     <main class="main-content">
-      
+
       <div id="contentHome">
-        
+
         <section id="favoriteVenueSection" style="display: none; margin-bottom: 24px;">
           <div class="section-header">
             <h2 class="section-title"><i class="fas fa-star" style="color: #d97706; margin-right: 6px;"></i>お気に入りレース場</h2>
@@ -137,8 +201,18 @@
           <div class="venue-grid" id="favoriteVenueGrid"></div>
         </section>
 
+        <div class="date-nav">
+          <a class="date-nav-btn" href="?date=<?php echo $prevDate; ?>">&#8592; 前日</a>
+          <span class="date-nav-label"><?php echo htmlspecialchars($displayDate, ENT_QUOTES, 'UTF-8'); ?></span>
+          <?php if ($nextDisabled): ?>
+            <span class="date-nav-btn disabled">翌日 &#8594;</span>
+          <?php else: ?>
+            <a class="date-nav-btn" href="?date=<?php echo $nextDate; ?>">翌日 &#8594;</a>
+          <?php endif; ?>
+        </div>
+
         <div class="section-header">
-          <h2 class="section-title">開催中のレース場 <span class="venue-count" id="venueCount">0場 開催中</span></h2>
+          <h2 class="section-title">開催中のレース場 <span class="venue-count" id="venueCount">0場 開催中</span><?php if ($isPast): ?><span class="badge-past">開催済み</span><?php endif; ?></h2>
         </div>
 
         <div class="filter-bar">
@@ -170,7 +244,7 @@
             </div>
           </div>
 
-          <div class="bottom-card">
+          <div class="bottom-card"<?php if ($isPast): ?> style="display:none;"<?php endif; ?>>
             <h3><i class="fas fa-hourglass-half" style="color: #eab308;"></i>まもなく締切</h3>
             <div id="urgentRaceList">
               <div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">レースを集計中...</div>
@@ -196,6 +270,7 @@
     </main>
   </div>
 
+  <script>var PAGE_DATE = '<?php echo htmlspecialchars($pageDate, ENT_QUOTES, 'UTF-8'); ?>';</script>
   <script src="app.js"></script>
   <script src="home-races.js" defer></script>
 </body>
