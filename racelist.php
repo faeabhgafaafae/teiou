@@ -82,18 +82,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 </head>
 <body>
 
-<header>
-  <div class="header-left">
-    <a class="back-btn" id="backBtn" href="index.php">&larr;</a>
-    <div class="header-info">
-      <h1 id="pageTitle">出走表</h1>
-      <div class="header-meta">
-        <span class="date" id="pageDate"></span>
-        <span class="grade-badge" id="pageBadge"></span>
-      </div>
-    </div>
-  </div>
-</header>
+<?php $pageTitleDefault = '出走表'; include 'header.php'; ?>
 
 <div class="container">
   <div class="race-bar" id="raceBar" style="display:none">
@@ -137,13 +126,13 @@ document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
 document.getElementById('backBtn').href = 'races.html?' + baseQ;
-document.getElementById('btnPredict').href = 'ai-predict.html?' + baseQ + '&race_no=' + raceNo;
+document.getElementById('btnPredict').href = 'ai-predict.php?' + baseQ + '&race_no=' + raceNo;
 
 var tabsEl = document.getElementById('raceTabs');
 for (var t = 1; t <= 12; t++) {
   var tab = document.createElement('a');
   tab.className = 'race-tab' + (t === raceNo ? ' active' : '');
-  tab.href = 'racelist.html?' + baseQ + '&race_no=' + t;
+  tab.href = 'racelist.php?' + baseQ + '&race_no=' + t;
   tab.textContent = t + 'R';
   tabsEl.appendChild(tab);
 }

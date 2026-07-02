@@ -140,7 +140,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
 .odds-pika-mark { font-size: 11px; margin-right: 2px; }
 
-/* ─── 戦略セクション（strategy.htmlから移植） ───────────── */
+/* ─── 戦略セクション（strategy.phpから移植） ───────────── */
 .note-box { background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: #1e40af; line-height: 1.5; }
 .strat-section { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
 .strat-hdr { display: flex; align-items: center; padding: 13px 14px; gap: 10px; cursor: pointer; transition: background 0.1s; }
@@ -244,18 +244,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 </head>
 <body>
 
-<header>
-  <div class="header-left">
-    <a class="back-btn" id="backBtn" href="index.php">&larr;</a>
-    <div class="header-info">
-      <h1 id="pageTitle">予想</h1>
-      <div class="header-meta">
-        <span class="date" id="pageDate"></span>
-        <span class="grade-badge" id="pageBadge"></span>
-      </div>
-    </div>
-  </div>
-</header>
+<?php $pageTitleDefault = '予想'; include 'header.php'; ?>
 
 <div class="container">
   <div class="race-bar" id="raceBar" style="display:none">
@@ -354,13 +343,13 @@ document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
 document.getElementById('backBtn').href = 'races.html?' + baseQ;
-document.getElementById('btnRacelist').href = 'racelist.html?' + baseQ + '&race_no=' + raceNo;
+document.getElementById('btnRacelist').href = 'racelist.php?' + baseQ + '&race_no=' + raceNo;
 document.getElementById('btnPredict').href = 'predict.html?' + baseQ + '&race_no=' + raceNo;
 
 var prevNo = raceNo > 1 ? raceNo - 1 : 1;
 var nextNo = raceNo < 12 ? raceNo + 1 : 12;
-document.getElementById('btnPrev').href = 'ai-predict.html?' + baseQ + '&race_no=' + prevNo;
-document.getElementById('btnNext').href = 'ai-predict.html?' + baseQ + '&race_no=' + nextNo;
+document.getElementById('btnPrev').href = 'ai-predict.php?' + baseQ + '&race_no=' + prevNo;
+document.getElementById('btnNext').href = 'ai-predict.php?' + baseQ + '&race_no=' + nextNo;
 if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
 if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
 
@@ -896,7 +885,7 @@ document.getElementById('pikaichiToggle').onclick = function() {
   for (var s = 0; s < stratApplyFns.length; s++) { stratApplyFns[s](); }
 };
 
-/* ─── 戦略タブ（strategy.htmlから移植） ─────────────── */
+/* ─── 戦略タブ（strategy.phpから移植） ─────────────── */
 var COMBO_LIMIT = 10;
 var STRAT_DEFS = [
   { type: '的中特化', color: '#2563eb', desc: '上位3艇の全順列（最大6点）' },

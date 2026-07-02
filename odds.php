@@ -86,18 +86,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 </head>
 <body>
 
-<header>
-  <div class="header-left">
-    <a class="back-btn" id="backBtn" href="index.php">&larr;</a>
-    <div class="header-info">
-      <h1 id="pageTitle">オッズ</h1>
-      <div class="header-meta">
-        <span class="date" id="pageDate"></span>
-        <span class="grade-badge" id="pageBadge"></span>
-      </div>
-    </div>
-  </div>
-</header>
+<?php $pageTitleDefault = 'オッズ'; include 'header.php'; ?>
 
 <div class="container">
   <div class="race-bar" id="raceBar" style="display:none">
@@ -157,8 +146,8 @@ document.getElementById('backBtn').href = 'races.html?' + baseQ;
 
 var prevNo = raceNo > 1 ? raceNo - 1 : 1;
 var nextNo = raceNo < 12 ? raceNo + 1 : 12;
-document.getElementById('btnPrev').href = 'odds.html?' + baseQ + '&race_no=' + prevNo;
-document.getElementById('btnNext').href = 'odds.html?' + baseQ + '&race_no=' + nextNo;
+document.getElementById('btnPrev').href = 'odds.php?' + baseQ + '&race_no=' + prevNo;
+document.getElementById('btnNext').href = 'odds.php?' + baseQ + '&race_no=' + nextNo;
 if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
 if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
 

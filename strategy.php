@@ -122,18 +122,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 </head>
 <body>
 
-<header>
-  <div class="header-left">
-    <a class="back-btn" id="backBtn" href="index.php">&larr;</a>
-    <div class="header-info">
-      <h1 id="pageTitle">戦略別予想</h1>
-      <div class="header-meta">
-        <span class="date" id="pageDate"></span>
-        <span class="grade-badge" id="pageBadge"></span>
-      </div>
-    </div>
-  </div>
-</header>
+<?php $pageTitleDefault = '戦略別予想'; include 'header.php'; ?>
 
 <div class="container">
   <div class="note-box">
@@ -203,9 +192,9 @@ document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
 document.getElementById('backBtn').href = 'races.html?venue=' + encodeURIComponent(venue) + '&date=' + date;
-document.getElementById('btnRacelist').href  = 'racelist.html?'  + baseQ;
+document.getElementById('btnRacelist').href  = 'racelist.php?'  + baseQ;
 document.getElementById('btnPredict').href   = 'predict.html?'   + baseQ;
-document.getElementById('btnAiPredict').href = 'ai-predict.html?' + baseQ;
+document.getElementById('btnAiPredict').href = 'ai-predict.php?' + baseQ;
 document.getElementById('bottomActions').style.display = 'flex';
 
 // ─── ユーティリティ ────────────────────────────────────
