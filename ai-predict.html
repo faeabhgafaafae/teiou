@@ -128,6 +128,97 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .bottom-btn { flex: 1; padding: 10px; border: 1px solid #e0e3e8; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 600; color: #555; text-align: center; text-decoration: none; transition: all 0.15s; }
 .bottom-btn:hover { border-color: #0055a4; color: #0055a4; }
 
+.pikaichi-bar { margin-bottom: 10px; }
+.pikaichi-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid #d0d5dd; border-radius: 20px; background: #fff; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; transition: all 0.15s; }
+.pikaichi-toggle:hover { border-color: #f59e0b; color: #d97706; }
+.pikaichi-toggle.active { background: #fffbeb; border-color: #f59e0b; color: #d97706; }
+
+.page-tabs { display: flex; gap: 4px; margin-bottom: 12px; padding: 4px; background: #e9ecef; border-radius: 10px; }
+.page-tab { flex: 1; padding: 9px 4px; border: none; border-radius: 8px; background: transparent; font-size: 13px; font-weight: 700; color: #888; cursor: pointer; text-align: center; transition: all 0.15s; }
+.page-tab:hover { color: #555; background: #dde0e4; }
+.page-tab.active { background: #0055a4; color: #fff; }
+
+.odds-pika-mark { font-size: 11px; margin-right: 2px; }
+
+/* ─── 戦略セクション（strategy.htmlから移植） ───────────── */
+.note-box { background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: #1e40af; line-height: 1.5; }
+.strat-section { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+.strat-hdr { display: flex; align-items: center; padding: 13px 14px; gap: 10px; cursor: pointer; transition: background 0.1s; }
+.strat-hdr:hover { background: #fafbfc; }
+.strat-bar { width: 4px; min-height: 38px; border-radius: 2px; flex-shrink: 0; align-self: stretch; }
+.strat-name-wrap { flex: 1; min-width: 0; }
+.strat-name { font-size: 15px; font-weight: 800; }
+.strat-desc { font-size: 10px; color: #aaa; margin-top: 2px; }
+.strat-stats-wrap { display: flex; gap: 14px; flex-shrink: 0; }
+.strat-stat { text-align: center; }
+.strat-stat-lbl { font-size: 9px; color: #aaa; font-weight: 700; letter-spacing: 0.04em; display: block; }
+.strat-stat-val { font-size: 14px; font-weight: 900; display: block; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.strat-stat-val.pos { color: #16a34a; }
+.strat-stat-val.neg { color: #dc2626; }
+.strat-stat-val.neu { color: #0055a4; }
+.strat-stat-val.dim { color: #bbb; }
+.strat-toggle { border: 1px solid #e0e3e8; border-radius: 8px; background: #fff; font-size: 11px; color: #777; padding: 5px 8px; cursor: pointer; white-space: nowrap; flex-shrink: 0; line-height: 1; }
+.strat-toggle:hover { border-color: #aaa; }
+.strat-body { border-top: 1px solid #f0f0f0; }
+.strat-empty { padding: 20px 16px; text-align: center; color: #bbb; font-size: 13px; }
+
+.result-banner { padding: 11px 16px 9px; border-bottom: 1px solid rgba(0,0,0,0.07); }
+.banner-hit { background: #fff0f5; }
+.banner-miss { background: #f5f5f5; }
+.banner-label { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 5px; }
+.banner-hit .banner-label { color: #c2185b; }
+.banner-miss .banner-label { color: #999; }
+.banner-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.banner-title { font-size: 18px; font-weight: 900; }
+.banner-hit .banner-title { color: #e91e8c; }
+.banner-miss .banner-title { color: #aaa; }
+.banner-combo-row { display: flex; align-items: center; gap: 3px; }
+.banner-odds-txt { font-size: 13px; font-weight: 700; color: #e91e8c; }
+.banner-payout-txt { font-size: 13px; font-weight: 700; color: #e91e8c; }
+.banner-win-payout { font-size: 12px; color: #aaa; margin-left: 2px; }
+
+.filter-bar { display: flex; gap: 6px; padding: 7px 12px; background: #f9fafb; border-bottom: 1px solid #ebebeb; flex-wrap: wrap; align-items: center; }
+.filter-group { display: flex; align-items: center; gap: 3px; }
+.filter-pos-lbl { font-size: 11px; font-weight: 700; color: #555; margin-right: 2px; white-space: nowrap; }
+.filter-btn { width: 26px; height: 26px; border-radius: 4px; border: 1px solid #ddd; background: #f0f0f0; color: #888; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.filter-btn:hover { border-color: #aaa; }
+.filter-divider { width: 1px; height: 18px; background: #e0e0e0; margin: 0 2px; flex-shrink: 0; }
+
+.ct-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ct-table { min-width: 360px; width: 100%; }
+.ct-hdr { display: flex; padding: 5px 16px; background: #f7f8fa; gap: 4px; border-bottom: 1px solid #eee; }
+.ct-row { display: flex; padding: 7px 16px; border-bottom: 1px solid #f5f5f5; gap: 4px; align-items: center; }
+.ct-row:last-child { border-bottom: none; }
+.ct-row.ct-hl { background: #fffbea; }
+.ct-row.ct-hit { background: #fffde7; border-left: 3px solid #f59e0b; padding-left: 13px; }
+.ct-col-combo  { flex: 1; min-width: 108px; display: flex; align-items: center; gap: 3px; }
+.ct-col-odds   { width: 78px; text-align: right; flex-shrink: 0; }
+.ct-col-cost   { width: 50px; text-align: right; flex-shrink: 0; }
+.ct-col-payout { width: 74px; text-align: right; flex-shrink: 0; }
+.ct-col-rate   { width: 52px; text-align: right; flex-shrink: 0; }
+.ct-th { font-size: 10px; font-weight: 700; color: #999; }
+.ct-sep { font-size: 11px; color: #bbb; }
+.ct-waku { width: 22px; height: 22px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.ct-odds-val { font-size: 13px; font-weight: 700; color: #0055a4; font-variant-numeric: tabular-nums; }
+.ct-odds-val.ct-max { color: #d97706; }
+.ct-odds-none { font-size: 13px; color: #bbb; }
+.ct-icon { font-size: 11px; margin-left: 1px; }
+.ct-cost-val { font-size: 12px; color: #aaa; }
+.ct-payout-val { font-size: 12px; font-weight: 600; color: #333; font-variant-numeric: tabular-nums; }
+.ct-rate-val { font-size: 12px; color: #6b7280; font-variant-numeric: tabular-nums; }
+.ct-hit-mark { font-size: 13px; margin-right: 2px; }
+.ct-pika-mark { font-size: 13px; margin-right: 2px; }
+
+.show-all-btn { display: block; width: 100%; padding: 11px 16px; border: none; border-top: 1px solid #ebebeb; background: #fafbfc; font-size: 13px; font-weight: 600; color: #0055a4; cursor: pointer; text-align: center; }
+.show-all-btn:hover { background: #eff6ff; }
+
+@media (max-width: 480px) {
+  .strat-stats-wrap { gap: 10px; }
+  .strat-stat-val { font-size: 13px; }
+  .ct-col-cost { display: none; }
+  .filter-bar { gap: 5px; padding: 6px 10px; }
+}
+
 @media (max-width: 600px) {
   .race-bar { flex-direction: column; align-items: flex-start; }
   .race-bar-right { width: 100%; }
@@ -178,38 +269,56 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     </div>
   </div>
 
-  <div class="stats-tabs" id="statsTabs" style="display:none">
-    <button class="stats-tab active" data-tab="recent10">直近10走</button>
-    <button class="stats-tab" data-tab="recent6m">直近6ヶ月</button>
-    <button class="stats-tab" data-tab="local">当地</button>
-    <button class="stats-tab" data-tab="current_period">今期</button>
+  <div class="pikaichi-bar" id="pikaichiBar" style="display:none">
+    <button class="pikaichi-toggle" id="pikaichiToggle">&#11088; ピカイチのみを表示</button>
   </div>
 
-  <div class="pred-table-header">
-    <div class="th-waku">枠</div>
-    <div class="th-name">レーサー</div>
-    <div class="th-score">スコア</div>
-    <div class="th-breakdown">スコア内訳</div>
-    <div class="th-rates">
-      <div class="th-top3">3連対率</div>
-      <div>1着率</div>
-      <div>2着率</div>
-      <div>3着率</div>
+  <div class="page-tabs" id="pageTabs" style="display:none">
+    <button class="page-tab active" id="tabPredict">予想</button>
+    <button class="page-tab" id="tabStrategy">戦略</button>
+  </div>
+
+  <div id="predictSection">
+    <div class="stats-tabs" id="statsTabs" style="display:none">
+      <button class="stats-tab active" data-tab="recent10">直近10走</button>
+      <button class="stats-tab" data-tab="recent6m">直近6ヶ月</button>
+      <button class="stats-tab" data-tab="local">当地</button>
+      <button class="stats-tab" data-tab="current_period">今期</button>
+    </div>
+
+    <div class="pred-table-header">
+      <div class="th-waku">枠</div>
+      <div class="th-name">レーサー</div>
+      <div class="th-score">スコア</div>
+      <div class="th-breakdown">スコア内訳</div>
+      <div class="th-rates">
+        <div class="th-top3">3連対率</div>
+        <div>1着率</div>
+        <div>2着率</div>
+        <div>3着率</div>
+      </div>
+    </div>
+
+    <div id="predList">
+      <div class="loading"><div class="loading-spinner"></div>予想データを取得中...</div>
+    </div>
+
+    <div id="aiExplainSection" style="display:none; background:#fff; border:1px solid #e0e3e8; border-radius:12px; margin-top:16px; overflow:hidden;">
+      <h3 style="font-size:14px; font-weight:700; color:#222; padding:14px 16px; border-bottom:1px solid #e0e3e8; margin:0;">&#129302; AI&#35299;&#35500;</h3>
+      <div id="aiExplainBody" style="padding:14px 16px; font-size:13px; line-height:1.7; color:#333;">&#35299;&#35500;&#12434;&#29983;&#25104;&#20013;...</div>
+    </div>
+
+    <div class="odds-section" id="oddsSection" style="display:none">
+      <h3 class="odds-title">3連単オッズ TOP10</h3>
+      <div id="oddsList"></div>
     </div>
   </div>
 
-  <div id="predList">
-    <div class="loading"><div class="loading-spinner"></div>予想データを取得中...</div>
-  </div>
-
-  <div id="aiExplainSection" style="display:none; background:#fff; border:1px solid #e0e3e8; border-radius:12px; margin-top:16px; overflow:hidden;">
-    <h3 style="font-size:14px; font-weight:700; color:#222; padding:14px 16px; border-bottom:1px solid #e0e3e8; margin:0;">&#129302; AI&#35299;&#35500;</h3>
-    <div id="aiExplainBody" style="padding:14px 16px; font-size:13px; line-height:1.7; color:#333;">&#35299;&#35500;&#12434;&#29983;&#25104;&#20013;...</div>
-  </div>
-
-  <div class="odds-section" id="oddsSection" style="display:none">
-    <h3 class="odds-title">3連単オッズ TOP10</h3>
-    <div id="oddsList"></div>
+  <div id="strategySection" style="display:none">
+    <div class="note-box">各戦略の全期間実績と今レースの買い目を表示します。1点100円換算。</div>
+    <div id="strategyArea">
+      <div class="loading"><div class="loading-spinner"></div>データを取得中...</div>
+    </div>
   </div>
 
   <div class="bottom-actions" id="bottomActions" style="display:none">
@@ -262,6 +371,17 @@ var personalExplainLoading = false;
 var personalExplainRefs = {};
 var currentRaceId = null;
 var userPlan = 'free';
+
+var topScoreLane = null;
+var pikaichiOnly = false;
+var applyOddsFilter = function() {};
+var stratApplyFns = [];
+var strategyLoaded = false;
+
+function isPikaichiCombo(combo) {
+  if (topScoreLane == null) return false;
+  return Number(combo.split('-')[0]) === topScoreLane;
+}
 
 function buildResults(predictions) {
   var results = [];
@@ -482,6 +602,7 @@ function renderOdds(oddsData) {
     msg.textContent = 'オッズ未取得';
     list.appendChild(msg);
     section.style.display = 'block';
+    applyOddsFilter = function() {};
     return;
   }
 
@@ -497,9 +618,11 @@ function renderOdds(oddsData) {
   table.appendChild(hdr);
 
   var items = oddsData.odds;
+  var rowsMeta = [];
   for (var i = 0; i < items.length; i++) {
     var odd = items[i];
     var parts = odd.combo.split('-');
+    var isPika = isPikaichiCombo(odd.combo);
     var row = document.createElement('div');
     row.className = 'odds-row';
 
@@ -509,6 +632,12 @@ function renderOdds(oddsData) {
 
     var combo = document.createElement('div');
     combo.className = 'odds-combo';
+    if (isPika) {
+      var pikaMark = document.createElement('span');
+      pikaMark.className = 'odds-pika-mark';
+      pikaMark.textContent = '⭐';
+      combo.appendChild(pikaMark);
+    }
     for (var j = 0; j < parts.length; j++) {
       var w = document.createElement('span');
       w.className = 'odds-combo-waku';
@@ -531,10 +660,18 @@ function renderOdds(oddsData) {
     row.appendChild(combo);
     row.appendChild(val);
     table.appendChild(row);
+    rowsMeta.push({ el: row, isPika: isPika });
   }
 
   list.appendChild(table);
   section.style.display = 'block';
+
+  applyOddsFilter = function() {
+    for (var m = 0; m < rowsMeta.length; m++) {
+      rowsMeta[m].el.style.display = (!pikaichiOnly || rowsMeta[m].isPika) ? '' : 'none';
+    }
+  };
+  applyOddsFilter();
 }
 
 var API_HOST = 'https://' + '2410049.moo.jp';
@@ -574,8 +711,11 @@ async function loadData() {
     bar.style.display = 'flex';
     document.getElementById('statsTabs').style.display = 'flex';
     document.getElementById('bottomActions').style.display = 'flex';
+    document.getElementById('pikaichiBar').style.display = 'block';
+    document.getElementById('pageTabs').style.display = 'flex';
 
     var results = buildResults(data.predictions);
+    topScoreLane = results.length ? results[0].lane : null;
     list.textContent = '';
 
     var legend = document.createElement('div');
@@ -728,6 +868,423 @@ for (var t = 0; t < tabBtns.length; t++) {
       loadStats(btn.getAttribute('data-tab'));
     };
   })(tabBtns[t]);
+}
+
+/* ─── ページタブ（予想 / 戦略） ─────────────────────── */
+document.getElementById('tabPredict').onclick = function() {
+  document.getElementById('tabPredict').className = 'page-tab active';
+  document.getElementById('tabStrategy').className = 'page-tab';
+  document.getElementById('predictSection').style.display = '';
+  document.getElementById('strategySection').style.display = 'none';
+};
+document.getElementById('tabStrategy').onclick = function() {
+  document.getElementById('tabStrategy').className = 'page-tab active';
+  document.getElementById('tabPredict').className = 'page-tab';
+  document.getElementById('predictSection').style.display = 'none';
+  document.getElementById('strategySection').style.display = '';
+  if (!strategyLoaded) {
+    strategyLoaded = true;
+    loadStrategyTab();
+  }
+};
+
+/* ─── ピカイチのみ表示トグル ────────────────────────── */
+document.getElementById('pikaichiToggle').onclick = function() {
+  pikaichiOnly = !pikaichiOnly;
+  this.className = 'pikaichi-toggle' + (pikaichiOnly ? ' active' : '');
+  applyOddsFilter();
+  for (var s = 0; s < stratApplyFns.length; s++) { stratApplyFns[s](); }
+};
+
+/* ─── 戦略タブ（strategy.htmlから移植） ─────────────── */
+var COMBO_LIMIT = 10;
+var STRAT_DEFS = [
+  { type: '的中特化', color: '#2563eb', desc: '上位3艇の全順列（最大6点）' },
+  { type: 'バランス',   color: '#16a34a', desc: '上位2艇固定×上位4艇流し（最大12点）' },
+  { type: '一撃重視', color: '#dc2626', desc: '1位固定・穴狙い（最大6点）' },
+  { type: '絞り込み', color: '#7c3aed', desc: '1点勝負' }
+];
+
+function makeWakuBadge(lane) {
+  var el = document.createElement('span');
+  el.className = 'ct-waku';
+  el.style.cssText = WAKU_STYLES[lane] || 'background:#eee;color:#333';
+  el.textContent = lane;
+  return el;
+}
+
+function makeTh(cls, text) {
+  var el = document.createElement('div');
+  el.className = cls + ' ct-th';
+  el.textContent = text;
+  return el;
+}
+
+function makeBanner(stratIsHit, hitCombo, hitOdds, hitPayout) {
+  var banner = document.createElement('div');
+  banner.className = 'result-banner ' + (stratIsHit ? 'banner-hit' : 'banner-miss');
+
+  var lbl = document.createElement('div'); lbl.className = 'banner-label';
+  lbl.textContent = stratIsHit ? '的中！' : '今回の結果';
+  banner.appendChild(lbl);
+
+  var row = document.createElement('div'); row.className = 'banner-row';
+
+  var title = document.createElement('div'); title.className = 'banner-title';
+  title.textContent = stratIsHit ? '的中' : '不的中';
+  row.appendChild(title);
+
+  if (hitCombo) {
+    var comboRow = document.createElement('div'); comboRow.className = 'banner-combo-row';
+    var parts = hitCombo.split('-');
+    for (var j = 0; j < parts.length; j++) {
+      comboRow.appendChild(makeWakuBadge(Number(parts[j])));
+      if (j < parts.length - 1) {
+        var sep = document.createElement('span'); sep.className = 'ct-sep'; sep.textContent = '-';
+        comboRow.appendChild(sep);
+      }
+    }
+    row.appendChild(comboRow);
+  }
+
+  if (stratIsHit) {
+    if (hitOdds !== null && hitOdds !== undefined) {
+      var oddsEl = document.createElement('div'); oddsEl.className = 'banner-odds-txt';
+      oddsEl.textContent = Number(hitOdds).toFixed(1) + '倍';
+      row.appendChild(oddsEl);
+    }
+    if (hitPayout !== null && hitPayout !== undefined) {
+      var payEl = document.createElement('div'); payEl.className = 'banner-payout-txt';
+      payEl.textContent = '▶ ' + Number(hitPayout).toLocaleString() + '円';
+      row.appendChild(payEl);
+    }
+  } else {
+    if (hitPayout !== null && hitPayout !== undefined) {
+      var missPayEl = document.createElement('div'); missPayEl.className = 'banner-win-payout';
+      missPayEl.textContent = Number(hitPayout).toLocaleString() + '円';
+      row.appendChild(missPayEl);
+    }
+  }
+
+  banner.appendChild(row);
+  return banner;
+}
+
+function makeComboRow(item, maxOdds, isFinished) {
+  var isMax = maxOdds !== null && item.odds !== null && item.odds === maxOdds;
+  var isHit = isFinished && item.is_hit;
+  var isPika = isPikaichiCombo(item.combo);
+
+  var rowClass = 'ct-row';
+  if (isHit)      { rowClass += ' ct-hit'; }
+  else if (isMax) { rowClass += ' ct-hl'; }
+
+  var row = document.createElement('div'); row.className = rowClass;
+
+  var comboCell = document.createElement('div'); comboCell.className = 'ct-col-combo';
+  if (isPika) {
+    var pikaMark = document.createElement('span'); pikaMark.className = 'ct-pika-mark'; pikaMark.textContent = '⭐';
+    comboCell.appendChild(pikaMark);
+  }
+  if (isHit) {
+    var mark = document.createElement('span'); mark.className = 'ct-hit-mark'; mark.textContent = '⭐';
+    comboCell.appendChild(mark);
+  }
+  var parts = item.combo.split('-');
+  for (var j = 0; j < parts.length; j++) {
+    comboCell.appendChild(makeWakuBadge(Number(parts[j])));
+    if (j < parts.length - 1) {
+      var sep = document.createElement('span'); sep.className = 'ct-sep'; sep.textContent = '-';
+      comboCell.appendChild(sep);
+    }
+  }
+
+  var oddsCell = document.createElement('div'); oddsCell.className = 'ct-col-odds';
+  if (item.odds !== null) {
+    var oddsVal = document.createElement('span');
+    oddsVal.className = 'ct-odds-val' + (isMax && !isHit ? ' ct-max' : '');
+    oddsVal.textContent = Number(item.odds).toFixed(1) + '倍';
+    oddsCell.appendChild(oddsVal);
+    if (isMax && !isHit) {
+      var icon = document.createElement('span'); icon.className = 'ct-icon'; icon.textContent = '⭐';
+      oddsCell.appendChild(icon);
+    }
+  } else {
+    var oddsNone = document.createElement('span'); oddsNone.className = 'ct-odds-none'; oddsNone.textContent = '-';
+    oddsCell.appendChild(oddsNone);
+  }
+
+  var costCell = document.createElement('div'); costCell.className = 'ct-col-cost';
+  var costVal = document.createElement('span'); costVal.className = 'ct-cost-val'; costVal.textContent = '100円';
+  costCell.appendChild(costVal);
+
+  var payoutCell = document.createElement('div'); payoutCell.className = 'ct-col-payout';
+  if (item.odds !== null) {
+    var payoutVal = document.createElement('span'); payoutVal.className = 'ct-payout-val';
+    payoutVal.textContent = Math.floor(item.odds * 100).toLocaleString() + '円';
+    payoutCell.appendChild(payoutVal);
+  } else {
+    var payoutNone = document.createElement('span'); payoutNone.className = 'ct-odds-none'; payoutNone.textContent = '-';
+    payoutCell.appendChild(payoutNone);
+  }
+
+  var rateCell = document.createElement('div'); rateCell.className = 'ct-col-rate';
+  if (item.odds !== null && item.odds > 0) {
+    var rateVal = document.createElement('span'); rateVal.className = 'ct-rate-val';
+    var pct = 100 / item.odds;
+    rateVal.textContent = pct < 1 ? pct.toFixed(2) + '%' : pct.toFixed(1) + '%';
+    rateCell.appendChild(rateVal);
+  } else {
+    var rateNone = document.createElement('span'); rateNone.className = 'ct-odds-none'; rateNone.textContent = '-';
+    rateCell.appendChild(rateNone);
+  }
+
+  row.appendChild(comboCell); row.appendChild(oddsCell); row.appendChild(costCell);
+  row.appendChild(payoutCell); row.appendChild(rateCell);
+  return row;
+}
+
+function renderStrategySection(strat, def, statRow, ctx) {
+  var isFinished     = ctx ? ctx.isFinished     : false;
+  var hitCombination = ctx ? ctx.hitCombination : null;
+  var hitOdds        = ctx ? ctx.hitOdds        : null;
+  var hitPayout      = ctx ? ctx.hitPayout      : null;
+  var color          = def ? def.color : '#888';
+
+  var section = document.createElement('div'); section.className = 'strat-section';
+
+  var hdr = document.createElement('div'); hdr.className = 'strat-hdr';
+
+  var bar = document.createElement('div'); bar.className = 'strat-bar';
+  bar.style.background = color;
+  hdr.appendChild(bar);
+
+  var nameWrap = document.createElement('div'); nameWrap.className = 'strat-name-wrap';
+  var nameEl = document.createElement('div'); nameEl.className = 'strat-name'; nameEl.style.color = color;
+  nameEl.textContent = strat.strategy_type;
+  var descEl = document.createElement('div'); descEl.className = 'strat-desc';
+  descEl.textContent = def ? def.desc : '';
+  nameWrap.appendChild(nameEl); nameWrap.appendChild(descEl);
+  hdr.appendChild(nameWrap);
+
+  var statsWrap = document.createElement('div'); statsWrap.className = 'strat-stats-wrap';
+
+  var hitRate = statRow && statRow.total_races > 0 ? Number(statRow.hit_rate) : null;
+  var roi     = statRow && statRow.total_races > 0 ? Number(statRow.roi)      : null;
+
+  var hrStat = document.createElement('div'); hrStat.className = 'strat-stat';
+  var hrLbl  = document.createElement('span'); hrLbl.className = 'strat-stat-lbl'; hrLbl.textContent = '的中率';
+  var hrVal  = document.createElement('span');
+  hrVal.className = 'strat-stat-val ' + (hitRate === null ? 'dim' : hitRate >= 20 ? 'pos' : hitRate >= 10 ? 'neu' : 'neg');
+  hrVal.textContent = hitRate !== null ? hitRate.toFixed(1) + '%' : '---';
+  hrStat.appendChild(hrLbl); hrStat.appendChild(hrVal);
+  statsWrap.appendChild(hrStat);
+
+  var roiStat = document.createElement('div'); roiStat.className = 'strat-stat';
+  var roiLbl  = document.createElement('span'); roiLbl.className = 'strat-stat-lbl'; roiLbl.textContent = '回収率';
+  var roiVal  = document.createElement('span');
+  roiVal.className = 'strat-stat-val ' + (roi === null ? 'dim' : roi >= 0 ? 'pos' : 'neg');
+  roiVal.textContent = roi !== null ? (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%' : '---';
+  roiStat.appendChild(roiLbl); roiStat.appendChild(roiVal);
+  statsWrap.appendChild(roiStat);
+
+  hdr.appendChild(statsWrap);
+
+  var toggleBtn = document.createElement('button'); toggleBtn.className = 'strat-toggle';
+  toggleBtn.textContent = '閉じる▲';
+  hdr.appendChild(toggleBtn);
+
+  section.appendChild(hdr);
+
+  var body = document.createElement('div'); body.className = 'strat-body';
+  var expanded = true;
+
+  hdr.onclick = function() {
+    if (expanded) {
+      body.style.display = 'none'; toggleBtn.textContent = '開く▼'; expanded = false;
+    } else {
+      body.style.display = ''; toggleBtn.textContent = '閉じる▲'; expanded = true;
+    }
+  };
+
+  var combos = strat.combinations || [];
+  if (!combos.length) {
+    var empty = document.createElement('div'); empty.className = 'strat-empty';
+    empty.textContent = '買い目が生成されていません（予想画面を開くと生成されます）';
+    body.appendChild(empty);
+    section.appendChild(body);
+    return section;
+  }
+
+  if (isFinished) {
+    body.appendChild(makeBanner(strat.is_hit, hitCombination, hitOdds, hitPayout));
+  }
+
+  var maxOdds = null;
+  for (var i = 0; i < combos.length; i++) {
+    var o = combos[i].odds;
+    if (o !== null && (maxOdds === null || o > maxOdds)) { maxOdds = o; }
+  }
+
+  var rowEls    = [];
+  var combosArr = [];
+  for (var i = 0; i < combos.length; i++) {
+    rowEls.push(makeComboRow(combos[i], maxOdds, isFinished));
+    combosArr.push(combos[i].combo);
+  }
+
+  var filterSel     = [[], [], []];
+  var showAllExpanded = false;
+
+  function applyVisibility() {
+    for (var ri = 0; ri < rowEls.length; ri++) {
+      var passFilter = true;
+      var passLimit  = showAllExpanded || ri < COMBO_LIMIT;
+      var passPika   = !pikaichiOnly || isPikaichiCombo(combosArr[ri]);
+      var pts = combosArr[ri].split('-');
+      for (var pi = 0; pi < 3; pi++) {
+        if (filterSel[pi].length > 0) {
+          var ln = parseInt(pts[pi], 10);
+          var found = false;
+          for (var si = 0; si < filterSel[pi].length; si++) {
+            if (filterSel[pi][si] === ln) { found = true; break; }
+          }
+          if (!found) { passFilter = false; break; }
+        }
+      }
+      rowEls[ri].style.display = (passFilter && passPika && passLimit) ? '' : 'none';
+    }
+  }
+  stratApplyFns.push(applyVisibility);
+
+  var filterBar = document.createElement('div'); filterBar.className = 'filter-bar';
+  var POS_LABELS = ['1着🔴', '2着⚪', '3着🔵'];
+
+  for (var pi = 0; pi < 3; pi++) {
+    (function(posIdx) {
+      if (posIdx > 0) {
+        var dvd = document.createElement('div'); dvd.className = 'filter-divider';
+        filterBar.appendChild(dvd);
+      }
+      var grp = document.createElement('div'); grp.className = 'filter-group';
+      var plbl = document.createElement('span'); plbl.className = 'filter-pos-lbl';
+      plbl.textContent = POS_LABELS[posIdx];
+      grp.appendChild(plbl);
+      for (var lane = 1; lane <= 6; lane++) {
+        (function(laneNum) {
+          var fbtn = document.createElement('button'); fbtn.className = 'filter-btn';
+          fbtn.textContent = laneNum;
+          fbtn.onclick = function() {
+            var idx = -1;
+            for (var si = 0; si < filterSel[posIdx].length; si++) {
+              if (filterSel[posIdx][si] === laneNum) { idx = si; break; }
+            }
+            if (idx >= 0) {
+              filterSel[posIdx].splice(idx, 1);
+              fbtn.style.cssText = ''; fbtn.className = 'filter-btn';
+            } else {
+              filterSel[posIdx].push(laneNum);
+              fbtn.style.cssText = WAKU_STYLES[laneNum] || ''; fbtn.className = 'filter-btn active';
+            }
+            applyVisibility();
+          };
+          grp.appendChild(fbtn);
+        })(lane);
+      }
+      filterBar.appendChild(grp);
+    })(pi);
+  }
+  body.appendChild(filterBar);
+
+  var wrap = document.createElement('div'); wrap.className = 'ct-wrap';
+  var table = document.createElement('div'); table.className = 'ct-table';
+  var thdr = document.createElement('div'); thdr.className = 'ct-hdr';
+  thdr.appendChild(makeTh('ct-col-combo', '3連単'));
+  thdr.appendChild(makeTh('ct-col-odds',  'オッズ'));
+  thdr.appendChild(makeTh('ct-col-cost',  '購入'));
+  thdr.appendChild(makeTh('ct-col-payout','払戻'));
+  thdr.appendChild(makeTh('ct-col-rate',  '的中率'));
+  table.appendChild(thdr);
+  for (var i = 0; i < rowEls.length; i++) { table.appendChild(rowEls[i]); }
+  wrap.appendChild(table);
+  body.appendChild(wrap);
+
+  if (combos.length > COMBO_LIMIT) {
+    var showBtn = document.createElement('button'); showBtn.className = 'show-all-btn';
+    showBtn.textContent = 'すべての買い目を表示する（全 ' + combos.length + ' 件）';
+    (function(btn) {
+      btn.onclick = function() {
+        if (!showAllExpanded) {
+          showAllExpanded = true;
+          applyVisibility();
+          btn.textContent = '折りたたむ';
+        } else {
+          showAllExpanded = false;
+          applyVisibility();
+          btn.textContent = 'すべての買い目を表示する（全 ' + combos.length + ' 件）';
+        }
+      };
+    })(showBtn);
+    body.appendChild(showBtn);
+  }
+
+  applyVisibility();
+
+  section.appendChild(body);
+  return section;
+}
+
+function renderStrategySections(comboData, statsMap) {
+  var area = document.getElementById('strategyArea');
+  area.textContent = '';
+  stratApplyFns = [];
+
+  var ctx = null;
+  var comboMap = {};
+  if (comboData) {
+    ctx = {
+      isFinished:     comboData.is_finished     || false,
+      hitCombination: comboData.hit_combination || null,
+      hitOdds:        comboData.hit_odds        || null,
+      hitPayout:      comboData.hit_payout      || null,
+    };
+    var strats = comboData.strategies || [];
+    for (var i = 0; i < strats.length; i++) { comboMap[strats[i].strategy_type] = strats[i]; }
+  }
+
+  for (var i = 0; i < STRAT_DEFS.length; i++) {
+    var def      = STRAT_DEFS[i];
+    var statRow  = statsMap[def.type] || null;
+    var strat    = comboMap[def.type] || { strategy_type: def.type, combinations: [], combo_count: 0, total_cost: 0, is_hit: false };
+    area.appendChild(renderStrategySection(strat, def, statRow, ctx));
+  }
+}
+
+async function fetchStrategyStats() {
+  try {
+    var res = await fetch(API_HOST + '/strategy_stats.php');
+    if (!res.ok) return {};
+    var data = await res.json();
+    var map = {};
+    var rows = data.stats || [];
+    for (var i = 0; i < rows.length; i++) { map[rows[i].strategy_type] = rows[i]; }
+    return map;
+  } catch(e) { return {}; }
+}
+
+async function fetchStrategyCombos() {
+  if (!venue || !raceNo) return null;
+  try {
+    var url = API_HOST + '/strategy_detail.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+    var res = await fetch(url);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch(e) { return null; }
+}
+
+async function loadStrategyTab() {
+  var results = await Promise.all([fetchStrategyStats(), fetchStrategyCombos()]);
+  renderStrategySections(results[1], results[0]);
 }
 
 loadData();
