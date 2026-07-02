@@ -87,16 +87,7 @@
 </head>
 <body>
 
-  <header>
-    <div class="logo" id="headerLogo" style="cursor: pointer;">
-      <h1>艇王</h1>
-      <span class="logo-sub">ボートレース予測</span>
-    </div>
-    <div class="header-right">
-      <div class="header-date" id="headerDate">----年--月--日 (-)</div>
-      <div class="header-auth" id="headerAuth"></div>
-    </div>
-  </header>
+  <?php include 'header.php'; ?>
 
   <div class="dashboard-container">
     
