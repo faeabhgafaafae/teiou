@@ -112,18 +112,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #888; }
 .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
 
-.odds-section { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-top: 16px; overflow: hidden; }
-.odds-title { font-size: 14px; font-weight: 700; color: #222; padding: 14px 16px; border-bottom: 1px solid #e0e3e8; }
-.odds-table { width: 100%; }
-.odds-row { display: flex; align-items: center; padding: 8px 16px; border-bottom: 1px solid #f5f5f5; gap: 10px; }
-.odds-row:last-child { border-bottom: none; }
-.odds-row.odds-header-row { background: #f7f8fa; font-size: 10px; font-weight: 700; color: #999; padding: 6px 16px; }
-.odds-rank { width: 28px; flex-shrink: 0; text-align: center; font-size: 12px; font-weight: 700; color: #888; }
-.odds-combo { flex: 1; font-size: 14px; font-weight: 600; color: #222; }
-.odds-combo-waku { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 3px; font-size: 12px; font-weight: 800; margin: 0 1px; }
-.odds-value { width: 70px; flex-shrink: 0; text-align: right; font-size: 14px; font-weight: 700; color: #0055a4; font-variant-numeric: tabular-nums; }
-.odds-empty { padding: 20px 16px; text-align: center; color: #999; font-size: 13px; }
-
 .bottom-actions { display: flex; gap: 6px; margin-top: 16px; }
 .bottom-btn { flex: 1; padding: 10px; border: 1px solid #e0e3e8; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 600; color: #555; text-align: center; text-decoration: none; transition: all 0.15s; }
 .bottom-btn:hover { border-color: #0055a4; color: #0055a4; }
@@ -137,8 +125,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .page-tab { flex: 1; padding: 9px 4px; border: none; border-radius: 8px; background: transparent; font-size: 13px; font-weight: 700; color: #888; cursor: pointer; text-align: center; transition: all 0.15s; }
 .page-tab:hover { color: #555; background: #dde0e4; }
 .page-tab.active { background: #0055a4; color: #fff; }
-
-.odds-pika-mark { font-size: 11px; margin-right: 2px; }
 
 /* ─── 戦略セクション（strategy.phpから移植） ───────────── */
 .note-box { background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: #1e40af; line-height: 1.5; }
@@ -238,7 +224,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .score-detail-label { width: 60px; font-size: 11px; }
   .score-detail-value { width: 80px; font-size: 11px; }
   .header-info h1 { font-size: 15px; }
-  .odds-combo-waku { width: 20px; height: 20px; font-size: 11px; }
 }
 </style>
 </head>
@@ -308,10 +293,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
       <div id="aiExplainBody" style="padding:14px 16px; font-size:13px; line-height:1.7; color:#333;">&#35299;&#35500;&#12434;&#29983;&#25104;&#20013;...</div>
     </div>
 
-    <div class="odds-section" id="oddsSection" style="display:none">
-      <h3 class="odds-title">3連単オッズ TOP10</h3>
-      <div id="oddsList"></div>
-    </div>
   </div>
 
   <div id="strategySection" style="display:none">
@@ -374,7 +355,6 @@ var userPlan = 'free';
 
 var topScoreLane = null;
 var pikaichiOnly = false;
-var applyOddsFilter = function() {};
 var stratApplyFns = [];
 var strategyLoaded = false;
 
@@ -591,89 +571,6 @@ function loadStats(tab) {
   }
 }
 
-function renderOdds(oddsData) {
-  var section = document.getElementById('oddsSection');
-  var list = document.getElementById('oddsList');
-  list.textContent = '';
-
-  if (!oddsData || !oddsData.odds || oddsData.odds.length === 0 || oddsData.error) {
-    var msg = document.createElement('div');
-    msg.className = 'odds-empty';
-    msg.textContent = 'オッズ未取得';
-    list.appendChild(msg);
-    section.style.display = 'block';
-    applyOddsFilter = function() {};
-    return;
-  }
-
-  var table = document.createElement('div');
-  table.className = 'odds-table';
-
-  var hdr = document.createElement('div');
-  hdr.className = 'odds-row odds-header-row';
-  var h1 = document.createElement('div'); h1.className = 'odds-rank'; h1.textContent = '#';
-  var h2 = document.createElement('div'); h2.className = 'odds-combo'; h2.textContent = '組み合わせ';
-  var h3 = document.createElement('div'); h3.className = 'odds-value'; h3.textContent = 'オッズ';
-  hdr.appendChild(h1); hdr.appendChild(h2); hdr.appendChild(h3);
-  table.appendChild(hdr);
-
-  var items = oddsData.odds;
-  var rowsMeta = [];
-  for (var i = 0; i < items.length; i++) {
-    var odd = items[i];
-    var parts = odd.combo.split('-');
-    var isPika = isPikaichiCombo(odd.combo);
-    var row = document.createElement('div');
-    row.className = 'odds-row';
-
-    var rk = document.createElement('div');
-    rk.className = 'odds-rank';
-    rk.textContent = i + 1;
-
-    var combo = document.createElement('div');
-    combo.className = 'odds-combo';
-    if (isPika) {
-      var pikaMark = document.createElement('span');
-      pikaMark.className = 'odds-pika-mark';
-      pikaMark.textContent = '⭐';
-      combo.appendChild(pikaMark);
-    }
-    for (var j = 0; j < parts.length; j++) {
-      var w = document.createElement('span');
-      w.className = 'odds-combo-waku';
-      w.style.cssText = WAKU_STYLES[Number(parts[j])] || '';
-      w.textContent = parts[j];
-      combo.appendChild(w);
-      if (j < 2) {
-        var arrow = document.createElement('span');
-        arrow.textContent = '-';
-        arrow.style.cssText = 'margin:0 2px;color:#999;font-size:12px';
-        combo.appendChild(arrow);
-      }
-    }
-
-    var val = document.createElement('div');
-    val.className = 'odds-value';
-    val.textContent = Number(odd.odds).toFixed(1) + '倍';
-
-    row.appendChild(rk);
-    row.appendChild(combo);
-    row.appendChild(val);
-    table.appendChild(row);
-    rowsMeta.push({ el: row, isPika: isPika });
-  }
-
-  list.appendChild(table);
-  section.style.display = 'block';
-
-  applyOddsFilter = function() {
-    for (var m = 0; m < rowsMeta.length; m++) {
-      rowsMeta[m].el.style.display = (!pikaichiOnly || rowsMeta[m].isPika) ? '' : 'none';
-    }
-  };
-  applyOddsFilter();
-}
-
 var API_HOST = 'https://' + '2410049.moo.jp';
 
 async function loadData() {
@@ -750,10 +647,7 @@ async function loadData() {
 
     if (data.race_id) {
       currentRaceId = data.race_id;
-      loadOdds(data.race_id);
       loadExplain(data.race_id);
-    } else {
-      renderOdds(null);
     }
   } catch(e) {
     list.textContent = '';
@@ -845,18 +739,6 @@ async function loadExplain(raceId) {
   }
 }
 
-async function loadOdds(raceId) {
-  try {
-    var url = API_HOST + '/get_odds.php?race_id=' + raceId;
-    var res = await fetch(url);
-    if (!res.ok) { renderOdds(null); return; }
-    var data = await res.json();
-    renderOdds(data);
-  } catch(e) {
-    renderOdds(null);
-  }
-}
-
 var tabBtns = document.querySelectorAll('.stats-tab');
 for (var t = 0; t < tabBtns.length; t++) {
   (function(btn) {
@@ -892,7 +774,6 @@ document.getElementById('tabStrategy').onclick = function() {
 document.getElementById('pikaichiToggle').onclick = function() {
   pikaichiOnly = !pikaichiOnly;
   this.className = 'pikaichi-toggle' + (pikaichiOnly ? ' active' : '');
-  applyOddsFilter();
   for (var s = 0; s < stratApplyFns.length; s++) { stratApplyFns[s](); }
 };
 
