@@ -41,6 +41,11 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .mode-btn:hover { color: #555; background: #dde0e4; }
 .mode-btn.active { background: #0055a4; color: #fff; }
 
+.bettype-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.bettype-btn { flex: 0 0 auto; padding: 8px 14px; border: 1px solid #d0d5dd; border-radius: 20px; background: #fff; font-size: 13px; font-weight: 600; color: #555; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.bettype-btn:hover { border-color: #0055a4; color: #0055a4; }
+.bettype-btn.active { background: #0055a4; border-color: #0055a4; color: #fff; }
+
 .matrix-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid #e0e3e8; background: #fff; }
 .odds-matrix { width: 100%; border-collapse: collapse; min-width: 520px; }
 .odds-matrix th, .odds-matrix td { border: 1px solid #e0e3e8; text-align: center; vertical-align: middle; }
@@ -105,6 +110,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
       <a class="nav-btn" id="btnNext">次R &#9654;</a>
     </div>
   </div>
+
+  <div class="bettype-tabs" id="bettypeTabs" style="display:none"></div>
 
   <div class="mode-switch" id="modeSwitch" style="display:none">
     <button class="mode-btn active" id="btnMatrix">通常</button>
@@ -253,8 +260,20 @@ function buildMatrix(oddsData) {
   return wrap;
 }
 
+function oddsSortValue(v) {
+  var n = Number(String(v).split('-')[0]);
+  return isNaN(n) ? 0 : n;
+}
+
+function formatOddsVal(v) {
+  var s = String(v);
+  var n = Number(s);
+  if (!isNaN(n) && s.indexOf('-') === -1) return n.toFixed(1) + '倍';
+  return s + '倍';
+}
+
 function buildPopularList(oddsData) {
-  var sorted = oddsData.slice().sort(function(a, b) { return Number(a.odds) - Number(b.odds); });
+  var sorted = oddsData.slice().sort(function(a, b) { return oddsSortValue(a.odds) - oddsSortValue(b.odds); });
   var list = document.createElement('div');
   list.className = 'popular-list';
 
@@ -278,14 +297,15 @@ function buildPopularList(oddsData) {
     var combo = document.createElement('div');
     combo.className = 'popular-combo';
     var parts = o.combo.split('-');
-    var lanes = [Number(parts[0]), Number(parts[1]), Number(parts[2])];
+    var lanes = [];
+    for (var p = 0; p < parts.length; p++) lanes.push(Number(parts[p]));
     for (var j = 0; j < lanes.length; j++) {
       var w = document.createElement('span');
       w.className = 'pw';
       applyWaku(w, lanes[j]);
       w.textContent = lanes[j];
       combo.appendChild(w);
-      if (j < 2) {
+      if (j < lanes.length - 1) {
         var sep = document.createElement('span');
         sep.className = 'popular-sep';
         sep.textContent = '-';
@@ -295,7 +315,7 @@ function buildPopularList(oddsData) {
 
     var val = document.createElement('div');
     val.className = 'popular-odds';
-    val.textContent = Number(o.odds).toFixed(1) + '倍';
+    val.textContent = formatOddsVal(o.odds);
 
     row.appendChild(rk);
     row.appendChild(combo);
@@ -307,23 +327,76 @@ function buildPopularList(oddsData) {
 
 var API_HOST = 'https://' + '2410049.moo.jp';
 
+var BET_TYPES = [
+  { key: '3t',         label: '3連単' },
+  { key: 'sanrenfuku', label: '3連複' },
+  { key: 'rentan2',    label: '2連単' },
+  { key: 'renfuku2',   label: '2連複' },
+  { key: 'kakurenku',  label: '拡連複' },
+  { key: 'tansho',     label: '単勝' },
+  { key: 'fukusho',    label: '複勝' }
+];
+var currentBetType = '3t';
+var currentMode = 'matrix';
+
+function renderBettypeTabs() {
+  var wrap = document.getElementById('bettypeTabs');
+  wrap.textContent = '';
+  for (var i = 0; i < BET_TYPES.length; i++) {
+    var bt = BET_TYPES[i];
+    var btn = document.createElement('button');
+    btn.className = 'bettype-btn' + (bt.key === currentBetType ? ' active' : '');
+    btn.textContent = bt.label;
+    btn.dataset.betType = bt.key;
+    btn.onclick = function() {
+      var key = this.dataset.betType;
+      if (currentBetType === key) return;
+      currentBetType = key;
+      renderBettypeTabs();
+      loadData();
+    };
+    wrap.appendChild(btn);
+  }
+  wrap.style.display = 'flex';
+}
+
+function updateModeSwitchVisibility() {
+  var modeSwitch = document.getElementById('modeSwitch');
+  var matrixView = document.getElementById('matrixView');
+  var popularView = document.getElementById('popularView');
+  if (currentBetType === '3t') {
+    modeSwitch.style.display = 'flex';
+    if (currentMode === 'matrix') {
+      matrixView.style.display = 'block';
+      popularView.style.display = 'none';
+    } else {
+      matrixView.style.display = 'none';
+      popularView.style.display = 'block';
+    }
+  } else {
+    modeSwitch.style.display = 'none';
+    matrixView.style.display = 'none';
+    popularView.style.display = 'block';
+  }
+}
+
 async function loadData() {
   var content = document.getElementById('oddsContent');
+  content.style.display = 'block';
+  content.textContent = '';
+  var loading = document.createElement('div');
+  loading.className = 'loading';
+  var spinner = document.createElement('div');
+  spinner.className = 'loading-spinner';
+  loading.appendChild(spinner);
+  loading.appendChild(document.createTextNode('オッズデータを取得中...'));
+  content.appendChild(loading);
+
   try {
-    var url = API_HOST + '/get_odds.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo + '&all=1';
+    var url = API_HOST + '/get_odds.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo + '&bet_type=' + currentBetType + '&all=1';
     var res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
-
-    var oddsArr = data.odds || [];
-    if (data.error || oddsArr.length === 0) {
-      content.textContent = '';
-      var msg = document.createElement('div');
-      msg.className = 'error-msg';
-      msg.textContent = 'オッズ未取得';
-      content.appendChild(msg);
-      return;
-    }
 
     document.getElementById('raceNoLg').textContent = raceNo + 'R';
     var detail = document.getElementById('raceBarDetail');
@@ -333,17 +406,34 @@ async function loadData() {
     detail.appendChild(vs);
     detail.appendChild(document.createTextNode(' ' + fmtDate(date) + ' / オッズ'));
     document.getElementById('raceBar').style.display = 'flex';
-    document.getElementById('modeSwitch').style.display = 'flex';
+    renderBettypeTabs();
+
+    var oddsArr = data.odds || [];
+    if (data.error || oddsArr.length === 0) {
+      content.textContent = '';
+      var msg = document.createElement('div');
+      msg.className = 'error-msg';
+      msg.textContent = 'オッズ未取得';
+      content.appendChild(msg);
+      document.getElementById('matrixView').style.display = 'none';
+      document.getElementById('popularView').style.display = 'none';
+      document.getElementById('modeSwitch').style.display = 'none';
+      return;
+    }
+
     content.style.display = 'none';
 
     var matrixView = document.getElementById('matrixView');
     matrixView.textContent = '';
-    matrixView.appendChild(buildMatrix(oddsArr));
-    matrixView.style.display = 'block';
+    if (currentBetType === '3t') {
+      matrixView.appendChild(buildMatrix(oddsArr));
+    }
 
     var popularView = document.getElementById('popularView');
     popularView.textContent = '';
     popularView.appendChild(buildPopularList(oddsArr));
+
+    updateModeSwitchVisibility();
 
   } catch(e) {
     content.textContent = '';
@@ -355,16 +445,16 @@ async function loadData() {
 }
 
 document.getElementById('btnMatrix').onclick = function() {
+  currentMode = 'matrix';
   document.getElementById('btnMatrix').className = 'mode-btn active';
   document.getElementById('btnPopular').className = 'mode-btn';
-  document.getElementById('matrixView').style.display = 'block';
-  document.getElementById('popularView').style.display = 'none';
+  updateModeSwitchVisibility();
 };
 document.getElementById('btnPopular').onclick = function() {
+  currentMode = 'popular';
   document.getElementById('btnPopular').className = 'mode-btn active';
   document.getElementById('btnMatrix').className = 'mode-btn';
-  document.getElementById('matrixView').style.display = 'none';
-  document.getElementById('popularView').style.display = 'block';
+  updateModeSwitchVisibility();
 };
 
 loadData();

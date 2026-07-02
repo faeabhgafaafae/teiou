@@ -15,17 +15,20 @@ if (!$input || ($input['api_key'] ?? '') !== API_KEY) {
     exit;
 }
 
-$data = $input['data'] ?? [];
-$date    = $data['date']    ?? '';
-$venue   = $data['venue']   ?? '';
-$race_no = $data['race_no'] ?? 0;
-$odds    = $data['odds']    ?? [];
+$data       = $input['data'] ?? [];
+$date       = $data['date']       ?? '';
+$venue      = $data['venue']      ?? '';
+$race_no    = $data['race_no']    ?? 0;
+$odds       = $data['odds']       ?? [];
+$odds_multi = $data['odds_multi'] ?? [];
 
-if (!$date || !$venue || !$race_no || !$odds) {
+if (!$date || !$venue || !$race_no || (!$odds && !$odds_multi)) {
     http_response_code(400);
-    echo json_encode(['error' => 'date, venue, race_no, odds は必須です'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'date, venue, race_no, odds(またはodds_multi) は必須です'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+$VALID_BET_TYPES = ['tansho', 'fukusho', 'rentan2', 'renfuku2', 'kakurenku', 'sanrenfuku'];
 
 try {
     $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
@@ -69,10 +72,33 @@ foreach ($odds as $combo => $odds_val) {
     }
 }
 
+$upsert_multi = $pdo->prepare('
+    INSERT INTO odds_multi (race_id, bet_type, combo, odds)
+    VALUES (?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE odds = VALUES(odds)
+');
+
+$ok_multi = 0;
+
+foreach ($odds_multi as $bet_type => $combos) {
+    if (!in_array($bet_type, $VALID_BET_TYPES, true) || !is_array($combos)) {
+        continue;
+    }
+    foreach ($combos as $combo => $odds_val) {
+        try {
+            $upsert_multi->execute([$race_id, $bet_type, $combo, $odds_val]);
+            $ok_multi++;
+        } catch (PDOException $e) {
+            $errors[] = ['combo' => $bet_type . ':' . $combo, 'message' => $e->getMessage()];
+        }
+    }
+}
+
 $pdo->prepare('UPDATE races SET before_updated_at = NOW() WHERE id = ?')->execute([$race_id]);
 
 echo json_encode([
-    'race_id' => (int)$race_id,
-    'ok'      => $ok,
-    'errors'  => $errors,
+    'race_id'  => (int)$race_id,
+    'ok'       => $ok,
+    'ok_multi' => $ok_multi,
+    'errors'   => $errors,
 ], JSON_UNESCAPED_UNICODE);

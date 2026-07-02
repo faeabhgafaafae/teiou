@@ -11,8 +11,8 @@ import requests
 
 from scrape_boatrace import VENUES
 from scrape_live import (
-    API_PENDING, API_KEY, SLEEP_SEC,
-    VENUE_TO_JCD, scrape_odds, send_odds,
+    API_PENDING, API_KEY, SLEEP_SEC, ODDS_SLEEP_SEC,
+    VENUE_TO_JCD, scrape_odds, scrape_all_odds, send_odds,
 )
 
 def get_all_races() -> list:
@@ -59,9 +59,11 @@ def main():
 
         try:
             odds = scrape_odds(jcd, race_no, hd)
+            time.sleep(ODDS_SLEEP_SEC)
+            odds_multi = scrape_all_odds(jcd, race_no, hd)
             if odds:
                 print(f' オッズ: {len(odds)}通り', end=' ')
-                if send_odds(date_str, venue, race_no, odds):
+                if send_odds(date_str, venue, race_no, odds, odds_multi):
                     odds_ok += 1
             else:
                 print(f' オッズ: データなし')
