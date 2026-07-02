@@ -37,8 +37,8 @@
         '<div style="font-size:10px; color:#bbb;">選手読込中...</div>' +
       '</div>' +
       '<div class="urgent-btn-group">' +
-        '<a class="urgent-btn" href="racelist.html?venue=' + encodeURIComponent(race.venue) + '&date=' + date + '&race_no=' + race.race_no + '">出走表</a>' +
-        '<a class="urgent-btn main-btn" href="ai-predict.html?venue=' + encodeURIComponent(race.venue) + '&date=' + date + '&race_no=' + race.race_no + '">AI予想</a>' +
+        '<a class="urgent-btn" href="racelist.php?venue=' + encodeURIComponent(race.venue) + '&date=' + date + '&race_no=' + race.race_no + '">出走表</a>' +
+        '<a class="urgent-btn main-btn" href="ai-predict.php?venue=' + encodeURIComponent(race.venue) + '&date=' + date + '&race_no=' + race.race_no + '">AI予想</a>' +
       '</div>';
       
     return card;
