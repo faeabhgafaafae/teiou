@@ -18,10 +18,18 @@ var VENUE_GRADES = {
 
 // --- 状態管理用変数 ---
 var apiDate = '';
-var venueMap = {}; 
+var venueMap = {};
 var favoriteVenues = []; // DBから取得したお気に入り会場名配列
-var currentFilter = 'all'; 
-var currentSearch = '';    
+var currentFilter = 'all';
+var currentSearch = '';
+
+// URLパラメータ or PAGE_DATE グローバルから表示日付を決定
+(function() {
+  var _n = new Date();
+  var _today = _n.getFullYear() + '-' + String(_n.getMonth()+1).padStart(2,'0') + '-' + String(_n.getDate()).padStart(2,'0');
+  var _raw = window.PAGE_DATE || '';
+  window.PAGE_DATE = (_raw && _raw <= _today) ? _raw : _today;
+})();
 
 // --- ユーティリティ関数 ---
 function formatDate(dateStr) {
@@ -84,7 +92,7 @@ function createVenueCard(venueName, venueData) {
   }
 
   var totalRaces = venueData.race_count;
-  var href = 'races.html?venue=' + encodeURIComponent(venueName) + '&date=' + apiDate;
+  var href = 'races.html?venue=' + encodeURIComponent(venueName) + '&date=' + window.PAGE_DATE;
 
   return '<a href="' + href + '" class="venue-card">' +
       '<div style="display:flex; justify-content:space-between; align-items:center;">' +
@@ -134,7 +142,7 @@ function renderFeaturedBanner(venues) {
   featuredVenues.forEach(function(featured) {
     var grade = VENUE_GRADES[featured.venue];
     var gradeClass = GRADE_CLASSES[grade];
-    var href = 'races.html?venue=' + encodeURIComponent(featured.venue) + '&date=' + apiDate;
+    var href = 'races.html?venue=' + encodeURIComponent(featured.venue) + '&date=' + window.PAGE_DATE;
 
     html += '<div class="featured-item">' +
         '<div class="featured-left">' +
@@ -177,7 +185,7 @@ function renderVenueGrid() {
 async function loadVenues() {
   var grid = document.getElementById('venueGrid');
   try {
-    var res = await fetch('https://2410049.moo.jp/venues.php');
+    var res = await fetch('https://2410049.moo.jp/venues.php?date=' + window.PAGE_DATE);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
 
