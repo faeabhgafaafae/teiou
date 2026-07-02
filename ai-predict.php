@@ -326,10 +326,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     </div>
   </div>
 
-  <div class="pikaichi-bar" id="pikaichiBar" style="display:none">
-    <button class="pikaichi-toggle" id="pikaichiToggle">&#11088; ピカイチのみを表示</button>
-  </div>
-
   <div id="predictSection">
     <div class="stats-tabs" id="statsTabs" style="display:none">
       <button class="stats-tab active" data-tab="recent10">直近10走</button>
@@ -364,6 +360,9 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
   <div id="strategySection">
     <div class="note-box">各戦略の全期間実績と今レースの買い目を表示します。1点100円換算。</div>
+    <div class="pikaichi-bar" id="pikaichiBar" style="display:none">
+      <button class="pikaichi-toggle" id="pikaichiToggle">&#11088; ピカイチのみを表示</button>
+    </div>
     <div id="strategyArea">
       <div class="loading"><div class="loading-spinner"></div>データを取得中...</div>
     </div>
