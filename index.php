@@ -276,12 +276,10 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
           </div>
 
           <div class="bottom-card">
-            <h3><i class="fas fa-info-circle" style="color: #0055a4;"></i>お知らせ</h3>
-            <ul class="info-list">
-              <li><span class="date">2026/06/24</span><a href="#">AI予測モデルのアルゴリズムをアップデートしました</a></li>
-              <li><span class="date">2026/06/20</span><a href="#">SG開催期間中のサーバーメンテナンスについて</a></li>
-              <li><span class="date">2026/06/15</span><a href="#">プレミアムプランの新規登録キャンペーン実施中！</a></li>
-            </ul>
+            <h3><i class="fas fa-bullseye" style="color: #e53e3e; margin-right: 6px;"></i>的中速報</h3>
+            <div id="hitsList">
+              <div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">読み込み中...</div>
+            </div>
           </div>
         </div>
 
