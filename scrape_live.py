@@ -20,7 +20,6 @@ API_PENDING    = os.environ.get('API_PENDING',    'https://2410049.moo.jp/get_pe
 API_BEFOREINFO = os.environ.get('API_URL',        'https://2410049.moo.jp/import_beforeinfo.php')
 API_ODDS       = os.environ.get('API_ODDS',       'https://2410049.moo.jp/import_odds.php')
 API_KEY        = os.environ.get('API_KEY',         'teio2025')
-WITHIN         = int(os.environ.get('WITHIN',      '60'))
 SLEEP_SEC      = 3
 
 VENUE_TO_JCD = {v: k for k, v in VENUES.items()}
@@ -28,37 +27,15 @@ ODDS_SLEEP_SEC = 1
 
 
 def get_pending_races() -> list:
-    """当日の全レースを取得し、締切前かつ締切までWITHIN分以内のレースのみ対象とする"""
+    """締切前かつ60分以内のレース一覧を取得する（絞り込みはAPI側で実施）"""
     res = requests.get(API_PENDING, params={
         'api_key': API_KEY,
-        'all':     '1',
     }, timeout=15)
     res.raise_for_status()
     data = res.json()
     if 'error' in data:
         raise RuntimeError(f'get_pending_races error: {data["error"]}')
-    races = data.get('races', [])
-
-    target = []
-    for r in races:
-        venue   = r.get('venue', '?')
-        race_no = r.get('race_no', '?')
-        sched   = r.get('scheduled_time', '??:??')
-        mins    = r.get('minutes_until_deadline')
-
-        if mins is None:
-            print(f'  [SKIP] [{venue}] {race_no}R (締切時刻不明)')
-            continue
-        if mins < 0:
-            print(f'  [SKIP] [{venue}] {race_no}R (締切{sched} 締切済み=結果確定済み)')
-            continue
-        if mins > WITHIN:
-            print(f'  [SKIP] [{venue}] {race_no}R (締切{sched} 残り{mins}分 > {WITHIN}分)')
-            continue
-
-        target.append(r)
-
-    return target
+    return data.get('races', [])
 
 
 def scrape_odds(jcd: str, rno: int, hd: str) -> dict | None:
@@ -419,7 +396,7 @@ def main():
     scrape_boatrace.API_URL = API_BEFOREINFO
     scrape_boatrace.API_KEY = API_KEY
 
-    print(f'[scrape_live] 対象レース取得中 (within={WITHIN}分)...')
+    print('[scrape_live] 対象レース取得中...')
     try:
         races = get_pending_races()
     except Exception as e:

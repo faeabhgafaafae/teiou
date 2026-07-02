@@ -15,9 +15,8 @@ if ($api_key !== API_KEY) {
     exit;
 }
 
-$within = (int)($_GET['within'] ?? 40);
-$date   = $_GET['date'] ?? date('Y-m-d');
-$all    = ($_GET['all'] ?? '') === '1';
+$date = $_GET['date'] ?? date('Y-m-d');
+$all  = ($_GET['all'] ?? '') === '1';
 
 try {
     $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
@@ -42,17 +41,18 @@ if ($all) {
     ');
     $stmt->execute([':date' => $date]);
 } else {
+    // 現在時刻(JST)からscheduled_timeまで60分以内 かつ 締切前のレースのみ
     $stmt = $pdo->prepare('
         SELECT id AS race_id, date, venue, race_no, scheduled_time,
                TIMESTAMPDIFF(MINUTE, NOW(), CONCAT(date, " ", scheduled_time)) AS minutes_until_deadline
         FROM races
         WHERE date = :date
           AND scheduled_time IS NOT NULL
-          AND CONCAT(date, " ", scheduled_time) >= NOW() - INTERVAL 20 MINUTE
-          AND CONCAT(date, " ", scheduled_time) <= NOW() + INTERVAL :within MINUTE
+          AND CONCAT(date, " ", scheduled_time) >= NOW()
+          AND CONCAT(date, " ", scheduled_time) <= NOW() + INTERVAL 60 MINUTE
         ORDER BY CONCAT(date, " ", scheduled_time) ASC
     ');
-    $stmt->execute([':date' => $date, ':within' => $within]);
+    $stmt->execute([':date' => $date]);
 }
 $races = $stmt->fetchAll();
 
