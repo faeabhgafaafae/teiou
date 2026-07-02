@@ -6,20 +6,72 @@
 <title>艇王 - 予想</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
-header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; gap: 14px; justify-content: space-between; }
-.header-left { display: flex; align-items: center; gap: 12px; }
-.back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
-.back-btn:hover { background: #e8f0fd; }
-.header-info h1 { font-size: 17px; font-weight: 700; color: #222; }
-.header-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
-.header-meta .date { font-size: 12px; color: #888; }
-.grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
-.grade-sg { background: #fff3cd; color: #b8860b; }
-.grade-g1 { background: #fee2e2; color: #c0392b; }
-.grade-g2 { background: #dbeafe; color: #2563eb; }
-.grade-g3 { background: #d1fae5; color: #16a34a; }
-.grade-ippan { background: #f3f4f6; color: #888; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; padding-top: 130px; /* ヘッダーとナビの高さ分余白を追加 */ }
+
+/* --- ヘッダー全体を上部に固定 --- */
+header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; height: 71px; /* ヘッダーの高さを固定 */ }
+
+/* 左：ロゴ ＆ レース場情報エリア */
+.header-left { display: flex; align-items: center; gap: 20px; }
+.logo img { height: 44px; width: auto; display: block; cursor: pointer; }
+
+.header-venue-info { display: flex; flex-direction: column; }
+.header-venue-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.header-page-title { font-size: 18px; font-weight: 800; color: #1a202c; }
+.gh-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+.header-main-date { font-size: 14px; color: #4a5568; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* 右：ログイン・新規登録ボタン */
+.header-right { display: flex; align-items: center; gap: 16px; }
+.header-auth { display: flex; align-items: center; gap: 8px; }
+.auth-link { font-size: 12px; color: #0055a4; text-decoration: none; font-weight: 600; padding: 6px 14px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; transition: background 0.2s; }
+.auth-link:hover { background: #f8fafc; }
+.auth-link.register { background: #0055a4; color: #fff; border: none; }
+.auth-link.register:hover { background: #004488; }
+
+/* グレード badge カラーマスタ */
+.grade-sg { background: #fed7d7; color: #e53e3e; }
+.grade-g1 { background: #feebc8; color: #dd6b20; }
+.grade-g2 { background: #ebf8ff; color: #2b6cb0; }
+.grade-g3 { background: #e6fffa; color: #319795; }
+.grade-ippan { background: #edf2f7; color: #718096; }
+
+/* --- R数クイックナビ --- */
+.race-nav-sticky {
+  position: fixed;
+  top: 71px; /* ヘッダーの下に配置 */
+  left: 0;
+  width: 100%;
+  background: #ffffff;
+  z-index: 1000;
+  border-bottom: 2px solid #0055a4;
+  padding: 8px 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+  display: flex;
+  gap: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.race-nav-sticky::-webkit-scrollbar { display: none; }
+
+.race-nav-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #0055a4;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 52px;
+  text-align: center;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.race-nav-btn:hover { background: #0055a4; color: #ffffff; border-color: #0055a4; }
+.race-nav-btn.active { background: #0055a4; color: #ffffff; border-color: #0055a4; }
+
 .container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
 .loading { text-align: center; padding: 60px 20px; color: #999; }
 .loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
@@ -193,6 +245,16 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .show-all-btn { display: block; width: 100%; padding: 11px 16px; border: none; border-top: 1px solid #ebebeb; background: #fafbfc; font-size: 13px; font-weight: 600; color: #0055a4; cursor: pointer; text-align: center; }
 .show-all-btn:hover { background: #eff6ff; }
 
+@media (max-width: 820px) {
+  header { padding: 12px 16px; height: 110px; /* タブレットサイズは高さを変更 */ flex-direction: column; }
+  .header-left { gap: 12px; }
+  .logo img { height: 36px; }
+  .header-page-title { font-size: 15px; }
+  .header-main-date { font-size: 12px; }
+  .race-nav-sticky { top: 110px; }
+  body { padding-top: 170px; }
+}
+
 @media (max-width: 480px) {
   .strat-stats-wrap { gap: 10px; }
   .strat-stat-val { font-size: 13px; }
@@ -201,6 +263,11 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 }
 
 @media (max-width: 600px) {
+  header { flex-wrap: wrap; justify-content: space-between; padding: 10px 12px; gap: 8px; }
+  .header-left { width: auto; order: 1; }
+  .header-right { width: auto; order: 2; gap: 8px; }
+  .header-venue-info { flex-direction: row; align-items: center; width: 100%; order: 3; padding-top: 4px; border-top: 1px dashed #e2e8f0; justify-content: center; gap: 8px; }
+  .race-nav-btn { min-width: 44px; padding: 6px 10px; font-size: 12px; }
   .race-bar { flex-direction: column; align-items: flex-start; }
   .race-bar-right { width: 100%; }
   .nav-btn { flex: 1; text-align: center; }
@@ -218,7 +285,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .pred-detail { padding: 0 10px 10px 10px; }
   .score-detail-label { width: 60px; font-size: 11px; }
   .score-detail-value { width: 80px; font-size: 11px; }
-  .header-info h1 { font-size: 15px; }
 }
 </style>
 </head>
@@ -226,16 +292,27 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
 <header>
   <div class="header-left">
-    <a class="back-btn" id="backBtn" href="index.php">&larr;</a>
-    <div class="header-info">
-      <h1 id="pageTitle">予想</h1>
-      <div class="header-meta">
-        <span class="date" id="pageDate"></span>
-        <span class="grade-badge" id="pageBadge"></span>
+    <div class="logo" id="headerLogo" onclick="location.href='index.php'">
+      <img src="艇王.jpg" alt="艇王 BOATRACE ROYAL">
+    </div>
+    <div class="header-venue-info">
+      <div class="header-venue-row">
+        <h1 id="pageTitle" class="header-page-title"></h1>
+        <span id="pageBadge" style="display: none;"></span>
       </div>
+      <div class="header-main-date" id="pageDate">--/-- (-)</div>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="header-auth" id="headerAuth">
+      <a class="auth-link" href="login.html">ログイン</a>
+      <a class="auth-link register" href="register.html">新規登録</a>
     </div>
   </div>
 </header>
+
+<div id="raceTopNav" class="race-nav-sticky" style="display: none;"></div>
 
 <div class="container">
   <div class="race-bar" id="raceBar" style="display:none">
@@ -316,15 +393,15 @@ var vg = VENUE_GRADES[venue] || '一般';
 function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
 function formatName(n) { return n.replace(/[\s　]+/g, ' ').trim(); }
 
-document.getElementById('pageTitle').textContent = raceNo + 'R ' + venue + ' ' + fmtDate(date) + ' / 予想';
+document.getElementById('pageTitle').textContent = venue + ' ' + raceNo + 'R 予想';
 document.title = '艇王 - ' + venue + ' ' + raceNo + 'R 予想';
 var badge = document.getElementById('pageBadge');
 badge.textContent = vg;
-badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
+badge.className = 'gh-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
+badge.style.display = 'inline-block';
 document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
-document.getElementById('backBtn').href = 'races.html?' + baseQ;
 document.getElementById('btnRacelist').href = 'racelist.php?' + baseQ + '&race_no=' + raceNo;
 document.getElementById('btnPredict').href = 'predict.html?' + baseQ + '&race_no=' + raceNo;
 
@@ -334,6 +411,16 @@ document.getElementById('btnPrev').href = 'ai-predict.php?' + baseQ + '&race_no=
 document.getElementById('btnNext').href = 'ai-predict.php?' + baseQ + '&race_no=' + nextNo;
 if (raceNo <= 1) document.getElementById('btnPrev').style.visibility = 'hidden';
 if (raceNo >= 12) document.getElementById('btnNext').style.visibility = 'hidden';
+
+var raceNav = document.getElementById('raceTopNav');
+raceNav.style.display = 'flex';
+for (var rn = 1; rn <= 12; rn++) {
+  var navBtn = document.createElement('a');
+  navBtn.className = 'race-nav-btn' + (rn === raceNo ? ' active' : '');
+  navBtn.href = 'ai-predict.php?' + baseQ + '&race_no=' + rn;
+  navBtn.textContent = rn + 'R';
+  raceNav.appendChild(navBtn);
+}
 
 var rateRefs = {};
 var renderedPlayers = [];
