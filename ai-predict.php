@@ -121,11 +121,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .pikaichi-toggle:hover { border-color: #f59e0b; color: #d97706; }
 .pikaichi-toggle.active { background: #fffbeb; border-color: #f59e0b; color: #d97706; }
 
-.page-tabs { display: flex; gap: 4px; margin-bottom: 12px; padding: 4px; background: #e9ecef; border-radius: 10px; }
-.page-tab { flex: 1; padding: 9px 4px; border: none; border-radius: 8px; background: transparent; font-size: 13px; font-weight: 700; color: #888; cursor: pointer; text-align: center; transition: all 0.15s; }
-.page-tab:hover { color: #555; background: #dde0e4; }
-.page-tab.active { background: #0055a4; color: #fff; }
-
 /* ─── 戦略セクション（strategy.phpから移植） ───────────── */
 .note-box { background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: #1e40af; line-height: 1.5; }
 .strat-section { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
@@ -258,11 +253,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     <button class="pikaichi-toggle" id="pikaichiToggle">&#11088; ピカイチのみを表示</button>
   </div>
 
-  <div class="page-tabs" id="pageTabs" style="display:none">
-    <button class="page-tab active" id="tabPredict">予想</button>
-    <button class="page-tab" id="tabStrategy">戦略</button>
-  </div>
-
   <div id="predictSection">
     <div class="stats-tabs" id="statsTabs" style="display:none">
       <button class="stats-tab active" data-tab="recent10">直近10走</button>
@@ -295,7 +285,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
   </div>
 
-  <div id="strategySection" style="display:none">
+  <div id="strategySection">
     <div class="note-box">各戦略の全期間実績と今レースの買い目を表示します。1点100円換算。</div>
     <div id="strategyArea">
       <div class="loading"><div class="loading-spinner"></div>データを取得中...</div>
@@ -356,7 +346,6 @@ var userPlan = 'free';
 var topScoreLane = null;
 var pikaichiOnly = false;
 var stratApplyFns = [];
-var strategyLoaded = false;
 
 function isPikaichiCombo(combo) {
   if (topScoreLane == null) return false;
@@ -609,7 +598,6 @@ async function loadData() {
     document.getElementById('statsTabs').style.display = 'flex';
     document.getElementById('bottomActions').style.display = 'flex';
     document.getElementById('pikaichiBar').style.display = 'block';
-    document.getElementById('pageTabs').style.display = 'flex';
 
     var results = buildResults(data.predictions);
     topScoreLane = results.length ? results[0].lane : null;
@@ -751,24 +739,6 @@ for (var t = 0; t < tabBtns.length; t++) {
     };
   })(tabBtns[t]);
 }
-
-/* ─── ページタブ（予想 / 戦略） ─────────────────────── */
-document.getElementById('tabPredict').onclick = function() {
-  document.getElementById('tabPredict').className = 'page-tab active';
-  document.getElementById('tabStrategy').className = 'page-tab';
-  document.getElementById('predictSection').style.display = '';
-  document.getElementById('strategySection').style.display = 'none';
-};
-document.getElementById('tabStrategy').onclick = function() {
-  document.getElementById('tabStrategy').className = 'page-tab active';
-  document.getElementById('tabPredict').className = 'page-tab';
-  document.getElementById('predictSection').style.display = 'none';
-  document.getElementById('strategySection').style.display = '';
-  if (!strategyLoaded) {
-    strategyLoaded = true;
-    loadStrategyTab();
-  }
-};
 
 /* ─── ピカイチのみ表示トグル ────────────────────────── */
 document.getElementById('pikaichiToggle').onclick = function() {
@@ -1169,6 +1139,7 @@ async function loadStrategyTab() {
 }
 
 loadData();
+loadStrategyTab();
 </script>
 </body>
 </html>
