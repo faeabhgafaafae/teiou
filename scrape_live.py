@@ -24,6 +24,7 @@ WITHIN         = int(os.environ.get('WITHIN',      '40'))
 SLEEP_SEC      = 3
 
 VENUE_TO_JCD = {v: k for k, v in VENUES.items()}
+ODDS_SLEEP_SEC = 1
 
 
 def get_pending_races() -> list:
@@ -124,24 +125,265 @@ def scrape_odds(jcd: str, rno: int, hd: str) -> dict | None:
     return odds
 
 
-def send_odds(date_str: str, venue: str, race_no: int, odds: dict) -> bool:
+def _expand_grid(table) -> list:
+    """rowspanを考慮してtbody内の<tr>をrow x colの密な二次元配列に展開する"""
+    ncols = len(table.find_all('colgroup'))
+    tbody = table.find('tbody')
+    if not tbody or ncols == 0:
+        return []
+
+    grid = []
+    pending = {}
+    for tr in tbody.find_all('tr'):
+        tds = iter(tr.find_all('td'))
+        row = []
+        for col in range(ncols):
+            if col in pending:
+                text, classes, remaining = pending[col]
+                row.append((text, classes))
+                if remaining - 1 <= 0:
+                    del pending[col]
+                else:
+                    pending[col] = (text, classes, remaining - 1)
+                continue
+            td = next(tds, None)
+            if td is None:
+                row.append(('', []))
+                continue
+            text = td.get_text(strip=True)
+            classes = td.get('class') or []
+            rowspan = int(td.get('rowspan', 1) or 1)
+            row.append((text, classes))
+            if rowspan > 1:
+                pending[col] = (text, classes, rowspan - 1)
+        grid.append(row)
+    return grid
+
+
+def _fetch_odds_page(path: str, jcd: str, rno: int, hd: str):
+    url = f'{BASE_URL}/owpc/pc/race/{path}?rno={rno}&jcd={jcd}&hd={hd}'
+    res = fetch(url, timeout=30)
+    return BeautifulSoup(res.text, 'html.parser')
+
+
+def scrape_odds3f(jcd: str, rno: int, hd: str) -> dict | None:
+    """3連複オッズ"""
     try:
+        soup = _fetch_odds_page('odds3f', jcd, rno, hd)
+    except Exception as e:
+        print(f'    [ODDS3F ERROR] {e}')
+        return None
+
+    tables = soup.find_all('table')
+    if len(tables) < 2:
+        print('    [ODDS3F ERROR] オッズテーブルが見つかりません')
+        return None
+
+    grid = _expand_grid(tables[1])
+    odds = {}
+    for row in grid:
+        for g in range(6):
+            base = g * 3
+            if base + 2 >= len(row):
+                continue
+            second_cell, third_cell, odds_cell = row[base], row[base + 1], row[base + 2]
+            if 'is-disabled' in odds_cell[1]:
+                continue
+            try:
+                nums = sorted([g + 1, int(second_cell[0]), int(third_cell[0])])
+                val = float(odds_cell[0])
+            except ValueError:
+                continue
+            odds['-'.join(str(n) for n in nums)] = val
+    return odds
+
+
+def scrape_oddsk(jcd: str, rno: int, hd: str) -> dict | None:
+    """拡連複オッズ（値は "1.1-1.3" のようなレンジ文字列）"""
+    try:
+        soup = _fetch_odds_page('oddsk', jcd, rno, hd)
+    except Exception as e:
+        print(f'    [ODDSK ERROR] {e}')
+        return None
+
+    tables = soup.find_all('table')
+    if len(tables) < 2:
+        print('    [ODDSK ERROR] オッズテーブルが見つかりません')
+        return None
+
+    grid = _expand_grid(tables[1])
+    odds = {}
+    for row in grid:
+        for g in range(6):
+            base = g * 2
+            if base + 1 >= len(row):
+                continue
+            num_cell, odds_cell = row[base], row[base + 1]
+            if 'is-disabled' in odds_cell[1]:
+                continue
+            try:
+                nums = sorted([g + 1, int(num_cell[0])])
+            except ValueError:
+                continue
+            if not odds_cell[0]:
+                continue
+            odds['-'.join(str(n) for n in nums)] = odds_cell[0]
+    return odds
+
+
+def scrape_odds2tf(jcd: str, rno: int, hd: str):
+    """2連単・2連複オッズ。(rentan2, renfuku2) のタプルを返す"""
+    try:
+        soup = _fetch_odds_page('odds2tf', jcd, rno, hd)
+    except Exception as e:
+        print(f'    [ODDS2TF ERROR] {e}')
+        return None
+
+    tables = soup.find_all('table')
+    if len(tables) < 3:
+        print('    [ODDS2TF ERROR] オッズテーブルが見つかりません')
+        return None
+
+    rentan2 = {}
+    for row in _expand_grid(tables[1]):
+        for g in range(6):
+            base = g * 2
+            if base + 1 >= len(row):
+                continue
+            num_cell, odds_cell = row[base], row[base + 1]
+            if 'is-disabled' in odds_cell[1]:
+                continue
+            try:
+                second = int(num_cell[0])
+                val = float(odds_cell[0])
+            except ValueError:
+                continue
+            rentan2[f'{g + 1}-{second}'] = val
+
+    renfuku2 = {}
+    for row in _expand_grid(tables[2]):
+        for g in range(6):
+            base = g * 2
+            if base + 1 >= len(row):
+                continue
+            num_cell, odds_cell = row[base], row[base + 1]
+            if 'is-disabled' in odds_cell[1]:
+                continue
+            try:
+                nums = sorted([g + 1, int(num_cell[0])])
+                val = float(odds_cell[0])
+            except ValueError:
+                continue
+            renfuku2['-'.join(str(n) for n in nums)] = val
+
+    return rentan2, renfuku2
+
+
+def scrape_oddstf(jcd: str, rno: int, hd: str):
+    """単勝・複勝オッズ。(tansho, fukusho) のタプルを返す（複勝はレンジ文字列）"""
+    try:
+        soup = _fetch_odds_page('oddstf', jcd, rno, hd)
+    except Exception as e:
+        print(f'    [ODDSTF ERROR] {e}')
+        return None
+
+    tables = soup.find_all('table')
+    if len(tables) < 3:
+        print('    [ODDSTF ERROR] オッズテーブルが見つかりません')
+        return None
+
+    tansho = {}
+    for tbody in tables[1].find_all('tbody'):
+        tr = tbody.find('tr')
+        if not tr:
+            continue
+        tds = tr.find_all('td')
+        if len(tds) < 3:
+            continue
+        try:
+            boat = int(tds[0].get_text(strip=True))
+            val = float(tds[2].get_text(strip=True))
+        except ValueError:
+            continue
+        tansho[str(boat)] = val
+
+    fukusho = {}
+    for tbody in tables[2].find_all('tbody'):
+        tr = tbody.find('tr')
+        if not tr:
+            continue
+        tds = tr.find_all('td')
+        if len(tds) < 3:
+            continue
+        try:
+            boat = int(tds[0].get_text(strip=True))
+        except ValueError:
+            continue
+        val = tds[2].get_text(strip=True)
+        if not val:
+            continue
+        fukusho[str(boat)] = val
+
+    return tansho, fukusho
+
+
+def scrape_all_odds(jcd: str, rno: int, hd: str) -> dict:
+    """3連単以外の全券種オッズをまとめて取得する"""
+    result = {}
+
+    sanrenfuku = scrape_odds3f(jcd, rno, hd)
+    if sanrenfuku:
+        result['sanrenfuku'] = sanrenfuku
+    time.sleep(ODDS_SLEEP_SEC)
+
+    tf2 = scrape_odds2tf(jcd, rno, hd)
+    if tf2:
+        rentan2, renfuku2 = tf2
+        if rentan2:
+            result['rentan2'] = rentan2
+        if renfuku2:
+            result['renfuku2'] = renfuku2
+    time.sleep(ODDS_SLEEP_SEC)
+
+    kakurenku = scrape_oddsk(jcd, rno, hd)
+    if kakurenku:
+        result['kakurenku'] = kakurenku
+    time.sleep(ODDS_SLEEP_SEC)
+
+    tf = scrape_oddstf(jcd, rno, hd)
+    if tf:
+        tansho, fukusho = tf
+        if tansho:
+            result['tansho'] = tansho
+        if fukusho:
+            result['fukusho'] = fukusho
+
+    return result
+
+
+def send_odds(date_str: str, venue: str, race_no: int, odds: dict, odds_multi: dict | None = None) -> bool:
+    try:
+        payload = {
+            'date':    date_str,
+            'venue':   venue,
+            'race_no': race_no,
+            'odds':    odds,
+        }
+        if odds_multi:
+            payload['odds_multi'] = odds_multi
+
         res = requests.post(API_ODDS, json={
             'api_key': API_KEY,
-            'data': {
-                'date':    date_str,
-                'venue':   venue,
-                'race_no': race_no,
-                'odds':    odds,
-            },
+            'data': payload,
         }, timeout=30)
         result = res.json()
         if result.get('error'):
             print(f'    [ODDS API ERROR] {result["error"]}')
             return False
         ok = result.get('ok', 0)
+        ok_multi = result.get('ok_multi', 0)
         errors = result.get('errors', [])
-        print(f'    → オッズ {ok}件登録', end='')
+        print(f'    → オッズ {ok}件登録 (他券種{ok_multi}件)', end='')
         if errors:
             print(f' (エラー{len(errors)}件)')
         else:
@@ -209,11 +451,13 @@ def main():
 
             time.sleep(SLEEP_SEC)
 
-            # オッズ
+            # オッズ(3連単 + 他券種)
             odds = scrape_odds(jcd, race_no, hd)
+            time.sleep(ODDS_SLEEP_SEC)
+            odds_multi = scrape_all_odds(jcd, race_no, hd)
             if odds:
                 print(f'    オッズ: {len(odds)}通り', end=' ')
-                if send_odds(date_str, venue, race_no, odds):
+                if send_odds(date_str, venue, race_no, odds, odds_multi):
                     odds_ok += 1
             else:
                 print(f'    オッズ: データなし')
