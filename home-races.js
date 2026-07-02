@@ -111,15 +111,20 @@
     });
   }
 
-  // 過去日付選択時、会場グリッド内のリンクに ?date= を付与する
+  // 過去日付選択時、会場グリッド内のリンクの date= を currentDate で上書きする
   function patchDateLinks(container) {
     if (!container) return;
     var links = container.querySelectorAll('a[href]');
     Array.prototype.forEach.call(links, function(a) {
       var href = a.getAttribute('href');
-      if (!href || href.charAt(0) === '#' || href.indexOf('date=') !== -1) return;
-      var sep = href.indexOf('?') !== -1 ? '&' : '?';
-      a.setAttribute('href', href + sep + 'date=' + currentDate);
+      if (!href || href.charAt(0) === '#') return;
+      if (href.indexOf('date=') !== -1) {
+        // app.js が既に付けた date= を currentDate で置換
+        a.setAttribute('href', href.replace(/([?&])date=[^&#]*/g, '$1date=' + currentDate));
+      } else {
+        var sep = href.indexOf('?') !== -1 ? '&' : '?';
+        a.setAttribute('href', href + sep + 'date=' + currentDate);
+      }
     });
   }
 
