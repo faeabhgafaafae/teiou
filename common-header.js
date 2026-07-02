@@ -160,7 +160,7 @@
     leftDiv.className = 'gh-left';
     
     if (hasBack) {
-      leftDiv.innerHTML = `<a class="gh-back-btn" href="index.html">&larr;</a>`;
+      leftDiv.innerHTML = `<a class="gh-back-btn" href="index.php">&larr;</a>`;
     }
 
     leftDiv.innerHTML += `
@@ -179,7 +179,7 @@
     drawer.className = 'gh-drawer';
     drawer.innerHTML = `
       <div class="gh-drawer-logo">艇王 Menu</div>
-      <a href="index.html" class="${pageType === 'home' ? 'active' : ''}">🏠 ホーム（場選択）</a>
+      <a href="index.php" class="${pageType === 'home' ? 'active' : ''}">🏠 ホーム（場選択）</a>
       <a href="mypage.html" class="${pageType === 'mypage' ? 'active' : ''}">👤 マイページ</a>
       <a href="history.html" class="${pageType === 'history' ? 'active' : ''}">📊 投票履歴・収支分析</a>
       <a href="settings.html" class="${pageType === 'settings' ? 'active' : ''}">⚙️ 設定</a>

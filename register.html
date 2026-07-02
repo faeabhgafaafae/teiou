@@ -122,7 +122,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
 <header>
   <div class="logo">
-    <a href="index.html">
+    <a href="index.php">
       <h1>艇王</h1>
       <span class="logo-sub">ボートレース予測</span>
     </a>
@@ -181,7 +181,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
       errEl.style.display = 'block';
       return;
     }
-    location.href = 'index.html';
+    location.href = 'index.php';
   } catch(err) {
     errEl.textContent = '通信エラーが発生しました';
     errEl.style.display = 'block';

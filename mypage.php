@@ -249,7 +249,7 @@
         });
         document.getElementById('logoutBtn').addEventListener('click', async function() {
           await fetch('logout.php');
-          location.href = 'index.html';
+          location.href = 'index.php';
         });
       } catch(err) {
         authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
@@ -368,7 +368,7 @@
       });
     }
 
-    document.getElementById('headerLogo').addEventListener('click', function() { location.href = 'index.html'; });
+    document.getElementById('headerLogo').addEventListener('click', function() { location.href = 'index.php'; });
     loadHeaderStats();
     checkAuth();
     fetchFavoriteVenues();
