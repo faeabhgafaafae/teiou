@@ -193,7 +193,7 @@
       var res = await fetch(API_HOST + '/get_hits.php');
       if (!res.ok) throw new Error('fetch error');
       var data = await res.json();
-      var hits = data.hits || [];
+      var hits = (data.hits || []).slice(0, 5);
       if (hits.length === 0) {
         container.innerHTML = '<div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">まだ的中データがありません</div>';
         return;
