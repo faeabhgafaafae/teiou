@@ -145,7 +145,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
           </div>
         </div>
         <div class="wx-mini-card">
-          <div class="wx-icon-wrap">
+          <div class="wx-icon-wrap" id="wxIconWrap">
             <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="19" cy="19" r="18" fill="#fef9c3"/>
               <circle cx="19" cy="19" r="7" fill="#fbbf24"/>
@@ -160,8 +160,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
             </svg>
           </div>
           <div class="wx-vals">
-            <div class="wx-row"><span class="wx-lbl">天候</span><strong class="wx-num wx-num-sm">-</strong></div>
-            <div class="wx-row"><span class="wx-lbl">気温</span><strong class="wx-num wx-num-sm">-</strong><span class="wx-unit">℃</span></div>
+            <div class="wx-row"><span class="wx-lbl">天候</span><strong class="wx-num wx-num-sm" id="wxWeather">-</strong></div>
+            <div class="wx-row"><span class="wx-lbl">気温</span><strong class="wx-num wx-num-sm" id="wxTemp">-</strong><span class="wx-unit">℃</span></div>
           </div>
         </div>
       </div>
@@ -176,7 +176,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
         </svg>
         <div class="wx-water-center">
           <div class="wx-water-row"><span class="wx-water-lbl">波高</span><strong class="wx-water-num" id="waveHeight">-</strong><span class="wx-water-unit">cm</span></div>
-          <div class="wx-water-row"><span class="wx-water-lbl">水温</span><strong class="wx-water-num">-</strong><span class="wx-water-unit">℃</span></div>
+          <div class="wx-water-row"><span class="wx-water-lbl">水温</span><strong class="wx-water-num" id="wxWaterTemp">-</strong><span class="wx-water-unit">℃</span></div>
         </div>
         <svg width="34" height="48" viewBox="0 0 34 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;flex-shrink:0">
           <line x1="17" y1="4" x2="17" y2="30" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
@@ -184,7 +184,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
           <path d="M5 31 Q17 37 29 31 L27 41 Q17 45 7 41 Z" fill="rgba(255,255,255,0.8)"/>
         </svg>
       </div>
-      <div class="note">天候・気温・水温は現在取得しておらず「-」表示です。風向・風速・波高のみDBから表示します。</div>
     </div>
 
     <div class="card">
@@ -250,6 +249,40 @@ for (var i = 0; i < tabButtons.length; i++) {
     for (var k = 0; k < panels.length; k++) panels[k].classList.remove('active');
     document.getElementById('panel-' + tab).classList.add('active');
   });
+}
+
+function getWeatherIconSVG(w) {
+  if (w.indexOf('雨') !== -1) {
+    return '<svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<circle cx="19" cy="19" r="18" fill="#dbeafe"/>' +
+      '<ellipse cx="15" cy="19" rx="7" ry="6" fill="#90c4e8" stroke="#5ba7d1" stroke-width="1.5"/>' +
+      '<ellipse cx="22" cy="17" rx="6" ry="5" fill="#90c4e8" stroke="#5ba7d1" stroke-width="1.5"/>' +
+      '<rect x="10" y="20" width="16" height="5" rx="2.5" fill="#90c4e8"/>' +
+      '<line x1="14" y1="26" x2="12" y2="31" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round"/>' +
+      '<line x1="19" y1="26" x2="17" y2="31" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round"/>' +
+      '<line x1="24" y1="26" x2="22" y2="31" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round"/>' +
+      '</svg>';
+  }
+  if (w.indexOf('曇') !== -1) {
+    return '<svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<circle cx="19" cy="19" r="18" fill="#f1f5f9"/>' +
+      '<ellipse cx="14" cy="21" rx="7" ry="6" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5"/>' +
+      '<ellipse cx="22" cy="19" rx="6" ry="5" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5"/>' +
+      '<rect x="8" y="21" width="20" height="6" rx="3" fill="#cbd5e1"/>' +
+      '</svg>';
+  }
+  return '<svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+    '<circle cx="19" cy="19" r="18" fill="#fef9c3"/>' +
+    '<circle cx="19" cy="19" r="7" fill="#fbbf24"/>' +
+    '<line x1="19" y1="7" x2="19" y2="4" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="19" y1="31" x2="19" y2="34" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="7" y1="19" x2="4" y2="19" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="31" y1="19" x2="34" y2="19" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="10.8" y1="10.8" x2="8.7" y2="8.7" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="27.2" y1="27.2" x2="29.3" y2="29.3" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="27.2" y1="10.8" x2="29.3" y2="8.7" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="10.8" y1="27.2" x2="8.7" y2="29.3" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>' +
+    '</svg>';
 }
 
 function gradeSpanFor(grade) {
@@ -489,9 +522,15 @@ async function loadPrediction() {
     }
 
     if (data.weather) {
-      document.getElementById('windDir').textContent = data.weather.wind_dir || '-';
-      document.getElementById('windSpeed').textContent = data.weather.wind_speed != null ? data.weather.wind_speed : '-';
-      document.getElementById('waveHeight').textContent = data.weather.wave_height != null ? data.weather.wave_height : '-';
+      var wx = data.weather;
+      document.getElementById('windDir').textContent = wx.wind_dir || '-';
+      document.getElementById('windSpeed').textContent = wx.wind_speed != null ? wx.wind_speed : '-';
+      document.getElementById('waveHeight').textContent = wx.wave_height != null ? wx.wave_height : '-';
+      document.getElementById('wxWeather').textContent = wx.weather || '-';
+      document.getElementById('wxTemp').textContent = wx.temperature != null ? wx.temperature : '-';
+      document.getElementById('wxWaterTemp').textContent = wx.water_temperature != null ? wx.water_temperature : '-';
+      var iconWrap = document.getElementById('wxIconWrap');
+      if (iconWrap) { iconWrap.innerHTML = getWeatherIconSVG(wx.weather || ''); }
       document.getElementById('weatherCard').style.display = 'block';
     }
 

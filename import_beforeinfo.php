@@ -78,6 +78,33 @@ foreach ($players as $p) {
     }
 }
 
+// 気象情報を races に保存（wind_speed/wind_dir/wave_height/weather/temperature/water_temperature）
+$wx = $data['weather'] ?? [];
+if (!empty($wx)) {
+    try {
+        $pdo->prepare('
+            UPDATE races
+            SET wind_speed        = COALESCE(?, wind_speed),
+                wind_dir          = COALESCE(?, wind_dir),
+                wave_height       = COALESCE(?, wave_height),
+                weather           = COALESCE(?, weather),
+                temperature       = COALESCE(?, temperature),
+                water_temperature = COALESCE(?, water_temperature)
+            WHERE id = ?
+        ')->execute([
+            isset($wx['wind_speed'])        ? (float)$wx['wind_speed']        : null,
+            $wx['wind_dir']                 ?? null,
+            isset($wx['wave_height'])       ? (int)$wx['wave_height']         : null,
+            $wx['weather']                  ?? null,
+            isset($wx['temperature'])       ? (float)$wx['temperature']       : null,
+            isset($wx['water_temperature']) ? (float)$wx['water_temperature'] : null,
+            $race_id,
+        ]);
+    } catch (PDOException $e) {
+        // カラム未追加時など非致命的エラーは無視
+    }
+}
+
 $pdo->prepare('UPDATE races SET before_updated_at = NOW() WHERE id = ?')->execute([$race_id]);
 
 echo json_encode([

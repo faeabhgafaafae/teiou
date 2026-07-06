@@ -34,7 +34,7 @@ try {
 }
 
 $stmt = $pdo->prepare("
-    SELECT id, wind_speed, wind_dir, wave_height
+    SELECT id, wind_speed, wind_dir, wave_height, weather, temperature, water_temperature
     FROM races
     WHERE date=? AND venue=? AND race_no=?
     LIMIT 1
@@ -252,9 +252,12 @@ echo json_encode([
     'race_id'     => $race_id,
     'entry_count' => count($entries),
     'weather'     => [
-        'wind_speed'  => $race['wind_speed'],
-        'wind_dir'    => $race['wind_dir'],
-        'wave_height' => $race['wave_height'],
+        'wind_speed'        => $race['wind_speed'],
+        'wind_dir'          => $race['wind_dir'],
+        'wave_height'       => $race['wave_height'],
+        'weather'           => $race['weather'],
+        'temperature'       => $race['temperature'],
+        'water_temperature' => $race['water_temperature'],
     ],
     'predictions' => $scores,
 ], JSON_UNESCAPED_UNICODE);
