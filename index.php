@@ -292,6 +292,7 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
   </div>
 
   <script>var PAGE_DATE = '<?php echo htmlspecialchars($pageDate, ENT_QUOTES, 'UTF-8'); ?>';</script>
+  <script src="venue-display.js"></script>
   <script src="app.js"></script>
   <script src="home-races.js" defer></script>
 </body>

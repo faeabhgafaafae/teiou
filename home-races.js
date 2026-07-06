@@ -33,7 +33,7 @@
 
     card.innerHTML =
       '<div class="urgent-header">' +
-        '<span class="urgent-venue">' + race.venue + '</span>' +
+        '<span class="urgent-venue">' + venueDisplayName(race.venue) + '</span>' +
         '<span class="urgent-no">' + race.race_no + 'R</span>' +
         '<span class="urgent-time ' + countdown.cls + '">' + countdown.text + '</span>' +
       '</div>' +
@@ -132,7 +132,7 @@
 
     var venueEl = document.createElement('span');
     venueEl.style.cssText = 'font-size:13px; font-weight:bold; color:#2d3748;';
-    venueEl.textContent = hit.venue + ' ' + hit.race_no + 'R';
+    venueEl.textContent = venueDisplayName(hit.venue) + ' ' + hit.race_no + 'R';
 
     var stratEl = document.createElement('span');
     var stratStyle = STRAT_STYLE[hit.strategy_type] || 'background:#e2e8f0; color:#4a5568;';

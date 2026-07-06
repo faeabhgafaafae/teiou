@@ -60,6 +60,7 @@ svg.trend-chart { width: 100%; height: auto; }
   .strategy-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 }
 </style>
+<script src="venue-display.js"></script>
 </head>
 <body>
 
@@ -383,7 +384,7 @@ async function loadVenue() {
     var tbody = document.createElement('tbody');
     data.by_venue.forEach(function(r) {
       var tr = document.createElement('tr');
-      var tdVenue = document.createElement('td'); tdVenue.textContent = r.venue; tr.appendChild(tdVenue);
+      var tdVenue = document.createElement('td'); tdVenue.textContent = venueDisplayName(r.venue); tr.appendChild(tdVenue);
       var tdType = document.createElement('td'); tdType.textContent = r.strategy_type; tr.appendChild(tdType);
       var tdCount = document.createElement('td'); tdCount.textContent = r.total_races; tr.appendChild(tdCount);
       var tdHit = document.createElement('td'); tdHit.textContent = r.hit_rate.toFixed(1) + '%'; tr.appendChild(tdHit);

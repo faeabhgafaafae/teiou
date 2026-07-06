@@ -83,6 +83,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .pw { width: 20px; height: 20px; font-size: 11px; }
 }
 </style>
+<script src="venue-display.js"></script>
 </head>
 <body>
 
@@ -145,8 +146,8 @@ var vg = VENUE_GRADES[venue] || '一般';
 
 function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
 
-document.getElementById('pageTitle').textContent = venue + ' ' + raceNo + 'R ' + fmtDate(date) + ' / オッズ';
-document.title = '艇王 - ' + venue + ' ' + raceNo + 'R オッズ';
+document.getElementById('pageTitle').textContent = venueDisplayName(venue) + ' ' + raceNo + 'R ' + fmtDate(date) + ' / オッズ';
+document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R オッズ';
 var badge = document.getElementById('pageBadge');
 badge.textContent = vg;
 badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
@@ -402,7 +403,7 @@ async function loadData() {
     var detail = document.getElementById('raceBarDetail');
     detail.textContent = '';
     var vs = document.createElement('strong');
-    vs.textContent = venue;
+    vs.textContent = venueDisplayName(venue);
     detail.appendChild(vs);
     detail.appendChild(document.createTextNode(' ' + fmtDate(date) + ' / オッズ'));
     document.getElementById('raceBar').style.display = 'flex';

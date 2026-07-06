@@ -69,7 +69,8 @@ function createVenueCard(venueName, venueData) {
   var grade = VENUE_GRADES[venueName] || '一般';
   var gradeClass = GRADE_CLASSES[grade];
   var imgSrc = venueName + '.jpg';
-  
+  var displayName = venueDisplayName(venueName);
+
   var isFav = favoriteVenues.indexOf(venueName) !== -1;
   var starStyle = isFav ? 'color: #d97706; font-weight: 900;' : 'color: #cbd5e1; font-weight: 400;';
 
@@ -79,14 +80,14 @@ function createVenueCard(venueName, venueData) {
   if (!isActive) {
     return '<div class="venue-card inactive">' +
         '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-          '<div><span class="venue-name">' + venueName + '</span><span class="grade-badge ' + gradeClass + '">' + grade + '</span></div>' +
+          '<div><span class="venue-name">' + displayName + '</span><span class="grade-badge ' + gradeClass + '">' + grade + '</span></div>' +
           starButton +
         '</div>' +
         '<div class="card-main-info">' +
           '<div class="card-text-side">' +
             '<div style="color:#aaa; font-size:12px; margin-top:4px;">非開催</div>' +
           '</div>' +
-          '<img src="' + imgSrc + '" alt="' + venueName + '" class="card-venue-img" style="opacity: 0.5;">' +
+          '<img src="' + imgSrc + '" alt="' + displayName + '" class="card-venue-img" style="opacity: 0.5;">' +
         '</div>' +
       '</div>';
   }
@@ -96,7 +97,7 @@ function createVenueCard(venueName, venueData) {
 
   return '<a href="' + href + '" class="venue-card">' +
       '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-        '<div><span class="venue-name">' + venueName + '</span><span class="grade-badge ' + gradeClass + '">' + grade + '</span></div>' +
+        '<div><span class="venue-name">' + displayName + '</span><span class="grade-badge ' + gradeClass + '">' + grade + '</span></div>' +
         starButton +
       '</div>' +
       '<div class="card-main-info">' +
@@ -104,7 +105,7 @@ function createVenueCard(venueName, venueData) {
           '<div class="status-indicator">開催中</div>' +
           '<div class="race-round">全' + totalRaces + 'R</div>' +
         '</div>' +
-        '<img src="' + imgSrc + '" alt="' + venueName + '" class="card-venue-img">' +
+        '<img src="' + imgSrc + '" alt="' + displayName + '" class="card-venue-img">' +
       '</div>' +
     '</a>';
 }
@@ -146,7 +147,7 @@ function renderFeaturedBanner(venues) {
 
     html += '<div class="featured-item">' +
         '<div class="featured-left">' +
-          '<span class="venue-name">' + featured.venue + '</span>' +
+          '<span class="venue-name">' + venueDisplayName(featured.venue) + '</span>' +
           '<span class="grade-badge ' + gradeClass + '">' + grade + '</span>' +
           '<span style="font-size:11px; color:#718096; font-weight:normal;">' + featured.race_count + 'R開催</span>' +
         '</div>' +

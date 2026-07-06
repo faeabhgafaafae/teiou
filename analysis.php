@@ -106,6 +106,7 @@ table.data-table tr.rank-1 { background: #fffbeb; }
   .stat-row { gap: 6px; }
 }
 </style>
+<script src="venue-display.js"></script>
 </head>
 <body>
 
@@ -384,7 +385,7 @@ async function showPlayerDetail(playerId) {
       var tbody = document.createElement('tbody');
       data.recent.forEach(function(r) {
         var tr = document.createElement('tr');
-        [r.date, r.venue, r.race_no + 'R', r.lane, r.actual_rank != null ? r.actual_rank : '-'].forEach(function(v) {
+        [r.date, venueDisplayName(r.venue), r.race_no + 'R', r.lane, r.actual_rank != null ? r.actual_rank : '-'].forEach(function(v) {
           var td = document.createElement('td');
           td.textContent = v;
           tr.appendChild(td);
@@ -521,7 +522,7 @@ document.getElementById('showFullRankingBtn').addEventListener('click', function
 var playersVenueSelect = document.getElementById('playersVenueSelect');
 ALL_VENUES.forEach(function(v) {
   var opt = document.createElement('option');
-  opt.value = v; opt.textContent = v;
+  opt.value = v; opt.textContent = venueDisplayName(v);
   playersVenueSelect.appendChild(opt);
 });
 
@@ -652,7 +653,7 @@ ALL_VENUES.forEach(function(v) {
   var btn = document.createElement('button');
   btn.className = 'venue-card-mini';
   btn.type = 'button';
-  btn.textContent = v;
+  btn.textContent = venueDisplayName(v);
   btn.addEventListener('click', function() {
     venuePicker.querySelectorAll('.venue-card-mini').forEach(function(b) { b.classList.remove('active'); });
     this.classList.add('active');
@@ -771,7 +772,7 @@ async function loadVenueAnalysis(venue) {
 var searchVenueSelect = document.getElementById('searchVenueSelect');
 ALL_VENUES.forEach(function(v) {
   var opt = document.createElement('option');
-  opt.value = v; opt.textContent = v;
+  opt.value = v; opt.textContent = venueDisplayName(v);
   searchVenueSelect.appendChild(opt);
 });
 

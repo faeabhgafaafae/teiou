@@ -211,6 +211,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="venue-display.js"></script>
 </head>
 <body>
 
@@ -271,9 +272,9 @@ var venueGrade = VENUE_GRADES[venue] || '一般';
 var activeRaces = []; 
 
 window.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('pageTitle').textContent = venue + ' レース一覧';
+  document.getElementById('pageTitle').textContent = venueDisplayName(venue) + ' レース一覧';
   document.getElementById('pageDate').textContent = formatDateJP(date);
-  document.title = '艇王 - ' + venue;
+  document.title = '艇王 - ' + venueDisplayName(venue);
   var badge = document.getElementById('pageBadge');
   if(badge) {
     badge.textContent = venueGrade;
@@ -502,7 +503,7 @@ async function loadRaces() {
     activeRaces = data.races; 
     
     var banner = document.getElementById('venueBanner');
-    document.getElementById('bannerTitle').textContent = venue;
+    document.getElementById('bannerTitle').textContent = venueDisplayName(venue);
     document.getElementById('bannerSub').textContent = formatDateJP(date) + ' 開催';
     document.getElementById('bannerTotal').textContent = data.races.length + 'R';
     banner.style.display = 'flex';

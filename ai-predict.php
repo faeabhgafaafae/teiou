@@ -290,6 +290,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .filter-bar { gap: 5px; padding: 6px 10px; }
 }
 </style>
+<script src="venue-display.js"></script>
 </head>
 <body>
 
@@ -401,8 +402,8 @@ if (backBtnEl) {
 function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
 function formatName(n) { return n.replace(/[\s　]+/g, ' ').trim(); }
 
-document.getElementById('pageTitle').textContent = venue + ' ' + raceNo + 'R 予想';
-document.title = '艇王 - ' + venue + ' ' + raceNo + 'R 予想';
+document.getElementById('pageTitle').textContent = venueDisplayName(venue) + ' ' + raceNo + 'R 予想';
+document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R 予想';
 var badge = document.getElementById('pageBadge');
 badge.textContent = vg;
 badge.className = 'gh-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
@@ -698,7 +699,7 @@ async function loadData() {
     var detail = document.getElementById('raceBarDetail');
     detail.textContent = '';
     var vs = document.createElement('strong');
-    vs.textContent = venue;
+    vs.textContent = venueDisplayName(venue);
     detail.appendChild(vs);
     detail.appendChild(document.createTextNode(' ' + fmtDate(date) + ' / 予想'));
     bar.style.display = 'flex';
