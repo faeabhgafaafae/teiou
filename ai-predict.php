@@ -32,11 +32,11 @@ header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px;
 .auth-link.register:hover { background: #004488; }
 
 /* グレード badge カラーマスタ */
-.grade-sg { background: #fed7d7; color: #e53e3e; }
-.grade-g1 { background: #feebc8; color: #dd6b20; }
-.grade-g2 { background: #ebf8ff; color: #2b6cb0; }
-.grade-g3 { background: #e6fffa; color: #319795; }
-.grade-ippan { background: #edf2f7; color: #718096; }
+.grade-sg { background: #fff3cd; color: #b8860b; }
+.grade-g1 { background: #fee2e2; color: #c0392b; }
+.grade-g2 { background: #dbeafe; color: #2563eb; }
+.grade-g3 { background: #d1fae5; color: #16a34a; }
+.grade-ippan { background: #f3f4f6; color: #888; }
 
 /* --- R数クイックナビ --- */
 .race-nav-sticky {
