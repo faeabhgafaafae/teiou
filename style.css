@@ -1,8 +1,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f4f6f9; color: #333; min-height: 100vh; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
 
 /* --- ヘッダー --- */
-header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
 .logo h1 { font-size: 22px; font-weight: 800; color: #0055a4; display: inline-block; vertical-align: middle; }
 .logo-sub { font-size: 11px; color: #718096; margin-left: 8px; }
 .header-right { display: flex; align-items: center; gap: 16px; }
@@ -85,11 +85,11 @@ header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px;
 
 /* 各バッジ色 */
 .grade-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; }
-.grade-sg { background: #fed7d7; color: #e53e3e; }
-.grade-g1 { background: #feebc8; color: #dd6b20; }
-.grade-g2 { background: #ebf8ff; color: #2b6cb0; }
-.grade-g3 { background: #e6fffa; color: #319795; }
-.grade-ippan { background: #edf2f7; color: #718096; }
+.grade-sg { background: #fff3cd; color: #b8860b; }
+.grade-g1 { background: #fee2e2; color: #c0392b; }
+.grade-g2 { background: #dbeafe; color: #2563eb; }
+.grade-g3 { background: #d1fae5; color: #16a34a; }
+.grade-ippan { background: #f3f4f6; color: #888; }
 
 .venue-card.inactive { opacity: 0.6; background: #f7fafc; }
 
