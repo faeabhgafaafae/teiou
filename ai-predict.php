@@ -11,8 +11,10 @@ body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; backgr
 /* --- ヘッダー全体を上部に固定 --- */
 header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; height: 71px; /* ヘッダーの高さを固定 */ }
 
-/* 左：ロゴ ＆ レース場情報エリア */
+/* 左：戻るボタン・ロゴ ＆ レース場情報エリア */
 .header-left { display: flex; align-items: center; gap: 20px; }
+.back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; flex-shrink: 0; }
+.back-btn:hover { background: #e8f0fd; }
 .logo img { height: 44px; width: auto; display: block; cursor: pointer; }
 
 .header-venue-info { display: flex; flex-direction: column; }
@@ -292,6 +294,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
 <header>
   <div class="header-left">
+    <a class="back-btn" id="backBtn" href="races.html">&larr;</a>
     <div class="logo" id="headerLogo" onclick="location.href='index.php'">
       <img src="艇王.jpg" alt="艇王 BOATRACE ROYAL">
     </div>
@@ -388,6 +391,11 @@ var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平�
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
 var WAKU_STYLES = { 1:'background:#fff;color:#222;border:2px solid #ccc', 2:'background:#222;color:#fff', 3:'background:#e53e3e;color:#fff', 4:'background:#2563eb;color:#fff', 5:'background:#eab308;color:#222', 6:'background:#16a34a;color:#fff' };
 var vg = VENUE_GRADES[venue] || '一般';
+
+var backBtnEl = document.getElementById('backBtn');
+if (backBtnEl) {
+  backBtnEl.href = 'races.html?venue=' + encodeURIComponent(venue) + '&date=' + date;
+}
 
 function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
 function formatName(n) { return n.replace(/[\s　]+/g, ' ').trim(); }
