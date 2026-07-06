@@ -195,7 +195,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     <div class="card">
       <h2>選手一覧</h2>
       <div class="pred-table-wrap" id="officialTableWrap"></div>
-      <div class="note">調整体重・チルト角度・プロペラ・部品交換の情報は現在取得しておらず、「-」表示になります。</div>
     </div>
   </div>
 
@@ -331,8 +330,12 @@ function buildOfficialTable(predictions) {
     tr.appendChild(tdName);
 
     var tdAdjWeight = document.createElement('td');
-    tdAdjWeight.className = 'na';
-    tdAdjWeight.textContent = '-';
+    if (p.adjust_weight != null) {
+      tdAdjWeight.textContent = p.adjust_weight + 'kg';
+    } else {
+      tdAdjWeight.className = 'na';
+      tdAdjWeight.textContent = '-';
+    }
     tr.appendChild(tdAdjWeight);
 
     var tdExhibit = document.createElement('td');
@@ -340,12 +343,33 @@ function buildOfficialTable(predictions) {
     tdExhibit.textContent = fmtVal(p.exhibit_time, 2);
     tr.appendChild(tdExhibit);
 
-    ['チルト', 'プロペラ', '部品交換'].forEach(function() {
-      var td = document.createElement('td');
-      td.className = 'na';
-      td.textContent = '-';
-      tr.appendChild(td);
-    });
+    var tdTilt = document.createElement('td');
+    if (p.tilt != null) {
+      tdTilt.textContent = p.tilt;
+    } else {
+      tdTilt.className = 'na';
+      tdTilt.textContent = '-';
+    }
+    tr.appendChild(tdTilt);
+
+    var tdProp = document.createElement('td');
+    if (p.propeller_mark) {
+      tdProp.textContent = p.propeller_mark;
+    } else {
+      tdProp.className = 'na';
+      tdProp.textContent = '-';
+    }
+    tr.appendChild(tdProp);
+
+    var tdParts = document.createElement('td');
+    if (p.parts_exchange) {
+      tdParts.style.fontSize = '11px';
+      tdParts.textContent = p.parts_exchange;
+    } else {
+      tdParts.className = 'na';
+      tdParts.textContent = '-';
+    }
+    tr.appendChild(tdParts);
 
     var tdSt = document.createElement('td');
     tdSt.className = 'score-cell';

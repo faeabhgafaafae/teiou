@@ -128,24 +128,47 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
             continue
         player_id = int(m.group(1))
 
-        exhibit_time = None
-        chilt = None
+        exhibit_time  = None
+        tilt          = None
+        adjust_weight = None
+        propeller_mark = None
+        parts_exchange = None
+
         rowspan4 = [td for td in tbody.find_all('td') if td.get('rowspan') == '4']
+        rowspan2 = [td for td in tbody.find_all('td') if td.get('rowspan') == '2']
+
         if len(rowspan4) >= 4:
             try:
                 exhibit_time = float(rowspan4[3].get_text(strip=True))
-            except:
+            except Exception:
                 pass
             try:
-                chilt = float(rowspan4[4].get_text(strip=True))
-            except:
+                tilt = float(rowspan4[4].get_text(strip=True))
+            except Exception:
+                pass
+        if len(rowspan4) >= 6:
+            prop_text = rowspan4[5].get_text(strip=True)
+            if prop_text:
+                propeller_mark = prop_text
+        if len(rowspan4) >= 7:
+            items = [li.get_text(strip=True) for li in rowspan4[6].select('li') if li.get_text(strip=True)]
+            if items:
+                parts_exchange = '・'.join(items)
+
+        if rowspan2:
+            try:
+                adjust_weight = float(rowspan2[0].get_text(strip=True).replace('kg', ''))
+            except Exception:
                 pass
 
         result['players'].append({
-            'waku':         waku,
-            'player_id':    player_id,
-            'exhibit_time': exhibit_time,
-            'chilt':        chilt,
+            'waku':           waku,
+            'player_id':      player_id,
+            'exhibit_time':   exhibit_time,
+            'tilt':           tilt,
+            'adjust_weight':  adjust_weight,
+            'propeller_mark': propeller_mark,
+            'parts_exchange': parts_exchange,
         })
 
     # スタート展示ST

@@ -51,6 +51,7 @@ $race_id = $race['id'];
 
 $stmt = $pdo->prepare("
     SELECT e.id, e.lane, e.player_id, e.exhibit_time, e.start_timing, e.motor_2rate, e.odds,
+           e.adjust_weight, e.tilt, e.propeller_mark, e.parts_exchange,
            p.name, p.grade
     FROM entries e
     JOIN players p ON e.player_id = p.id
@@ -183,6 +184,10 @@ foreach ($entries as $e) {
         'exhibit_time'      => $e['exhibit_time'],
         'start_timing'      => $e['start_timing'],
         'motor_2rate'       => $e['motor_2rate'],
+        'adjust_weight'     => $e['adjust_weight'],
+        'tilt'              => $e['tilt'],
+        'propeller_mark'    => $e['propeller_mark'],
+        'parts_exchange'    => $e['parts_exchange'],
         'win_rate_national' => round($win_rate_national, 2),
         'win_rate_local'    => round($win_rate_local, 2),
         'score_ability'     => round($score_ability, 2),
