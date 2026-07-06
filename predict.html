@@ -16,26 +16,37 @@ body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; backgr
 .container { max-width: 900px; margin: 0 auto; padding: 16px; }
 footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
-.weather-info { display: flex; gap: 16px; font-size: 13px; color: #555; margin-bottom: 12px; padding: 8px 12px; background: #fff; border: 1px solid #e0e3e8; border-radius: 8px; }
-.weather-info span { display: flex; align-items: center; gap: 4px; }
-.weather-info strong { color: #222; }
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.tab-btn { flex-shrink: 0; padding: 9px 16px; border-radius: 8px; background: #fff; border: 1px solid #e0e3e8; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; }
+.tab-btn.active { background: #0055a4; color: #fff; border-color: #0055a4; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+.card { background: #fff; border: 1px solid #e0e3e8; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+.card h2 { font-size: 13px; font-weight: 700; color: #222; margin-bottom: 10px; }
+
+.weather-row { display: flex; gap: 16px; font-size: 13px; color: #555; flex-wrap: wrap; }
+.weather-row span { display: flex; align-items: center; gap: 4px; }
+.weather-row strong { color: #222; }
+.note { font-size: 11px; color: #a0724b; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 12px; margin-top: 10px; line-height: 1.6; }
 
 .pred-table-wrap { overflow-x: auto; }
-.pred-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e0e3e8; border-radius: 8px; overflow: hidden; font-size: 13px; }
+.pred-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
 .pred-table th { background: #f7f8fa; font-size: 11px; font-weight: 700; color: #888; padding: 8px 6px; text-align: center; border-bottom: 2px solid #e0e3e8; white-space: nowrap; }
-.pred-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+.pred-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
 .pred-table tr:last-child td { border-bottom: none; }
 .pred-table tr:hover { background: #fafbfc; }
 
-.td-name { text-align: left; white-space: nowrap; }
+.td-name { text-align: left; }
 .td-name-inner { font-weight: 600; color: #222; }
 .td-grade { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 6px; }
 .pg-A1 { background: #fff3cd; color: #b8860b; }
 .pg-A2 { background: #dbeafe; color: #2563eb; }
 .pg-B1 { background: #f3f4f6; color: #666; }
 .pg-B2 { background: #f3f4f6; color: #aaa; }
+.na { color: #ccc; }
 
-.waku { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; font-weight: 800; font-size: 13px; }
+.waku { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; font-weight: 800; font-size: 13px; flex-shrink: 0; }
 .waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
 .waku-2 { background: #222; color: #fff; }
 .waku-3 { background: #e53e3e; color: #fff; }
@@ -46,6 +57,23 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .score-total { font-size: 15px; font-weight: 700; color: #0055a4; }
 .score-cell { font-variant-numeric: tabular-nums; }
 
+/* スタート情報(水面イメージ) */
+.start-track-wrap { display: flex; flex-direction: column; gap: 8px; }
+.start-track-row { display: flex; align-items: center; gap: 8px; }
+.start-track-bar { flex: 1; height: 30px; background: linear-gradient(180deg, #e0f2fe, #bae6fd); border-radius: 6px; position: relative; overflow: hidden; }
+.start-track-line { position: absolute; right: 8px; top: 0; bottom: 0; width: 2px; background: #0055a4; opacity: 0.4; }
+.start-track-boat { position: absolute; top: 3px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; transition: left 0.2s; }
+.start-track-st { width: 54px; text-align: right; font-size: 12px; font-weight: 700; color: #222; flex-shrink: 0; }
+.start-track-st.flying { color: #dc2626; }
+
+/* 同時間帯の他会場レース */
+.nearby-scroll { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+.nearby-card { flex-shrink: 0; background: #f7f8fa; border: 1px solid #e0e3e8; border-radius: 8px; padding: 10px 14px; text-decoration: none; text-align: center; min-width: 84px; }
+.nearby-card:hover { border-color: #0055a4; background: #f0f5ff; }
+.nearby-card-venue { font-size: 12px; font-weight: 700; color: #222; }
+.nearby-card-race { font-size: 11px; color: #0055a4; font-weight: 700; margin-top: 2px; }
+.nearby-card-time { font-size: 10px; color: #999; margin-top: 2px; }
+
 .loading { text-align: center; padding: 40px; color: #999; font-size: 14px; }
 .error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; color: #dc2626; font-size: 14px; }
 
@@ -53,6 +81,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .pred-table { font-size: 12px; }
   .pred-table th, .pred-table td { padding: 6px 4px; }
   .waku { width: 22px; height: 22px; font-size: 11px; }
+  .start-track-bar { height: 26px; }
+  .start-track-boat { width: 20px; height: 20px; font-size: 10px; }
 }
 </style>
 <script src="venue-display.js"></script>
@@ -65,13 +95,50 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 </div>
 
 <div class="container">
-  <div id="weatherWrap" class="weather-info" style="display:none">
-    <span>&#127788;&#65039; 風速 <strong id="windSpeed">-</strong>m</span>
-    <span>&#127754; 波高 <strong id="waveHeight">-</strong>cm</span>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="official">直前情報</button>
+    <button class="tab-btn" data-tab="original">オリジナル展示</button>
   </div>
 
-  <div id="predArea">
-    <div class="loading">直前情報を取得中...</div>
+  <div id="loadingArea"><div class="loading">直前情報を取得中...</div></div>
+  <div id="errorArea"></div>
+
+  <!-- 直前情報タブ -->
+  <div class="panel active" id="panel-official">
+    <div id="weatherCard" class="card" style="display:none">
+      <h2>水面気象情報</h2>
+      <div class="weather-row">
+        <span>&#127788;&#65039; 風向 <strong id="windDir">-</strong></span>
+        <span>&#127788;&#65039; 風速 <strong id="windSpeed">-</strong>m</span>
+        <span>&#127754; 波高 <strong id="waveHeight">-</strong>cm</span>
+      </div>
+      <div class="note">気温・水温・天候(晴/曇/雨等)は現在取得しておらず、風向・風速・波高のみの表示です。</div>
+    </div>
+
+    <div class="card">
+      <h2>スタート情報</h2>
+      <div class="start-track-wrap" id="startVisual"></div>
+      <div class="note">進入コースの実測データがないため、枠番の並び順でスタート展示の目安位置を表しています(実際の進入とは異なる場合があります)。</div>
+    </div>
+
+    <div class="card">
+      <h2>選手一覧</h2>
+      <div class="pred-table-wrap" id="officialTableWrap"></div>
+      <div class="note">調整体重・チルト角度・プロペラ・部品交換の情報は現在取得しておらず、「-」表示になります。</div>
+    </div>
+  </div>
+
+  <!-- オリジナル展示タブ -->
+  <div class="panel" id="panel-original">
+    <div class="card">
+      <h2>艇王オリジナル展示(AI予想スコア)</h2>
+      <div class="pred-table-wrap" id="originalTableWrap"></div>
+    </div>
+  </div>
+
+  <div class="card" id="nearbyCard" style="display:none">
+    <h2>発走直前のレース(同時間帯・他会場)</h2>
+    <div class="nearby-scroll" id="nearbyRaces"></div>
   </div>
 </div>
 
@@ -95,38 +162,53 @@ document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R 直�
 var API_BASE = 'https://' + '2410049.moo.jp';
 
 function formatName(n) { return n.replace(/[\s　]+/g, ''); }
-
 function fmtVal(v, decimals) {
   if (v == null || v === '') return '-';
   return Number(v).toFixed(decimals);
 }
 
-function buildTable(predictions) {
-  var area = document.getElementById('predArea');
-  area.textContent = '';
+// --- タブ切り替え ---
+var tabButtons = document.querySelectorAll('.tab-btn');
+for (var i = 0; i < tabButtons.length; i++) {
+  tabButtons[i].addEventListener('click', function() {
+    var tab = this.getAttribute('data-tab');
+    for (var j = 0; j < tabButtons.length; j++) tabButtons[j].classList.remove('active');
+    this.classList.add('active');
+    var panels = document.querySelectorAll('.panel');
+    for (var k = 0; k < panels.length; k++) panels[k].classList.remove('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+  });
+}
 
-  var wrap = document.createElement('div');
-  wrap.className = 'pred-table-wrap';
+function gradeSpanFor(grade) {
+  var s = document.createElement('span');
+  s.className = 'td-grade pg-' + (grade || 'B1').replace(/\s/g, '');
+  s.textContent = grade || '-';
+  return s;
+}
+
+// --- 選手一覧(直前情報タブ、公式レイアウト風) ---
+function buildOfficialTable(predictions) {
+  var wrap = document.getElementById('officialTableWrap');
+  wrap.textContent = '';
   var table = document.createElement('table');
   table.className = 'pred-table';
 
   var thead = document.createElement('thead');
   var htr = document.createElement('tr');
-  var cols = ['枠', '選手名', '展示T', 'ST', '能力', 'コース', '当日', '気象', '総合'];
-  for (var i = 0; i < cols.length; i++) {
+  var cols = ['枠', '選手名', '調整体重', '展示T', 'チルト', 'プロペラ', '部品交換', 'ST'];
+  cols.forEach(function(c) {
     var th = document.createElement('th');
-    th.textContent = cols[i];
+    th.textContent = c;
     htr.appendChild(th);
-  }
+  });
   thead.appendChild(htr);
   table.appendChild(thead);
 
   var tbody = document.createElement('tbody');
-  for (var j = 0; j < predictions.length; j++) {
-    var p = predictions[j];
+  predictions.forEach(function(p) {
     var tr = document.createElement('tr');
 
-    // 枠
     var tdWaku = document.createElement('td');
     var wakuEl = document.createElement('span');
     wakuEl.className = 'waku waku-' + p.lane;
@@ -134,105 +216,222 @@ function buildTable(predictions) {
     tdWaku.appendChild(wakuEl);
     tr.appendChild(tdWaku);
 
-    // 選手名・級別
     var tdName = document.createElement('td');
     tdName.className = 'td-name';
     var nameSpan = document.createElement('span');
     nameSpan.className = 'td-name-inner';
     nameSpan.textContent = formatName(p.name);
     tdName.appendChild(nameSpan);
-    if (p.grade) {
-      var gradeSpan = document.createElement('span');
-      gradeSpan.className = 'td-grade pg-' + p.grade.replace(/\s/g, '');
-      gradeSpan.textContent = p.grade;
-      tdName.appendChild(gradeSpan);
-    }
+    tdName.appendChild(gradeSpanFor(p.grade));
     tr.appendChild(tdName);
 
-    // 展示タイム
+    ['調整体重', 'チルト', 'プロペラ', '部品交換'].forEach(function() {
+      var td = document.createElement('td');
+      td.className = 'na';
+      td.textContent = '-';
+      tr.appendChild(td);
+    });
+
     var tdExhibit = document.createElement('td');
     tdExhibit.className = 'score-cell';
     tdExhibit.textContent = fmtVal(p.exhibit_time, 2);
     tr.appendChild(tdExhibit);
 
-    // ST
-    var tdST = document.createElement('td');
-    tdST.className = 'score-cell';
-    tdST.textContent = fmtVal(p.start_timing, 2);
-    tr.appendChild(tdST);
+    var tdSt = document.createElement('td');
+    tdSt.className = 'score-cell';
+    tdSt.textContent = p.is_flying ? 'F' : fmtVal(p.start_timing, 2);
+    tr.appendChild(tdSt);
 
-    // 選手能力
-    var tdAbility = document.createElement('td');
-    tdAbility.className = 'score-cell';
-    tdAbility.textContent = fmtVal(p.score_ability, 1);
-    tr.appendChild(tdAbility);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+}
 
-    // コース補正
-    var tdCourse = document.createElement('td');
-    tdCourse.className = 'score-cell';
-    tdCourse.textContent = fmtVal(p.score_course, 1);
-    tr.appendChild(tdCourse);
+// --- スタート情報(水面イメージ) ---
+function buildStartVisual(predictions) {
+  var wrap = document.getElementById('startVisual');
+  wrap.textContent = '';
 
-    // 当日情報
-    var tdToday = document.createElement('td');
-    tdToday.className = 'score-cell';
-    tdToday.textContent = fmtVal(p.score_today, 1);
-    tr.appendChild(tdToday);
+  var byLane = {};
+  predictions.forEach(function(p) { byLane[p.lane] = p; });
 
-    // 気象
-    var tdWeather = document.createElement('td');
-    tdWeather.className = 'score-cell';
-    tdWeather.textContent = fmtVal(p.score_weather, 1);
-    tr.appendChild(tdWeather);
+  var MIN_ST = 0.00, MAX_ST = 0.35;
 
-    // 総合スコア
+  for (var lane = 1; lane <= 6; lane++) {
+    var p = byLane[lane];
+    var row = document.createElement('div');
+    row.className = 'start-track-row';
+
+    var wakuEl = document.createElement('span');
+    wakuEl.className = 'waku waku-' + lane;
+    wakuEl.textContent = lane;
+    row.appendChild(wakuEl);
+
+    var bar = document.createElement('div');
+    bar.className = 'start-track-bar';
+    var line = document.createElement('div');
+    line.className = 'start-track-line';
+    bar.appendChild(line);
+
+    var boat = document.createElement('div');
+    boat.className = 'waku waku-' + lane + ' start-track-boat';
+    boat.textContent = lane;
+
+    var st = p ? p.start_timing : null;
+    var isFlying = p ? p.is_flying : false;
+    var percent = 6;
+    if (isFlying) {
+      percent = 92;
+    } else if (st != null) {
+      var clamped = Math.max(MIN_ST, Math.min(MAX_ST, st));
+      percent = 6 + (1 - (clamped - MIN_ST) / (MAX_ST - MIN_ST)) * 84;
+    }
+    boat.style.left = percent + '%';
+    bar.appendChild(boat);
+    row.appendChild(bar);
+
+    var stLabel = document.createElement('div');
+    stLabel.className = 'start-track-st' + (isFlying ? ' flying' : '');
+    stLabel.textContent = isFlying ? 'F' : fmtVal(st, 2);
+    row.appendChild(stLabel);
+
+    wrap.appendChild(row);
+  }
+}
+
+// --- オリジナル展示タブ(艇王AIスコア) ---
+function buildOriginalTable(predictions) {
+  var wrap = document.getElementById('originalTableWrap');
+  wrap.textContent = '';
+  var table = document.createElement('table');
+  table.className = 'pred-table';
+
+  var thead = document.createElement('thead');
+  var htr = document.createElement('tr');
+  var cols = ['枠', '選手名', '展示T', 'ST', '能力', 'コース', '当日', '気象', '総合'];
+  cols.forEach(function(c) {
+    var th = document.createElement('th');
+    th.textContent = c;
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  predictions.forEach(function(p) {
+    var tr = document.createElement('tr');
+
+    var tdWaku = document.createElement('td');
+    var wakuEl = document.createElement('span');
+    wakuEl.className = 'waku waku-' + p.lane;
+    wakuEl.textContent = p.lane;
+    tdWaku.appendChild(wakuEl);
+    tr.appendChild(tdWaku);
+
+    var tdName = document.createElement('td');
+    tdName.className = 'td-name';
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'td-name-inner';
+    nameSpan.textContent = formatName(p.name);
+    tdName.appendChild(nameSpan);
+    tdName.appendChild(gradeSpanFor(p.grade));
+    tr.appendChild(tdName);
+
+    var vals = [
+      fmtVal(p.exhibit_time, 2),
+      p.is_flying ? 'F' : fmtVal(p.start_timing, 2),
+      fmtVal(p.score_ability, 1),
+      fmtVal(p.score_course, 1),
+      fmtVal(p.score_today, 1),
+      fmtVal(p.score_weather, 1),
+    ];
+    vals.forEach(function(v) {
+      var td = document.createElement('td');
+      td.className = 'score-cell';
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+
     var tdTotal = document.createElement('td');
     tdTotal.className = 'score-total';
     tdTotal.textContent = fmtVal(p.score_total, 1);
     tr.appendChild(tdTotal);
 
     tbody.appendChild(tr);
-  }
+  });
   table.appendChild(tbody);
   wrap.appendChild(table);
-  area.appendChild(wrap);
+}
+
+// --- 同時間帯の他会場レース ---
+async function loadNearbyRaces() {
+  try {
+    var url = API_BASE + '/get_nearby_races.php?date=' + date + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
+    var res = await fetch(url);
+    var data = await res.json();
+    if (!data.nearby || data.nearby.length === 0) return;
+
+    var card = document.getElementById('nearbyCard');
+    var scroll = document.getElementById('nearbyRaces');
+    scroll.textContent = '';
+    data.nearby.forEach(function(r) {
+      var a = document.createElement('a');
+      a.className = 'nearby-card';
+      a.href = 'predict.html?venue=' + encodeURIComponent(r.venue) + '&date=' + date + '&race_no=' + r.race_no;
+      var v = document.createElement('div');
+      v.className = 'nearby-card-venue';
+      v.textContent = venueDisplayName(r.venue);
+      var rno = document.createElement('div');
+      rno.className = 'nearby-card-race';
+      rno.textContent = r.race_no + 'R';
+      var t = document.createElement('div');
+      t.className = 'nearby-card-time';
+      t.textContent = r.scheduled_time || '';
+      a.appendChild(v); a.appendChild(rno); a.appendChild(t);
+      scroll.appendChild(a);
+    });
+    card.style.display = 'block';
+  } catch (e) {}
 }
 
 async function loadPrediction() {
-  var area = document.getElementById('predArea');
   try {
     var url = API_BASE + '/predict.php?date=' + date + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
     var res = await fetch(url);
     var data = await res.json();
 
+    document.getElementById('loadingArea').textContent = '';
+
     if (data.error || !data.predictions || data.predictions.length === 0) {
-      area.textContent = '';
       var err = document.createElement('div');
       err.className = 'error-msg';
       err.textContent = data.error || '直前情報が見つかりません';
-      area.appendChild(err);
+      document.getElementById('errorArea').appendChild(err);
       return;
     }
 
-    if (data.weather) {
-      var ws = data.weather.wind_speed;
-      var wh = data.weather.wave_height;
-      document.getElementById('windSpeed').textContent = ws != null ? ws : '-';
-      document.getElementById('waveHeight').textContent = wh != null ? wh : '-';
-      document.getElementById('weatherWrap').style.display = '';
+    if (data.weather && (data.weather.wind_speed != null || data.weather.wave_height != null || data.weather.wind_dir)) {
+      document.getElementById('windDir').textContent = data.weather.wind_dir || '-';
+      document.getElementById('windSpeed').textContent = data.weather.wind_speed != null ? data.weather.wind_speed : '-';
+      document.getElementById('waveHeight').textContent = data.weather.wave_height != null ? data.weather.wave_height : '-';
+      document.getElementById('weatherCard').style.display = 'block';
     }
 
-    buildTable(data.predictions);
+    buildStartVisual(data.predictions);
+    buildOfficialTable(data.predictions);
+    buildOriginalTable(data.predictions);
   } catch(e) {
-    area.textContent = '';
+    document.getElementById('loadingArea').textContent = '';
     var err2 = document.createElement('div');
     err2.className = 'error-msg';
     err2.textContent = 'データの取得に失敗しました';
-    area.appendChild(err2);
+    document.getElementById('errorArea').appendChild(err2);
   }
 }
 
 loadPrediction();
+loadNearbyRaces();
 </script>
 </body>
 </html>
