@@ -25,10 +25,32 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .card { background: #fff; border: 1px solid #e0e3e8; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
 .card h2 { font-size: 13px; font-weight: 700; color: #222; margin-bottom: 10px; }
 
-.weather-row { display: flex; gap: 16px; font-size: 13px; color: #555; flex-wrap: wrap; }
-.weather-row span { display: flex; align-items: center; gap: 4px; }
-.weather-row strong { color: #222; }
 .note { font-size: 11px; color: #a0724b; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 12px; margin-top: 10px; line-height: 1.6; }
+
+/* 水面気象情報 */
+.wx-top { display: flex; gap: 10px; margin-bottom: 10px; }
+.wx-mini-card { flex: 1; min-width: 0; background: #f0f5ff; border: 1px solid #c7d8f5; border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+.wx-icon-wrap { flex-shrink: 0; }
+.wx-vals { flex: 1; min-width: 0; }
+.wx-row { display: flex; align-items: baseline; gap: 5px; margin-bottom: 5px; }
+.wx-row:last-child { margin-bottom: 0; }
+.wx-lbl { font-size: 11px; color: #888; white-space: nowrap; }
+.wx-num { font-size: 18px; font-weight: 800; color: #0055a4; }
+.wx-num-sm { font-size: 14px; }
+.wx-unit { font-size: 11px; color: #888; }
+.wx-water-bar { position: relative; background: linear-gradient(180deg, #7dd3fc 0%, #0284c7 55%, #0369a1 100%); border-radius: 10px; height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; margin-bottom: 10px; overflow: hidden; }
+.wx-wave-deco { position: absolute; top: 0; left: 0; width: 100%; height: 22px; }
+.wx-water-center { flex: 1; text-align: center; position: relative; z-index: 1; }
+.wx-water-row { display: flex; align-items: baseline; justify-content: center; gap: 5px; margin-bottom: 3px; }
+.wx-water-row:last-child { margin-bottom: 0; }
+.wx-water-lbl { font-size: 11px; color: rgba(255,255,255,0.82); }
+.wx-water-num { font-size: 19px; font-weight: 800; color: #fff; }
+.wx-water-unit { font-size: 11px; color: rgba(255,255,255,0.82); }
+@media (max-width: 480px) {
+  .wx-mini-card { padding: 10px; gap: 8px; }
+  .wx-num { font-size: 15px; }
+  .wx-water-num { font-size: 16px; }
+}
 
 .pred-table-wrap { overflow-x: auto; }
 .pred-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
@@ -107,12 +129,62 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   <div class="panel active" id="panel-official">
     <div id="weatherCard" class="card" style="display:none">
       <h2>水面気象情報</h2>
-      <div class="weather-row">
-        <span>&#127788;&#65039; 風向 <strong id="windDir">-</strong></span>
-        <span>&#127788;&#65039; 風速 <strong id="windSpeed">-</strong>m</span>
-        <span>&#127754; 波高 <strong id="waveHeight">-</strong>cm</span>
+      <div class="wx-top">
+        <div class="wx-mini-card">
+          <div class="wx-icon-wrap">
+            <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="19" cy="19" r="18" fill="#dbeafe"/>
+              <path d="M7 14 H22 Q26 14 26 10 Q26 6 22 6 Q18 6 18 10" stroke="#0055a4" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 19 H28" stroke="#0055a4" stroke-width="2" stroke-linecap="round"/>
+              <path d="M7 24 H21 Q25 24 25 28 Q25 32 21 32 Q17 32 17 28" stroke="#0055a4" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="wx-vals">
+            <div class="wx-row"><span class="wx-lbl">風速</span><strong class="wx-num" id="windSpeed">-</strong><span class="wx-unit">m/s</span></div>
+            <div class="wx-row"><span class="wx-lbl">風向</span><strong class="wx-num wx-num-sm" id="windDir">-</strong></div>
+          </div>
+        </div>
+        <div class="wx-mini-card">
+          <div class="wx-icon-wrap">
+            <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="19" cy="19" r="18" fill="#fef9c3"/>
+              <circle cx="19" cy="19" r="7" fill="#fbbf24"/>
+              <line x1="19" y1="7" x2="19" y2="4" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="19" y1="31" x2="19" y2="34" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="7" y1="19" x2="4" y2="19" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="31" y1="19" x2="34" y2="19" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="10.8" y1="10.8" x2="8.7" y2="8.7" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+              <line x1="27.2" y1="27.2" x2="29.3" y2="29.3" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+              <line x1="27.2" y1="10.8" x2="29.3" y2="8.7" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+              <line x1="10.8" y1="27.2" x2="8.7" y2="29.3" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="wx-vals">
+            <div class="wx-row"><span class="wx-lbl">天候</span><strong class="wx-num wx-num-sm">-</strong></div>
+            <div class="wx-row"><span class="wx-lbl">気温</span><strong class="wx-num wx-num-sm">-</strong><span class="wx-unit">℃</span></div>
+          </div>
+        </div>
       </div>
-      <div class="note">気温・水温・天候(晴/曇/雨等)は現在取得しておらず、風向・風速・波高のみの表示です。</div>
+      <div class="wx-water-bar">
+        <svg class="wx-wave-deco" viewBox="0 0 400 22" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 11 Q50 2 100 11 Q150 20 200 11 Q250 2 300 11 Q350 20 400 11 L400 0 L0 0 Z" fill="rgba(255,255,255,0.18)"/>
+        </svg>
+        <svg width="34" height="48" viewBox="0 0 34 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;flex-shrink:0">
+          <line x1="17" y1="4" x2="17" y2="30" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+          <path d="M17 5 L30 28 L17 28 Z" fill="rgba(255,255,255,0.85)"/>
+          <path d="M5 31 Q17 37 29 31 L27 41 Q17 45 7 41 Z" fill="rgba(255,255,255,0.8)"/>
+        </svg>
+        <div class="wx-water-center">
+          <div class="wx-water-row"><span class="wx-water-lbl">波高</span><strong class="wx-water-num" id="waveHeight">-</strong><span class="wx-water-unit">cm</span></div>
+          <div class="wx-water-row"><span class="wx-water-lbl">水温</span><strong class="wx-water-num">-</strong><span class="wx-water-unit">℃</span></div>
+        </div>
+        <svg width="34" height="48" viewBox="0 0 34 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;flex-shrink:0">
+          <line x1="17" y1="4" x2="17" y2="30" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+          <path d="M17 5 L4 28 L17 28 Z" fill="rgba(255,255,255,0.85)"/>
+          <path d="M5 31 Q17 37 29 31 L27 41 Q17 45 7 41 Z" fill="rgba(255,255,255,0.8)"/>
+        </svg>
+      </div>
+      <div class="note">天候・気温・水温は現在取得しておらず「-」表示です。風向・風速・波高のみDBから表示します。</div>
     </div>
 
     <div class="card">
