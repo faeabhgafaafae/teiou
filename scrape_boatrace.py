@@ -184,15 +184,15 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
                 weather['wind_dir'] = WIND_DIR_MAP.get(code, str(code))
                 break
 
-    # 天候
-    weather_cond_el = soup.select_one('.weather1_bodyUnit.is-weather .weather1_bodyUnitLabelData')
+    # 天候（テキストは LabelTitle に格納されている）
+    weather_cond_el = soup.select_one('.weather1_bodyUnit.is-weather .weather1_bodyUnitLabelTitle')
     if weather_cond_el:
         w_text = weather_cond_el.get_text(strip=True)
         if w_text:
             weather['weather'] = w_text
 
-    # 気温
-    temp_el = soup.select_one('.weather1_bodyUnit.is-temperature .weather1_bodyUnitLabelData')
+    # 気温（クラスは is-direction）
+    temp_el = soup.select_one('.weather1_bodyUnit.is-direction .weather1_bodyUnitLabelData')
     if temp_el:
         try:
             weather['temperature'] = float(temp_el.get_text(strip=True).replace('℃', ''))
