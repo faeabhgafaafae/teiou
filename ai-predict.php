@@ -779,7 +779,7 @@ function loadPersonalExplain(playerId) {
   if (!box) return;
   if (userPlan === 'free') {
     box.style.cssText = 'background:#f5f6f8;border-radius:8px;padding:8px;margin-top:8px;font-size:12px;line-height:1.6;color:#999;display:block;text-align:center';
-    box.textContent = '🔒 個別解説はスタンダードプラン以上で利用できます';
+    box.textContent = '🔒 個別解説はStandardプラン以上で利用できます';
     return;
   }
   if (personalExplainCache) {
