@@ -65,4 +65,10 @@ foreach ($SHIFT_MAP as $wrongLabel => $realVenue) {
     ];
 }
 
-json_response(['remap_check' => $results]);
+// 児島(jcd=16の実会場)が特定日に本当にレースをしていたか(公式ページの
+// 「データがありません」がページ保持期限切れなのか、開催なしなのかを切り分ける)
+$stmt3 = $pdo->prepare("SELECT date, COUNT(*) AS cnt FROM races r JOIN results res ON res.race_id = r.id WHERE r.venue = '児島' AND r.date IN ('2026-06-29','2026-06-25','2026-06-22','2026-06-20') GROUP BY date");
+$stmt3->execute();
+$kojimaCheck = $stmt3->fetchAll();
+
+json_response(['remap_check' => $results, 'kojima_race_check' => $kojimaCheck]);
