@@ -225,17 +225,22 @@ function buildOfficialTable(predictions) {
     tdName.appendChild(gradeSpanFor(p.grade));
     tr.appendChild(tdName);
 
-    ['調整体重', 'チルト', 'プロペラ', '部品交換'].forEach(function() {
-      var td = document.createElement('td');
-      td.className = 'na';
-      td.textContent = '-';
-      tr.appendChild(td);
-    });
+    var tdAdjWeight = document.createElement('td');
+    tdAdjWeight.className = 'na';
+    tdAdjWeight.textContent = '-';
+    tr.appendChild(tdAdjWeight);
 
     var tdExhibit = document.createElement('td');
     tdExhibit.className = 'score-cell';
     tdExhibit.textContent = fmtVal(p.exhibit_time, 2);
     tr.appendChild(tdExhibit);
+
+    ['チルト', 'プロペラ', '部品交換'].forEach(function() {
+      var td = document.createElement('td');
+      td.className = 'na';
+      td.textContent = '-';
+      tr.appendChild(td);
+    });
 
     var tdSt = document.createElement('td');
     tdSt.className = 'score-cell';
@@ -411,7 +416,7 @@ async function loadPrediction() {
       return;
     }
 
-    if (data.weather && (data.weather.wind_speed != null || data.weather.wave_height != null || data.weather.wind_dir)) {
+    if (data.weather) {
       document.getElementById('windDir').textContent = data.weather.wind_dir || '-';
       document.getElementById('windSpeed').textContent = data.weather.wind_speed != null ? data.weather.wind_speed : '-';
       document.getElementById('waveHeight').textContent = data.weather.wave_height != null ? data.weather.wave_height : '-';
