@@ -171,15 +171,35 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
             'parts_exchange': parts_exchange,
         })
 
-    # スタート展示ST
-    for span in soup.select('.table1_boatImage1Time'):
-        st_text = span.get_text(strip=True)
-        is_f = 'F' in st_text
+    # スタート展示（コース・ST）- lane indexed
+    # 各 .table1_boatImage1 div の出現順がコース1〜6に対応し、
+    # is-typeN クラスが「そのコースに入った枠番(N号艇)」を示す
+    start_by_lane = {}
+    for i, div in enumerate(soup.select('.table1_boatImage1')):
+        course_no = i + 1
+        number_span = div.select_one('.table1_boatImage1Number')
+        time_span   = div.select_one('.table1_boatImage1Time')
+        if not number_span:
+            continue
+        type_cls = [c for c in (number_span.get('class') or []) if c.startswith('is-type')]
+        if not type_cls:
+            continue
         try:
-            st_val = float(st_text.replace('F', '')) * -1 if is_f else float('0' + st_text)
-        except:
-            st_val = None
-        result['start_exhibition'].append({'st': st_val, 'is_flying': is_f})
+            lane = int(type_cls[0].replace('is-type', ''))
+        except Exception:
+            continue
+        st_val = None
+        is_f   = False
+        if time_span:
+            st_text = time_span.get_text(strip=True)
+            is_f = 'F' in st_text
+            try:
+                st_val = float(st_text.replace('F', '')) * -1 if is_f else float('0' + st_text)
+            except Exception:
+                pass
+        start_by_lane[lane] = {'st': st_val, 'is_flying': is_f, 'course': course_no}
+    # lane順リスト（index 0 = 1号艇）に変換。PHP側が $starts[$lane-1] でアクセスする
+    result['start_exhibition'] = [start_by_lane.get(lane) for lane in range(1, 7)]
 
     # 気象情報
     weather = {}
