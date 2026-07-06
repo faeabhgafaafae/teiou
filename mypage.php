@@ -138,7 +138,7 @@
         </div>
       </div>
 
-      <div class="section-header" style="margin-top: 32px;">
+      <div class="section-header" id="favoritesSection" style="margin-top: 32px;">
         <h2 class="section-title"><i class="fas fa-star" style="color: #d97706; margin-right: 6px;"></i>お気に入りのレース場</h2>
       </div>
       <div id="mypageFavoriteList" class="venue-grid"></div>

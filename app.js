@@ -334,6 +334,12 @@ function setupNavigation() {
   if(headerLogo) headerLogo.addEventListener('click', function() { switchPage('home'); });
 }
 
+// --- 準備中メニュー用 ---
+function showComingSoon(e) {
+  if (e) e.preventDefault();
+  alert('準備中です。しばらくお待ちください。');
+}
+
 // --- 初期実行 ---
 loadVenues();
 checkAuth();

@@ -178,11 +178,10 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
       <nav class="side-nav">
         <a href="#" class="nav-item active" id="menuHome"><i class="fas fa-home icon"></i> ホーム</a>
         <a href="mypage.php" class="nav-item" id="menuMypage"><i class="fas fa-user-cog icon"></i> マイページ</a>
-        <a href="#" class="nav-item"><i class="fas fa-bullseye icon"></i> 予測レース</a>
-        <a href="#" class="nav-item"><i class="fas fa-star icon"></i> お気に入り</a>
-        <a href="#" class="nav-item"><i class="fas fa-chart-line icon"></i> 成績・回収率</a>
-        <a href="#" class="nav-item"><i class="fas fa-database icon"></i> データ分析</a>
-        <a href="#" class="nav-item"><i class="fas fa-newspaper icon"></i> ニュース・コラム</a>
+        <a href="#" class="nav-item" onclick="showComingSoon(event)"><i class="fas fa-bullseye icon"></i> 予測レース</a>
+        <a href="mypage.php#favoritesSection" class="nav-item"><i class="fas fa-star icon"></i> お気に入り</a>
+        <a href="#" class="nav-item" onclick="showComingSoon(event)"><i class="fas fa-chart-line icon"></i> 成績・回収率</a>
+        <a href="#" class="nav-item" onclick="showComingSoon(event)"><i class="fas fa-database icon"></i> データ分析</a>
       </nav>
 
       <div class="premium-box">
