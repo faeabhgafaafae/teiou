@@ -11,8 +11,29 @@ header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px;
 .back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
 .back-btn:hover { background: #e8f0fd; }
 header h1 { font-size: 18px; font-weight: 700; color: #222; }
-.container { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
+.container { max-width: 1000px; margin: 0 auto; padding: 20px 16px; }
 
+.card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.card h2 { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 12px; }
+
+/* レーサー検索 */
+.search-card .controls { margin-bottom: 0; }
+.player-search-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.player-search-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #e0e3e8; border-radius: 8px; cursor: pointer; text-align: left; background: #fff; }
+.player-search-item:hover { border-color: #0055a4; background: #f0f5ff; }
+.player-search-item .psi-name { font-weight: 700; color: #222; font-size: 13px; }
+.player-search-item .psi-sub { font-size: 11px; color: #999; }
+
+.player-detail-close { float: right; background: none; border: none; font-size: 16px; color: #999; cursor: pointer; }
+.player-detail-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.player-detail-name { font-size: 16px; font-weight: 800; color: #222; }
+.player-detail-sub { font-size: 12px; color: #888; }
+.stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.stat-box { flex: 1; min-width: 90px; background: #f7f8fa; border-radius: 8px; padding: 10px; text-align: center; }
+.stat-box-label { font-size: 10px; color: #888; margin-bottom: 4px; }
+.stat-box-value { font-size: 16px; font-weight: 800; color: #0055a4; }
+
+/* タブ */
 .tabs { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 16px; }
 .tab-btn { flex-shrink: 0; padding: 9px 16px; border-radius: 8px; background: #fff; border: 1px solid #e0e3e8; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; white-space: nowrap; }
 .tab-btn.active { background: #0055a4; color: #fff; border-color: #0055a4; }
@@ -20,8 +41,15 @@ header h1 { font-size: 18px; font-weight: 700; color: #222; }
 .panel { display: none; }
 .panel.active { display: block; }
 
-.card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-.card h2 { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 12px; }
+/* ランキング: 指標タブ */
+.metric-tabs { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 14px; border-bottom: 2px solid #f0f2f5; }
+.metric-tab { flex-shrink: 0; padding: 8px 14px; background: none; border: none; border-bottom: 3px solid transparent; font-size: 13px; font-weight: 700; color: #888; cursor: pointer; white-space: nowrap; }
+.metric-tab.active { color: #0055a4; border-bottom-color: #0055a4; }
+
+.rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; font-weight: 800; color: #666; }
+.rank-badge.top1 { background: #fef3c7; color: #b45309; }
+.btn-outline { padding: 8px 20px; border-radius: 8px; background: #fff; border: 1px solid #0055a4; color: #0055a4; font-size: 13px; font-weight: 700; cursor: pointer; }
+.btn-outline:hover { background: #f0f5ff; }
 
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
 .controls select, .controls input { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: #333; }
@@ -33,13 +61,14 @@ header h1 { font-size: 18px; font-weight: 700; color: #222; }
 .seg button.active { background: #0055a4; color: #fff; }
 
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid #e0e3e8; }
-table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
-table.data-table th { background: #f7f8fa; font-size: 10px; font-weight: 700; color: #999; padding: 8px 6px; border-bottom: 2px solid #e0e3e8; white-space: nowrap; text-align: center; cursor: pointer; }
+table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+table.data-table th { background: #f7f8fa; font-size: 10px; font-weight: 700; color: #999; padding: 8px 6px; border-bottom: 2px solid #e0e3e8; white-space: nowrap; text-align: center; }
 table.data-table td { padding: 8px 6px; border-bottom: 1px solid #f0f0f0; text-align: center; white-space: nowrap; }
 table.data-table tr:last-child td { border-bottom: none; }
+table.data-table tr.rank-1 { background: #fffbeb; }
 .td-player { text-align: left; padding-left: 10px; }
 .player-name { font-weight: 700; color: #222; }
-.eg { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
+.eg { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
 .eg-A1 { background: #fff3cd; color: #b8860b; }
 .eg-A2 { background: #dbeafe; color: #2563eb; }
 .eg-B1 { background: #f3f4f6; color: #666; }
@@ -49,9 +78,11 @@ table.data-table tr:last-child td { border-bottom: none; }
 .loading { text-align: center; padding: 30px; color: #999; font-size: 13px; }
 .error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 14px; color: #dc2626; font-size: 13px; }
 
-.venue-btn { flex-shrink: 0; padding: 6px 12px; border-radius: 20px; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 700; color: #0055a4; cursor: pointer; }
-.venue-btn.active { background: #0055a4; color: #fff; border-color: #0055a4; }
-.venue-picker { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 14px; padding-bottom: 4px; }
+/* 会場グリッド */
+.venue-card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.venue-card-mini { background: #f7f8fa; border: 1px solid #e0e3e8; border-radius: 10px; padding: 12px 6px; text-align: center; font-size: 13px; font-weight: 700; color: #333; cursor: pointer; }
+.venue-card-mini:hover { border-color: #0055a4; background: #f0f5ff; color: #0055a4; }
+.venue-card-mini.active { background: #0055a4; border-color: #0055a4; color: #fff; }
 
 .kimarite-row { display: flex; gap: 10px; margin-bottom: 6px; }
 .kimarite-item { flex: 1; background: #f7f8fa; border-radius: 8px; padding: 10px; text-align: center; }
@@ -64,8 +95,15 @@ table.data-table tr:last-child td { border-bottom: none; }
 .race-search-item.confirmed { background: #dcfce7; border-color: #16a34a; color: #16a34a; }
 .race-search-item.confirmed:hover { background: #16a34a; color: #fff; }
 
+@media (max-width: 700px) {
+  .venue-card-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 460px) {
+  .venue-card-grid { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 600px) {
   .controls { flex-direction: column; align-items: stretch; }
+  .stat-row { gap: 6px; }
 }
 </style>
 </head>
@@ -78,6 +116,19 @@ table.data-table tr:last-child td { border-bottom: none; }
 
 <div class="container">
 
+  <!-- レーサー検索 -->
+  <div class="card search-card">
+    <h2>レーサー検索</h2>
+    <div class="controls">
+      <input type="text" id="playerSearchInput" placeholder="選手名で検索(例: 中辻)" style="flex:1; min-width:160px;">
+      <button id="playerSearchBtn">検索</button>
+    </div>
+    <div id="playerSearchResult"></div>
+  </div>
+
+  <!-- 選手詳細(簡易) -->
+  <div class="card" id="playerDetailCard" style="display:none;"></div>
+
   <div class="tabs">
     <button class="tab-btn active" data-tab="players">選手ランキング</button>
     <button class="tab-btn" data-tab="venue">会場別データ</button>
@@ -88,26 +139,40 @@ table.data-table tr:last-child td { border-bottom: none; }
   <!-- 選手ランキング -->
   <div class="panel active" id="panel-players">
     <div class="card">
-      <h2>選手ランキング</h2>
-      <div class="controls">
-        <div class="seg" id="scopeSeg">
-          <button class="active" data-scope="national">全国</button>
-          <button data-scope="local">当地</button>
-        </div>
-        <select id="playersVenueSelect" style="display:none;"></select>
-        <label>最低出走数</label>
-        <input type="number" id="minRacesInput" value="20" min="1" style="width:70px;">
-        <button id="playersSearchBtn">表示</button>
+      <h2>選手ランキング(全国・上位10)</h2>
+      <div class="metric-tabs" id="metricTabs">
+        <button class="metric-tab active" data-metric="win_score" data-order="desc">勝率(簡易)</button>
+        <button class="metric-tab" data-metric="rank1_rate" data-order="desc">1着率</button>
+        <button class="metric-tab" data-metric="rank2_rate" data-order="desc">2連対率</button>
+        <button class="metric-tab" data-metric="rank3_rate" data-order="desc">3連対率</button>
+        <button class="metric-tab" data-metric="avg_st" data-order="asc">平均ST</button>
       </div>
-      <div id="playersResult"><div class="loading">条件を選択して「表示」を押してください</div></div>
+      <div id="rankingCompact"><div class="loading">読み込み中...</div></div>
+      <div style="text-align:center; margin-top:14px;">
+        <button class="btn-outline" id="showFullRankingBtn">ランキング一覧へ(条件を絞り込む)</button>
+      </div>
+
+      <div id="rankingFull" style="display:none; margin-top:18px; border-top:1px solid #eee; padding-top:16px;">
+        <div class="controls">
+          <div class="seg" id="scopeSeg">
+            <button class="active" data-scope="national">全国</button>
+            <button data-scope="local">当地</button>
+          </div>
+          <select id="playersVenueSelect" style="display:none;"></select>
+          <label>最低出走数</label>
+          <input type="number" id="minRacesInput" value="20" min="1" style="width:70px;">
+          <button id="playersSearchBtn">表示</button>
+        </div>
+        <div id="playersResult"><div class="loading">条件を選択して「表示」を押してください</div></div>
+      </div>
     </div>
   </div>
 
   <!-- 会場別データ -->
   <div class="panel" id="panel-venue">
     <div class="card">
-      <h2>会場別データ</h2>
-      <div class="venue-picker" id="venuePicker"></div>
+      <h2>会場を選択</h2>
+      <div class="venue-card-grid" id="venuePicker"></div>
       <div id="venueResult"><div class="loading">会場を選択してください</div></div>
     </div>
   </div>
@@ -149,6 +214,24 @@ var ALL_VENUES = [
 var API_HOST = 'https://' + '2410049.moo.jp';
 
 function formatName(n) { return n ? n.replace(/[\s　]+/g, ' ').trim() : ''; }
+function makeLoading(text) {
+  var d = document.createElement('div');
+  d.className = 'loading';
+  d.textContent = text;
+  return d;
+}
+function makeError(text) {
+  var d = document.createElement('div');
+  d.className = 'error-msg';
+  d.textContent = text;
+  return d;
+}
+function gradeBadge(grade) {
+  var span = document.createElement('span');
+  span.className = 'eg eg-' + (grade || 'B1').replace(/\s/g, '');
+  span.textContent = grade || '-';
+  return span;
+}
 
 // --- タブ切り替え ---
 var tabButtons = document.querySelectorAll('.tab-btn');
@@ -164,9 +247,270 @@ for (var i = 0; i < tabButtons.length; i++) {
 }
 
 // ============================================================
-// 1. 選手ランキング
+// レーサー検索・簡易詳細
+// ============================================================
+async function searchPlayers() {
+  var resultEl = document.getElementById('playerSearchResult');
+  var keyword = document.getElementById('playerSearchInput').value.trim();
+  if (!keyword) { resultEl.textContent = ''; return; }
+  resultEl.textContent = '';
+  resultEl.appendChild(makeLoading('検索中...'));
+
+  try {
+    var res = await fetch(API_HOST + '/search_players.php?keyword=' + encodeURIComponent(keyword));
+    var data = await res.json();
+    resultEl.textContent = '';
+    if (!data.players || data.players.length === 0) {
+      resultEl.appendChild(makeError('該当する選手が見つかりませんでした'));
+      return;
+    }
+    var list = document.createElement('div');
+    list.className = 'player-search-list';
+    data.players.forEach(function(p) {
+      var item = document.createElement('button');
+      item.className = 'player-search-item';
+      item.type = 'button';
+      var nameEl = document.createElement('div');
+      nameEl.className = 'psi-name';
+      nameEl.textContent = formatName(p.name) + '(' + (p.grade || '-') + ')';
+      var subEl = document.createElement('div');
+      subEl.className = 'psi-sub';
+      subEl.textContent = (p.branch || '-') + ' / 登番' + p.id;
+      item.appendChild(nameEl);
+      item.appendChild(subEl);
+      item.addEventListener('click', function() { showPlayerDetail(p.id); });
+      list.appendChild(item);
+    });
+    resultEl.appendChild(list);
+  } catch (e) {
+    resultEl.textContent = '';
+    resultEl.appendChild(makeError('検索に失敗しました'));
+  }
+}
+document.getElementById('playerSearchBtn').addEventListener('click', searchPlayers);
+document.getElementById('playerSearchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') searchPlayers();
+});
+
+async function showPlayerDetail(playerId) {
+  var card = document.getElementById('playerDetailCard');
+  card.style.display = 'block';
+  card.textContent = '';
+  card.appendChild(makeLoading('読み込み中...'));
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  try {
+    var res = await fetch(API_HOST + '/get_player_detail.php?player_id=' + playerId);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    card.textContent = '';
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'player-detail-close';
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', function() { card.style.display = 'none'; });
+    card.appendChild(closeBtn);
+
+    var head = document.createElement('div');
+    head.className = 'player-detail-head';
+    var nameEl = document.createElement('div');
+    nameEl.className = 'player-detail-name';
+    nameEl.textContent = formatName(data.player.name);
+    head.appendChild(nameEl);
+    head.appendChild(gradeBadge(data.player.grade));
+    card.appendChild(head);
+
+    var sub = document.createElement('div');
+    sub.className = 'player-detail-sub';
+    sub.style.marginBottom = '12px';
+    sub.textContent = '支部: ' + (data.player.branch || '-') + ' / 登番: ' + data.player.id;
+    card.appendChild(sub);
+
+    if (data.stats) {
+      var row = document.createElement('div');
+      row.className = 'stat-row';
+      var items = [
+        ['出走数', data.stats.race_count],
+        ['1着率', data.stats.rank1_rate.toFixed(1) + '%'],
+        ['2連対率', data.stats.rank2_rate.toFixed(1) + '%'],
+        ['3連対率', data.stats.rank3_rate.toFixed(1) + '%'],
+        ['平均ST', data.stats.avg_st != null ? data.stats.avg_st.toFixed(2) : '-'],
+      ];
+      items.forEach(function(it) {
+        var box = document.createElement('div');
+        box.className = 'stat-box';
+        var lbl = document.createElement('div');
+        lbl.className = 'stat-box-label';
+        lbl.textContent = it[0];
+        var val = document.createElement('div');
+        val.className = 'stat-box-value';
+        val.textContent = it[1];
+        box.appendChild(lbl); box.appendChild(val);
+        row.appendChild(box);
+      });
+      card.appendChild(row);
+    } else {
+      card.appendChild(makeError('成績データがありません'));
+    }
+
+    if (data.recent && data.recent.length > 0) {
+      var recentTitle = document.createElement('div');
+      recentTitle.style.fontSize = '12px';
+      recentTitle.style.fontWeight = '700';
+      recentTitle.style.color = '#555';
+      recentTitle.style.margin = '4px 0 8px';
+      recentTitle.textContent = '直近成績';
+      card.appendChild(recentTitle);
+
+      var wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      var table = document.createElement('table');
+      table.className = 'data-table';
+      var thead = document.createElement('thead');
+      var hrow = document.createElement('tr');
+      ['日付', '会場', 'R', '枠', '着'].forEach(function(h) {
+        var th = document.createElement('th');
+        th.textContent = h;
+        hrow.appendChild(th);
+      });
+      thead.appendChild(hrow);
+      table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      data.recent.forEach(function(r) {
+        var tr = document.createElement('tr');
+        [r.date, r.venue, r.race_no + 'R', r.lane, r.actual_rank != null ? r.actual_rank : '-'].forEach(function(v) {
+          var td = document.createElement('td');
+          td.textContent = v;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      card.appendChild(wrap);
+    }
+  } catch (e) {
+    card.textContent = '';
+    card.appendChild(makeError('選手情報の取得に失敗しました'));
+  }
+}
+
+// ============================================================
+// 1. 選手ランキング(コンパクト表示 + 全件表示)
 // ============================================================
 var currentScope = 'national';
+var currentMetric = 'win_score';
+var currentMetricOrder = 'desc';
+
+var METRIC_LABELS = {
+  win_score: '勝率(簡易)',
+  rank1_rate: '1着率',
+  rank2_rate: '2連対率',
+  rank3_rate: '3連対率',
+  avg_st: '平均ST',
+};
+
+function formatMetricValue(metric, p) {
+  if (metric === 'win_score') return p.win_score.toFixed(2);
+  if (metric === 'avg_st') return p.avg_st != null ? p.avg_st.toFixed(2) : '-';
+  return p[metric].toFixed(1) + '%';
+}
+
+function renderCompactTable(data, metric) {
+  var wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  var table = document.createElement('table');
+  table.className = 'data-table';
+
+  var thead = document.createElement('thead');
+  var hrow = document.createElement('tr');
+  ['順位', 'レーサー名', '級', '支部', METRIC_LABELS[metric]].forEach(function(h) {
+    var th = document.createElement('th');
+    th.textContent = h;
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  data.players.forEach(function(p, idx) {
+    var tr = document.createElement('tr');
+    if (idx === 0) tr.className = 'rank-1';
+
+    var tdRank = document.createElement('td');
+    var badge = document.createElement('span');
+    badge.className = 'rank-badge' + (idx === 0 ? ' top1' : '');
+    badge.textContent = idx === 0 ? '★1' : String(idx + 1);
+    tdRank.appendChild(badge);
+    tr.appendChild(tdRank);
+
+    var tdName = document.createElement('td');
+    tdName.className = 'td-player';
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'player-name';
+    nameSpan.textContent = formatName(p.name) || ('登番' + p.player_id);
+    tdName.appendChild(nameSpan);
+    tr.appendChild(tdName);
+
+    var tdGrade = document.createElement('td');
+    tdGrade.appendChild(gradeBadge(p.grade));
+    tr.appendChild(tdGrade);
+
+    var tdBranch = document.createElement('td');
+    tdBranch.textContent = p.branch || '-';
+    tr.appendChild(tdBranch);
+
+    var tdVal = document.createElement('td');
+    tdVal.textContent = formatMetricValue(metric, p);
+    tr.appendChild(tdVal);
+
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  return wrap;
+}
+
+async function loadCompactRanking() {
+  var el = document.getElementById('rankingCompact');
+  el.textContent = '';
+  el.appendChild(makeLoading('読み込み中...'));
+
+  var qs = 'scope=national&min_races=20&sort=' + currentMetric + '&order=' + currentMetricOrder + '&limit=10';
+  try {
+    var res = await fetch(API_HOST + '/get_analysis_players.php?' + qs);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    el.textContent = '';
+    if (!data.players || data.players.length === 0) {
+      el.appendChild(makeError('データがありません'));
+      return;
+    }
+    el.appendChild(renderCompactTable(data, currentMetric));
+  } catch (e) {
+    el.textContent = '';
+    el.appendChild(makeError('データの取得に失敗しました'));
+  }
+}
+
+var metricTabs = document.querySelectorAll('.metric-tab');
+metricTabs.forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    metricTabs.forEach(function(b) { b.classList.remove('active'); });
+    this.classList.add('active');
+    currentMetric = this.getAttribute('data-metric');
+    currentMetricOrder = this.getAttribute('data-order');
+    loadCompactRanking();
+  });
+});
+
+document.getElementById('showFullRankingBtn').addEventListener('click', function() {
+  var full = document.getElementById('rankingFull');
+  var isHidden = full.style.display === 'none';
+  full.style.display = isHidden ? 'block' : 'none';
+  this.textContent = isHidden ? '一覧を閉じる' : 'ランキング一覧へ(条件を絞り込む)';
+  if (isHidden) full.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
 
 var playersVenueSelect = document.getElementById('playersVenueSelect');
 ALL_VENUES.forEach(function(v) {
@@ -193,7 +537,7 @@ function renderPlayersTable(data) {
 
   var thead = document.createElement('thead');
   var hrow = document.createElement('tr');
-  var headers = ['順位', '選手', '出走数', '勝率(簡易)', '1着率', '2連対率', '3連対率', '平均ST'];
+  var headers = ['順位', 'レーサー名', '級', '支部', '出走数', '勝率(簡易)', '1着率', '2連対率', '3連対率', '平均ST'];
   headers.forEach(function(h) {
     var th = document.createElement('th');
     th.textContent = h;
@@ -205,9 +549,13 @@ function renderPlayersTable(data) {
   var tbody = document.createElement('tbody');
   data.players.forEach(function(p, idx) {
     var tr = document.createElement('tr');
+    if (idx === 0) tr.className = 'rank-1';
 
     var tdRank = document.createElement('td');
-    tdRank.textContent = (idx + 1);
+    var badge = document.createElement('span');
+    badge.className = 'rank-badge' + (idx === 0 ? ' top1' : '');
+    badge.textContent = idx === 0 ? '★1' : String(idx + 1);
+    tdRank.appendChild(badge);
     tr.appendChild(tdRank);
 
     var tdName = document.createElement('td');
@@ -216,13 +564,15 @@ function renderPlayersTable(data) {
     nameSpan.className = 'player-name';
     nameSpan.textContent = formatName(p.name) || ('登番' + p.player_id);
     tdName.appendChild(nameSpan);
-    if (p.grade) {
-      var gr = document.createElement('span');
-      gr.className = 'eg eg-' + p.grade.replace(/\s/g, '');
-      gr.textContent = p.grade;
-      tdName.appendChild(gr);
-    }
     tr.appendChild(tdName);
+
+    var tdGrade = document.createElement('td');
+    tdGrade.appendChild(gradeBadge(p.grade));
+    tr.appendChild(tdGrade);
+
+    var tdBranch = document.createElement('td');
+    tdBranch.textContent = p.branch || '-';
+    tr.appendChild(tdBranch);
 
     var tdCount = document.createElement('td');
     tdCount.textContent = p.race_count;
@@ -261,7 +611,7 @@ async function loadPlayers() {
   resultEl.appendChild(makeLoading('読み込み中...'));
 
   var minRaces = document.getElementById('minRacesInput').value || 20;
-  var qs = 'scope=' + currentScope + '&min_races=' + encodeURIComponent(minRaces) + '&sort=rank1_rate&order=desc&limit=50';
+  var qs = 'scope=' + currentScope + '&min_races=' + encodeURIComponent(minRaces) + '&sort=' + currentMetric + '&order=' + currentMetricOrder + '&limit=50';
   if (currentScope === 'local') {
     qs += '&venue=' + encodeURIComponent(playersVenueSelect.value);
   }
@@ -288,29 +638,17 @@ async function loadPlayers() {
 }
 document.getElementById('playersSearchBtn').addEventListener('click', loadPlayers);
 
-function makeLoading(text) {
-  var d = document.createElement('div');
-  d.className = 'loading';
-  d.textContent = text;
-  return d;
-}
-function makeError(text) {
-  var d = document.createElement('div');
-  d.className = 'error-msg';
-  d.textContent = text;
-  return d;
-}
-
 // ============================================================
-// 2. 会場別データ
+// 2. 会場別データ(グリッドカード)
 // ============================================================
 var venuePicker = document.getElementById('venuePicker');
 ALL_VENUES.forEach(function(v) {
   var btn = document.createElement('button');
-  btn.className = 'venue-btn';
+  btn.className = 'venue-card-mini';
+  btn.type = 'button';
   btn.textContent = v;
   btn.addEventListener('click', function() {
-    venuePicker.querySelectorAll('.venue-btn').forEach(function(b) { b.classList.remove('active'); });
+    venuePicker.querySelectorAll('.venue-card-mini').forEach(function(b) { b.classList.remove('active'); });
     this.classList.add('active');
     loadVenueAnalysis(v);
   });
@@ -382,11 +720,7 @@ async function loadVenueAnalysis(venue) {
     if (data.course_stats && data.course_stats.length > 0) {
       resultEl.appendChild(renderRateTable('進入コース別 入着率(' + data.course_data_since + '〜)', data.course_stats, 'コース', 'course'));
     } else {
-      var noCourse = document.createElement('div');
-      noCourse.className = 'error-msg';
-      noCourse.style.marginTop = '10px';
-      noCourse.textContent = 'この会場は対象期間中のレースデータがありません。';
-      resultEl.appendChild(noCourse);
+      resultEl.appendChild(makeError('この会場は対象期間中のレースデータがありません。'));
     }
 
     if (data.kimarite_estimate) {
@@ -515,7 +849,7 @@ function renderPayoutsByType(rows) {
   return wrap;
 }
 
-function renderPopularityDist(dist, total) {
+function renderPopularityDist(dist) {
   var wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   var table = document.createElement('table');
@@ -566,7 +900,7 @@ async function loadPayouts() {
       popNote.className = 'note';
       popNote.textContent = '対象: 3連単 ' + data.sanrentan_total.toLocaleString() + '件。1番人気決着の割合が低いほど「荒れ」傾向です。';
       popEl.appendChild(popNote);
-      popEl.appendChild(renderPopularityDist(data.popularity_dist, data.sanrentan_total));
+      popEl.appendChild(renderPopularityDist(data.popularity_dist));
     } else {
       popEl.appendChild(makeError('データがありません'));
     }
@@ -576,6 +910,8 @@ async function loadPayouts() {
   }
 }
 
+// --- 初期実行 ---
+loadCompactRanking();
 loadPayouts();
 </script>
 </body>
