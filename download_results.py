@@ -31,8 +31,9 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # ─── 設定 ──────────────────────────────────────────────
-API_URL   = os.environ.get('API_URL', 'https://2410049.moo.jp/import_results.php')
-API_KEY   = os.environ.get('API_KEY', 'teio2025')
+API_URL          = os.environ.get('API_URL', 'https://2410049.moo.jp/import_results.php')
+API_URL_PAYOUTS  = os.environ.get('API_URL_PAYOUTS', 'https://2410049.moo.jp/save_payouts.php')
+API_KEY          = os.environ.get('API_KEY', 'teio2025')
 SLEEP_SEC = 3
 
 def get_7zip():
@@ -94,6 +95,32 @@ venue_pattern   = re.compile(r'^(.{3}|.{4})［成績］\s+(\d+)/\s*(\d+)')
 race_pattern    = re.compile(r'^\s{1,3}(\d{1,2})R\s')
 weather_pattern = re.compile(r'風\s+(\S+)\s+(\d+)m.*波\s+(\d+)cm')
 
+# ─── 払戻金ブロック ────────────────────────────────────
+# 例: "        ３連単   4-1-2    15610  人気    42 "
+#     "        複勝     4          130  1          120  "
+BET_TYPE_NORMALIZE = {
+    '単勝':   '単勝',
+    '複勝':   '複勝',
+    '２連単': '2連単',
+    '２連複': '2連複',
+    '拡連複': '拡連複',
+    '３連単': '3連単',
+    '３連複': '3連複',
+}
+CONTINUABLE_LABELS = ('複勝', '拡連複')
+
+payout_label_pattern = re.compile(
+    r'^[ 　]*(単勝|複勝|２連単|２連複|拡連複|３連単|３連複)[ 　]*(.*)$'
+)
+# 組番（ハイフン区切り）＋ 金額 ＋（任意で）人気
+combo_amount_pattern = re.compile(
+    r'(\d+(?:[-－]\d+)+)[ 　]+([\d,]+)(?:[ 　]*人気[ 　]*(\d+))?'
+)
+# 単勝・複勝用（枠番 ＋ 金額のペア。複勝は同一行に複数ペア）
+lane_amount_pattern = re.compile(
+    r'(\d+)[ 　]+([\d,]+)'
+)
+
 
 def normalize_venue(raw):
     s = raw.replace('\u3000', '　').strip()
@@ -141,18 +168,91 @@ def parse_result_line(line):
         return None
 
 
+def _extract_payout_entries(label, remainder):
+    """ラベル除去後の残り文字列から (combo, amount, popularity) のリストを返す"""
+    entries = []
+    if label in ('単勝', '複勝'):
+        for lane_s, amount_s in lane_amount_pattern.findall(remainder):
+            entries.append((lane_s, int(amount_s.replace(',', '')), None))
+    else:
+        for combo_s, amount_s, pop_s in combo_amount_pattern.findall(remainder):
+            combo = combo_s.replace('－', '-')
+            popularity = int(pop_s) if pop_s else None
+            entries.append((combo, int(amount_s.replace(',', '')), popularity))
+    return entries
+
+
+def parse_payout_block(lines, start_idx):
+    """
+    lines[start_idx] が払戻金ブロックの先頭行（"単勝"行）である前提で、
+    ブロックが終わる（空行 or 後続行が payout パターンに一致しない）まで読み進める。
+
+    拡連複・複勝はラベルの付かない継続行が続くことがあるため、
+    直前のラベルを引き継いで読み取る。
+
+    戻り値: (payouts, next_idx)
+      payouts  : [{'bet_type', 'combo', 'amount', 'popularity'}, ...]
+      next_idx : ブロックの次に読み始めるべき行インデックス
+    """
+    payouts = []
+    current_label = None
+    i = start_idx
+    n = len(lines)
+
+    while i < n:
+        line = lines[i]
+        if not line.strip():
+            break
+
+        m = payout_label_pattern.match(line)
+        if m:
+            current_label = m.group(1)
+            for combo, amount, popularity in _extract_payout_entries(current_label, m.group(2)):
+                payouts.append({
+                    'bet_type':   BET_TYPE_NORMALIZE[current_label],
+                    'combo':      combo,
+                    'amount':     amount,
+                    'popularity': popularity,
+                })
+            i += 1
+            continue
+
+        if current_label in CONTINUABLE_LABELS:
+            entries = _extract_payout_entries(current_label, line)
+            if entries:
+                for combo, amount, popularity in entries:
+                    payouts.append({
+                        'bet_type':   BET_TYPE_NORMALIZE[current_label],
+                        'combo':      combo,
+                        'amount':     amount,
+                        'popularity': popularity,
+                    })
+                i += 1
+                continue
+
+        break
+
+    return payouts, i
+
+
 def parse_txt(content, file_date):
     lines = content.splitlines()
     records = []
+    payouts = []
     current_venue   = None
     current_race    = None
     current_weather = {}
 
-    for line in lines:
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+
         m = venue_pattern.match(line)
         if m:
             current_venue = normalize_venue(m.group(1))
             current_race  = None
+            i += 1
             continue
 
         m = race_pattern.match(line)
@@ -165,6 +265,19 @@ def parse_txt(content, file_date):
                     'wind_speed':  float(wm.group(2)),
                     'wave_height': int(wm.group(3)),
                 }
+            i += 1
+            continue
+
+        if line.lstrip().startswith('単勝') and current_venue and current_race:
+            block, next_i = parse_payout_block(lines, i)
+            for p in block:
+                p.update({
+                    'date':    file_date.isoformat(),
+                    'venue':   current_venue,
+                    'race_no': current_race,
+                })
+            payouts.extend(block)
+            i = next_i
             continue
 
         r = parse_result_line(line)
@@ -179,7 +292,9 @@ def parse_txt(content, file_date):
             })
             records.append(r)
 
-    return records
+        i += 1
+
+    return records, payouts
 
 
 def download_and_parse(target_date):
@@ -245,6 +360,28 @@ def send_records(records, target_date):
         return False
 
 
+def send_payouts(payouts, target_date):
+    if not payouts:
+        return True
+    try:
+        res = requests.post(API_URL_PAYOUTS, json={
+            'api_key': API_KEY,
+            'date':    target_date.isoformat(),
+            'payouts': payouts,
+        }, timeout=30)
+        data = res.json()
+        if data.get('error'):
+            print(f'  [PAYOUT API ERROR] {data["error"]}')
+            return False
+        print(f'  → 払戻金 {data.get("ok", 0)}件登録 / {data.get("skip", 0)}件スキップ')
+        if data.get('first_error'):
+            print(f'  [PAYOUT FIRST ERROR] {data["first_error"]}')
+        return True
+    except Exception as e:
+        print(f'  [PAYOUT SEND ERROR] {e}')
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--start', default=None)
@@ -266,21 +403,23 @@ def main():
     while current <= end:
         print(f'[{current}] ', end='', flush=True)
 
-        records = download_and_parse(current)
+        result = download_and_parse(current)
 
-        if records is None:
+        if result is None:
             print('レースなし')
             skip_days += 1
             current += timedelta(days=1)
             time.sleep(1)
             continue
 
-        print(f'{len(records)}件パース ', end='', flush=True)
+        records, payouts = result
+        print(f'{len(records)}件パース / 払戻{len(payouts)}件 ', end='', flush=True)
 
         if args.download_only:
             print('(送信スキップ)')
         else:
             send_records(records, current)
+            send_payouts(payouts, current)
 
         ok_days += 1
         current += timedelta(days=1)
