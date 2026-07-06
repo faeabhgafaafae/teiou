@@ -180,6 +180,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .action-btn:hover { border-color: #0055a4; color: #0055a4; background: #f0f5ff; }
 .action-btn.primary { background: #0055a4; color: #fff; border-color: #0055a4; }
 .action-btn.primary:hover { background: #003d7a; }
+.action-btn.result { background: #16a34a; color: #fff; border-color: #16a34a; }
+.action-btn.result:hover { background: #12833c; }
 
 @media (max-width: 820px) {
   header { padding: 12px 16px; height: 110px; /* タブレットサイズは高さを変更 */ flex-direction: column; }
@@ -320,7 +322,7 @@ function updateAllCountdowns() {
     badgeEl.className = 'time-remaining ' + info.cls;
     
     if (statusEl) {
-      if (info.cls === 'closed') {
+      if (race.has_result) {
         statusEl.textContent = '結果確定';
         statusEl.className = 'status-badge status-kakutei';
       } else if (info.cls === 'time-red') {
@@ -399,14 +401,14 @@ function renderRaceCard(race) {
   var hdrR = document.createElement('div'); hdrR.className = 'race-header-right';
   var sb = document.createElement('span');
   sb.id = 'status-' + rno;
-  if (countdown.cls === 'closed') {
+  if (race.has_result) {
     sb.className = 'status-badge status-kakutei'; sb.textContent = '結果確定';
   } else if (countdown.cls === 'time-red') {
     sb.className = 'status-badge status-live'; sb.textContent = '締切間近';
   } else {
     sb.className = 'status-badge status-yosen'; sb.textContent = '予選';
   }
-  
+
   hdrR.appendChild(sb);
   hdr.appendChild(hdrL); hdr.appendChild(hdrR);
 
@@ -421,6 +423,10 @@ function renderRaceCard(race) {
   var b3 = document.createElement('a'); b3.className = 'action-btn'; b3.href = 'odds.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b3.textContent = 'オッズ';
   var b4 = document.createElement('a'); b4.className = 'action-btn primary'; b4.href = 'ai-predict.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b4.textContent = '予想';
   actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3); actions.appendChild(b4);
+  if (race.has_result) {
+    var b5 = document.createElement('a'); b5.className = 'action-btn result'; b5.href = 'result.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b5.textContent = '結果';
+    actions.appendChild(b5);
+  }
 
   card.appendChild(hdr); card.appendChild(panel1); card.appendChild(actions);
   return card;
