@@ -193,7 +193,7 @@ function renderPlayersTable(data) {
 
   var thead = document.createElement('thead');
   var hrow = document.createElement('tr');
-  var headers = ['順位', '選手', '出走数', '勝率', '1着率', '2連対率', '3連対率', '平均ST'];
+  var headers = ['順位', '選手', '出走数', '勝率(簡易)', '1着率', '2連対率', '3連対率', '平均ST'];
   headers.forEach(function(h) {
     var th = document.createElement('th');
     th.textContent = h;
@@ -276,6 +276,11 @@ async function loadPlayers() {
       return;
     }
     resultEl.appendChild(renderPlayersTable(data));
+    var footnote = document.createElement('div');
+    footnote.className = 'note';
+    footnote.style.marginTop = '10px';
+    footnote.textContent = '勝率(簡易)は (1着数×2 + 2着数×1) ÷ 出走数 で算出した当サイト独自の簡易指標です。公式発表の勝率とは計算方法が異なる場合があります。';
+    resultEl.appendChild(footnote);
   } catch (e) {
     resultEl.textContent = '';
     resultEl.appendChild(makeError('データの取得に失敗しました'));
