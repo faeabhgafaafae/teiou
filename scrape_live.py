@@ -27,7 +27,7 @@ ODDS_SLEEP_SEC = 1
 
 
 def get_pending_races() -> list:
-    """締切前かつ60分以内のレース一覧を取得する（絞り込みはAPI側で実施）"""
+    """締切60分前〜締切5分後のレース一覧を取得する（絞り込みはAPI側で実施）"""
     res = requests.get(API_PENDING, params={
         'api_key': API_KEY,
     }, timeout=15)
@@ -35,7 +35,16 @@ def get_pending_races() -> list:
     data = res.json()
     if 'error' in data:
         raise RuntimeError(f'get_pending_races error: {data["error"]}')
-    return data.get('races', [])
+    races = data.get('races', [])
+
+    # API側でもソート済みだが、念のためここでも
+    # 「exhibit_time/start_timing未取得(needs_scrape)」→「締切が近い順」で並べ直す。
+    # timeout-minutesに引っかかって処理が途中で切れても、優先度の高いレースから確実に処理されるようにする。
+    races.sort(key=lambda r: (
+        not r.get('needs_scrape', True),
+        r.get('minutes_until_deadline') if r.get('minutes_until_deadline') is not None else 9999,
+    ))
+    return races
 
 
 def scrape_odds(jcd: str, rno: int, hd: str) -> dict | None:
