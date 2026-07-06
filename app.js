@@ -319,6 +319,17 @@ async function checkAuth() {
       await fetch('logout.php');
       location.reload();
     });
+
+    var promoBtn = document.getElementById('sidebarPromoBtn');
+    if (promoBtn && user.plan === 'premium') {
+      promoBtn.textContent = '現在プレミアム会員です';
+      promoBtn.removeAttribute('href');
+      promoBtn.style.background = '#e2e8f0';
+      promoBtn.style.color = '#a0aec0';
+      promoBtn.style.border = '1px solid #cbd5e1';
+      promoBtn.style.cursor = 'default';
+      promoBtn.style.pointerEvents = 'none';
+    }
   } catch(err) {
     authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a>' +
       '<a class="auth-link register" href="register.html">新規登録</a>';
