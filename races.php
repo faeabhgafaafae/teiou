@@ -31,13 +31,18 @@ try {
 }
 
 $stmt = $pdo->prepare("
-    SELECT race_no, scheduled_time, wind_speed, wind_dir, wave_height
+    SELECT race_no, scheduled_time, wind_speed, wind_dir, wave_height,
+           EXISTS(SELECT 1 FROM results res WHERE res.race_id = races.id) AS has_result
     FROM races
     WHERE date = ? AND venue = ?
     ORDER BY race_no
 ");
 $stmt->execute([$date, $venue]);
 $races = $stmt->fetchAll(PDO::FETCH_ASSOC);
+foreach ($races as &$r) {
+    $r['has_result'] = (bool)$r['has_result'];
+}
+unset($r);
 
 echo json_encode([
     'date'  => $date,
