@@ -54,7 +54,8 @@ $race_id = $race['id'];
 
 $update = $pdo->prepare('
     UPDATE entries
-    SET exhibit_time = ?, start_timing = ?
+    SET exhibit_time = COALESCE(?, exhibit_time),
+        start_timing = COALESCE(?, start_timing)
     WHERE race_id = ? AND lane = ?
 ');
 

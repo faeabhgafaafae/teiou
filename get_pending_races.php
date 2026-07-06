@@ -41,20 +41,32 @@ if ($all) {
     ');
     $stmt->execute([':date' => $date]);
 } else {
-    // 現在時刻(JST)からscheduled_timeまで60分以内 かつ 締切前のレースのみ
+    // 締切60分前〜締切5分後のレースを対象にする（締切直後の取り漏らしも拾う）
+    // exhibit_time/start_timingがまだNULLのレースを優先して返す（needs_scrape）
     $stmt = $pdo->prepare('
-        SELECT id AS race_id, date, venue, race_no, scheduled_time,
-               TIMESTAMPDIFF(MINUTE, NOW(), CONCAT(date, " ", scheduled_time)) AS minutes_until_deadline
-        FROM races
-        WHERE date = :date
-          AND scheduled_time IS NOT NULL
-          AND CONCAT(date, " ", scheduled_time) >= NOW()
-          AND CONCAT(date, " ", scheduled_time) <= NOW() + INTERVAL 60 MINUTE
-        ORDER BY CONCAT(date, " ", scheduled_time) ASC
+        SELECT r.id AS race_id, r.date, r.venue, r.race_no, r.scheduled_time,
+               TIMESTAMPDIFF(MINUTE, NOW(), CONCAT(r.date, " ", r.scheduled_time)) AS minutes_until_deadline,
+               EXISTS (
+                   SELECT 1 FROM entries e
+                   WHERE e.race_id = r.id
+                     AND (e.exhibit_time IS NULL OR e.start_timing IS NULL)
+               ) AS needs_scrape
+        FROM races r
+        WHERE r.date = :date
+          AND r.scheduled_time IS NOT NULL
+          AND CONCAT(r.date, " ", r.scheduled_time) >= NOW() - INTERVAL 5 MINUTE
+          AND CONCAT(r.date, " ", r.scheduled_time) <= NOW() + INTERVAL 60 MINUTE
+        ORDER BY needs_scrape DESC, CONCAT(r.date, " ", r.scheduled_time) ASC
     ');
     $stmt->execute([':date' => $date]);
 }
 $races = $stmt->fetchAll();
+foreach ($races as &$r) {
+    if (array_key_exists('needs_scrape', $r)) {
+        $r['needs_scrape'] = (bool)$r['needs_scrape'];
+    }
+}
+unset($r);
 
 echo json_encode([
     'count' => count($races),
