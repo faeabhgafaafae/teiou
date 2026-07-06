@@ -73,7 +73,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .filter-bar { display: flex; gap: 6px; padding: 7px 12px; background: #f9fafb; border-bottom: 1px solid #ebebeb; flex-wrap: wrap; align-items: center; }
 .filter-group { display: flex; align-items: center; gap: 3px; }
 .filter-pos-lbl { font-size: 11px; font-weight: 700; color: #555; margin-right: 2px; white-space: nowrap; }
-.filter-btn { width: 26px; height: 26px; border-radius: 4px; border: 1px solid #ddd; background: #f0f0f0; color: #888; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.filter-btn { width: 44px; height: 44px; border-radius: 4px; border: 1px solid #ddd; background: #f0f0f0; color: #888; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
 .filter-btn:hover { border-color: #aaa; }
 .filter-divider { width: 1px; height: 18px; background: #e0e0e0; margin: 0 2px; flex-shrink: 0; }
 
@@ -571,32 +571,39 @@ function renderSections(comboData, statsMap) {
 }
 
 // ─── API取得 ───────────────────────────────────────────
+// 取得失敗(通信エラー・HTTPエラー)は例外を投げ、init()側でエラー表示する。
+// 「まだ買い目が生成されていない」等の正常な空データとは区別する。
 async function fetchStats() {
-  try {
-    var res = await fetch(API_HOST + '/strategy_stats.php');
-    if (!res.ok) return {};
-    var data = await res.json();
-    var map = {};
-    var rows = data.stats || [];
-    for (var i = 0; i < rows.length; i++) { map[rows[i].strategy_type] = rows[i]; }
-    return map;
-  } catch(e) { return {}; }
+  var res = await fetch(API_HOST + '/strategy_stats.php');
+  if (!res.ok) throw new Error('strategy_stats.php HTTP ' + res.status);
+  var data = await res.json();
+  var map = {};
+  var rows = data.stats || [];
+  for (var i = 0; i < rows.length; i++) { map[rows[i].strategy_type] = rows[i]; }
+  return map;
 }
 
 async function fetchCombos() {
   if (!venue || !raceNo) return null;
-  try {
-    var url = API_HOST + '/strategy_detail.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
-    var res = await fetch(url);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch(e) { return null; }
+  var url = API_HOST + '/strategy_detail.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+  var res = await fetch(url);
+  if (!res.ok) throw new Error('strategy_detail.php HTTP ' + res.status);
+  return await res.json();
 }
 
 // ─── 起動 ──────────────────────────────────────────────
 async function init() {
-  var results = await Promise.all([fetchStats(), fetchCombos()]);
-  renderSections(results[1], results[0]);
+  try {
+    var results = await Promise.all([fetchStats(), fetchCombos()]);
+    renderSections(results[1], results[0]);
+  } catch (e) {
+    var area = document.getElementById('mainArea');
+    area.textContent = '';
+    var err = document.createElement('div');
+    err.className = 'error-msg';
+    err.textContent = 'データの取得に失敗しました';
+    area.appendChild(err);
+  }
 }
 
 init();
