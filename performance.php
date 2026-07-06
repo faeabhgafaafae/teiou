@@ -125,6 +125,13 @@ var API_HOST = 'https://' + '2410049.moo.jp';
 var IS_PREMIUM = <?php echo $isPremium ? 'true' : 'false'; ?>;
 var STRATEGY_COLORS = { '的中特化': '#0055a4', 'バランス': '#16a34a', '一撃重視': '#dc2626', '絞り込み': '#d97706' };
 
+function formatDateJP(iso) {
+  if (!iso) return '';
+  var parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  return parts[0] + '年' + Number(parts[1]) + '月' + Number(parts[2]) + '日';
+}
+
 function makeLoading(text) {
   var d = document.createElement('div');
   d.className = 'loading';
@@ -161,7 +168,7 @@ async function loadSummary() {
 
     var note = document.createElement('div');
     note.className = 'note';
-    note.textContent = '集計期間: ' + data.date_range.min_date + ' 〜 ' + data.date_range.max_date +
+    note.textContent = '集計期間: ' + formatDateJP(data.date_range.min_date) + ' 〜 ' + formatDateJP(data.date_range.max_date) +
       '(対象 ' + data.date_range.race_count.toLocaleString() + 'レース)。運用開始から間もないため、サンプル数はまだ少ない点にご留意ください。';
     el.appendChild(note);
 

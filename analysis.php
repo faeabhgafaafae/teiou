@@ -214,6 +214,12 @@ var ALL_VENUES = [
 var API_HOST = 'https://' + '2410049.moo.jp';
 
 function formatName(n) { return n ? n.replace(/[\s　]+/g, ' ').trim() : ''; }
+function formatDateJP(iso) {
+  if (!iso) return '';
+  var parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  return parts[0] + '年' + Number(parts[1]) + '月' + Number(parts[2]) + '日';
+}
 function makeLoading(text) {
   var d = document.createElement('div');
   d.className = 'loading';
@@ -890,7 +896,7 @@ async function loadPayouts() {
     byTypeEl.textContent = '';
     var note = document.createElement('div');
     note.className = 'note';
-    note.textContent = '集計期間: ' + data.date_range.min_date + ' 〜 ' + data.date_range.max_date + '(払戻金データの記録開始から)';
+    note.textContent = '集計期間: ' + formatDateJP(data.date_range.min_date) + ' 〜 ' + formatDateJP(data.date_range.max_date) + '(払戻金データの記録開始から)';
     byTypeEl.appendChild(note);
     byTypeEl.appendChild(renderPayoutsByType(data.by_bet_type));
 
