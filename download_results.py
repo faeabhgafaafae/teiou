@@ -120,6 +120,8 @@ combo_amount_pattern = re.compile(
 lane_amount_pattern = re.compile(
     r'(\d+)[ 　]+([\d,]+)'
 )
+# レースタイム（着順タイム）: "1.49.7" = 1分49秒7
+race_time_pattern = re.compile(r'^\d\.\d{2}\.\d$')
 
 
 def normalize_venue(raw):
@@ -128,15 +130,16 @@ def normalize_venue(raw):
 
 
 def parse_result_line(line):
-    if len(line) < 47:
+    if len(line) < 58:
         return None
     try:
-        rank_s    = line[2:4].strip()
-        lane_s    = line[6:7].strip()
-        pid_s     = line[8:12].strip()
-        exhibit_s = line[31:35].strip()
-        course_s  = line[38:39].strip()
-        st_s      = line[43:47].strip()
+        rank_s      = line[2:4].strip()
+        lane_s      = line[6:7].strip()
+        pid_s       = line[8:12].strip()
+        exhibit_s   = line[31:35].strip()
+        course_s    = line[38:39].strip()
+        st_s        = line[43:47].strip()
+        race_time_s = line[52:58].strip()
 
         if not (rank_s.isdigit() and lane_s.isdigit() and pid_s.isdigit()):
             return None
@@ -156,6 +159,8 @@ def parse_result_line(line):
             try: st = float(st_s)
             except: pass
 
+        race_time = race_time_s if race_time_pattern.match(race_time_s) else None
+
         return {
             'actual_rank':  int(rank_s),
             'lane':         int(lane_s),
@@ -163,6 +168,7 @@ def parse_result_line(line):
             'exhibit_time': exhibit,
             'course':       course,
             'start_timing': st,
+            'race_time':    race_time,
         }
     except Exception:
         return None

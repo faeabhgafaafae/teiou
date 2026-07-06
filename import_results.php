@@ -61,11 +61,14 @@ $stmt_race_upsert = $pdo->prepare('
 $stmt_race_sel = $pdo->prepare('SELECT id FROM races WHERE date = ? AND venue = ? AND race_no = ?');
 
 $stmt_result = $pdo->prepare('
-    INSERT INTO results (race_id, player_id, lane, actual_rank)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO results (race_id, player_id, lane, actual_rank, time, start_timing, course)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
-        lane        = VALUES(lane),
-        actual_rank = VALUES(actual_rank)
+        lane         = VALUES(lane),
+        actual_rank  = VALUES(actual_rank),
+        time         = VALUES(time),
+        start_timing = VALUES(start_timing),
+        course       = VALUES(course)
 ');
 
 $stmt_strats = $pdo->prepare('SELECT id, strategy_type, combinations FROM strategies WHERE race_id = ?');
@@ -104,6 +107,9 @@ foreach ($race_groups as $race_records) {
                 (int)$r['player_id'],
                 (int)$r['lane'],
                 (int)$r['actual_rank'],
+                $r['race_time'] ?? null,
+                isset($r['start_timing']) ? (float)$r['start_timing'] : null,
+                isset($r['course']) ? (int)$r['course'] : null,
             ]);
             $ok++;
         } catch (PDOException $e) {
