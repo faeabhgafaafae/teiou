@@ -396,10 +396,21 @@ function buildStartVisual(predictions) {
   var byLane = {};
   predictions.forEach(function(p) { byLane[p.lane] = p; });
 
+  // exhibit_course が取得済みかどうか判定
+  var hasCourseData = predictions.some(function(p) { return p.exhibit_course != null; });
+
+  // コース順にソート: exhibit_course があればそれを使い、なければ lane 順
+  var byCourse = {};
+  predictions.forEach(function(p) {
+    var course = hasCourseData ? (p.exhibit_course || p.lane) : p.lane;
+    byCourse[course] = p;
+  });
+
   var MIN_ST = 0.00, MAX_ST = 0.35;
 
-  for (var lane = 1; lane <= 6; lane++) {
-    var p = byLane[lane];
+  for (var course = 1; course <= 6; course++) {
+    var p = byCourse[course];
+    var lane = p ? p.lane : course;
     var row = document.createElement('div');
     row.className = 'start-track-row';
 
@@ -437,6 +448,14 @@ function buildStartVisual(predictions) {
     row.appendChild(stLabel);
 
     wrap.appendChild(row);
+  }
+
+  // 注記更新: 実測データの有無に応じて切り替え
+  var note = wrap.nextElementSibling;
+  if (note && note.className === 'note') {
+    note.textContent = hasCourseData
+      ? 'スタート展示の実際の進入コース順・STタイムを表示しています。'
+      : '進入コースの実測データがないため、枠番の並び順でスタート展示の目安位置を表しています(実際の進入とは異なる場合があります)。';
   }
 }
 

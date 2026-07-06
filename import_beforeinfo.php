@@ -59,7 +59,8 @@ $update = $pdo->prepare('
         adjust_weight  = COALESCE(?, adjust_weight),
         tilt           = COALESCE(?, tilt),
         propeller_mark = COALESCE(?, propeller_mark),
-        parts_exchange = COALESCE(?, parts_exchange)
+        parts_exchange = COALESCE(?, parts_exchange),
+        exhibit_course = COALESCE(?, exhibit_course)
     WHERE race_id = ? AND lane = ?
 ');
 
@@ -73,13 +74,15 @@ foreach ($players as $p) {
     $tilt          = isset($p['tilt'])          ? (float)$p['tilt']          : null;
     $propeller     = $p['propeller_mark'] ?? null;
     $parts         = $p['parts_exchange'] ?? null;
-    // start_exhibition は waku 順（index 0 = 1号艇）
-    $st = isset($starts[$lane - 1]['st']) ? (float)$starts[$lane - 1]['st'] : null;
+    // start_exhibition は lane 順（index 0 = 1号艇）- コース変更にも対応
+    $start_item    = $starts[$lane - 1] ?? null;
+    $st            = isset($start_item['st'])     ? (float)$start_item['st']     : null;
+    $exhibit_course = isset($start_item['course']) ? (int)$start_item['course']  : null;
 
     if (!$lane) continue;
 
     try {
-        $update->execute([$exhibit_time, $st, $adjust_weight, $tilt, $propeller, $parts, $race_id, $lane]);
+        $update->execute([$exhibit_time, $st, $adjust_weight, $tilt, $propeller, $parts, $exhibit_course, $race_id, $lane]);
         $ok++;
     } catch (PDOException $e) {
         $errors[] = ['lane' => $lane, 'message' => $e->getMessage()];
