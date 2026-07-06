@@ -35,9 +35,17 @@ foreach ($byVenueRace as $k => $list) {
 $distinctVenues = [];
 foreach ($rows as $r) { $distinctVenues[$r['venue']] = true; }
 
+$byVenueSum = [];
+foreach ($rows as $r) {
+    $v = $r['venue'];
+    if (!isset($byVenueSum[$v])) $byVenueSum[$v] = ['races' => 0, 'with_result' => 0];
+    $byVenueSum[$v]['races']++;
+    if ($r['result_count'] > 0) $byVenueSum[$v]['with_result']++;
+}
+
 json_response([
     'total_rows'       => count($rows),
     'distinct_venues'  => array_keys($distinctVenues),
     'duplicates'       => $dups,
-    'sample_miyajima'  => array_values(array_filter($rows, function($r) { return mb_strpos($r['venue'], '宮') !== false; })),
+    'by_venue_summary' => $byVenueSum,
 ]);
