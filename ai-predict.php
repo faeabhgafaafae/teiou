@@ -215,7 +215,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .filter-bar { display: flex; gap: 6px; padding: 7px 12px; background: #f9fafb; border-bottom: 1px solid #ebebeb; flex-wrap: wrap; align-items: center; }
 .filter-group { display: flex; align-items: center; gap: 3px; }
 .filter-pos-lbl { font-size: 11px; font-weight: 700; color: #555; margin-right: 2px; white-space: nowrap; }
-.filter-btn { width: 26px; height: 26px; border-radius: 4px; border: 1px solid #ddd; background: #f0f0f0; color: #888; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.filter-btn { width: 44px; height: 44px; border-radius: 4px; border: 1px solid #ddd; background: #f0f0f0; color: #888; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
 .filter-btn:hover { border-color: #aaa; }
 .filter-divider { width: 1px; height: 18px; background: #e0e0e0; margin: 0 2px; flex-shrink: 0; }
 
@@ -247,25 +247,19 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .show-all-btn { display: block; width: 100%; padding: 11px 16px; border: none; border-top: 1px solid #ebebeb; background: #fafbfc; font-size: 13px; font-weight: 600; color: #0055a4; cursor: pointer; text-align: center; }
 .show-all-btn:hover { background: #eff6ff; }
 
+/* ブレークポイントはmax-widthの降順(820→600→480)で記述し、
+   幅が狭くなるほど後段のルールが優先されるようにする */
 @media (max-width: 820px) {
-  header { padding: 12px 16px; height: 110px; /* タブレットサイズは高さを変更 */ flex-direction: column; }
+  header { padding: 12px 16px; min-height: 110px; height: auto; flex-direction: column; }
   .header-left { gap: 12px; }
   .logo img { height: 36px; }
   .header-page-title { font-size: 15px; }
   .header-main-date { font-size: 12px; }
-  .race-nav-sticky { top: 110px; }
   body { padding-top: 170px; }
 }
 
-@media (max-width: 480px) {
-  .strat-stats-wrap { gap: 10px; }
-  .strat-stat-val { font-size: 13px; }
-  .ct-col-cost { display: none; }
-  .filter-bar { gap: 5px; padding: 6px 10px; }
-}
-
 @media (max-width: 600px) {
-  header { flex-wrap: wrap; justify-content: space-between; padding: 10px 12px; gap: 8px; }
+  header { flex-wrap: wrap; justify-content: space-between; padding: 10px 12px; gap: 8px; min-height: 110px; height: auto; }
   .header-left { width: auto; order: 1; }
   .header-right { width: auto; order: 2; gap: 8px; }
   .header-venue-info { flex-direction: row; align-items: center; width: 100%; order: 3; padding-top: 4px; border-top: 1px dashed #e2e8f0; justify-content: center; gap: 8px; }
@@ -287,6 +281,13 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .pred-detail { padding: 0 10px 10px 10px; }
   .score-detail-label { width: 60px; font-size: 11px; }
   .score-detail-value { width: 80px; font-size: 11px; }
+}
+
+@media (max-width: 480px) {
+  .strat-stats-wrap { gap: 10px; }
+  .strat-stat-val { font-size: 13px; }
+  .ct-col-cost { display: none; }
+  .filter-bar { gap: 5px; padding: 6px 10px; }
 }
 </style>
 </head>
@@ -428,6 +429,18 @@ for (var rn = 1; rn <= 12; rn++) {
   navBtn.textContent = rn + 'R';
   raceNav.appendChild(navBtn);
 }
+
+// ヘッダーは画面幅によって行数が変わり高さが可変のため、
+// 実際の高さを測ってbody余白とレースナビの位置に反映する(固定px値だと375px幅等で崩れるため)
+function syncHeaderOffsets() {
+  var headerEl = document.querySelector('header');
+  if (!headerEl) return;
+  var headerH = headerEl.offsetHeight;
+  raceNav.style.top = headerH + 'px';
+  document.body.style.paddingTop = (headerH + raceNav.offsetHeight) + 'px';
+}
+syncHeaderOffsets();
+window.addEventListener('resize', syncHeaderOffsets);
 
 var rateRefs = {};
 var renderedPlayers = [];
