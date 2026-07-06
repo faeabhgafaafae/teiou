@@ -1,5 +1,6 @@
 (function() {
-  var VENUES = ['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','琵琶湖','住之江','尼崎','鳴門','高松','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
+  // 会場一覧はapp.jsのALL_VENUESを共有する(index.phpでapp.js→home-races.jsの順に読み込まれるため参照可能)
+  var VENUES = window.ALL_VENUES;
   var _now = new Date();
   var today = _now.getFullYear() + '-' + String(_now.getMonth()+1).padStart(2,'0') + '-' + String(_now.getDate()).padStart(2,'0');
   var currentDate = (window.PAGE_DATE && window.PAGE_DATE <= today) ? window.PAGE_DATE : today;
