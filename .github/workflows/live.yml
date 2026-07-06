@@ -3,7 +3,8 @@ name: 艇王 直前情報・オッズ更新
 on:
   schedule:
     # 10分ごとに実行（UTC基準。GitHub Actions の cron は数分の遅延がある）
-    - cron: '*/10 * * * *'
+    # レース開催時間帯のみ実行: UTC 23:00-12:00 = JST 8:00-21:00
+    - cron: '*/10 23-23,0-12 * * *'
   workflow_dispatch:
 
 jobs:
