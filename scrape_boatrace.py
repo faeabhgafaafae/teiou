@@ -38,6 +38,13 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
 }
 
+WIND_DIR_MAP = {
+    1: '北',    2: '北北東', 3: '北東',  4: '東北東',
+    5: '東',    6: '東南東', 7: '南東',  8: '南南東',
+    9: '南',   10: '南南西', 11: '南西', 12: '西南西',
+    13: '西',  14: '西北西', 15: '北西', 16: '北北西',
+}
+
 
 def make_session():
     session = requests.Session()
@@ -173,8 +180,35 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
         for cls in classes:
             m = re.search(r'is-wind(\d+)', cls)
             if m:
-                weather['wind_dir_code'] = int(m.group(1))
+                code = int(m.group(1))
+                weather['wind_dir'] = WIND_DIR_MAP.get(code, str(code))
                 break
+
+    # 天候
+    weather_cond_el = soup.select_one('.weather1_bodyUnit.is-weather .weather1_bodyUnitLabelData')
+    if weather_cond_el:
+        w_text = weather_cond_el.get_text(strip=True)
+        if w_text:
+            weather['weather'] = w_text
+
+    # 気温
+    temp_el = soup.select_one('.weather1_bodyUnit.is-temperature .weather1_bodyUnitLabelData')
+    if temp_el:
+        try:
+            weather['temperature'] = float(temp_el.get_text(strip=True).replace('℃', ''))
+        except Exception:
+            pass
+
+    # 水温
+    water_temp_el = (
+        soup.select_one('.weather1_bodyUnit.is-waterTemperature .weather1_bodyUnitLabelData')
+        or soup.select_one('.weather1_bodyUnit.is-water .weather1_bodyUnitLabelData')
+    )
+    if water_temp_el:
+        try:
+            weather['water_temperature'] = float(water_temp_el.get_text(strip=True).replace('℃', ''))
+        except Exception:
+            pass
 
     result['weather'] = weather
     return result
