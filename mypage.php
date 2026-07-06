@@ -8,6 +8,7 @@
   <title>マイページ - 艇王</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="venue-display.js"></script>
   <style>
     /* マイページ固有のスタイル */
     .mypage-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 20px; }
@@ -183,10 +184,11 @@
       container.style.display = 'grid';
       container.innerHTML = favoriteVenues.map(function(name) {
         var imgSrc = name + '.jpg';
+        var displayName = venueDisplayName(name);
         return '<div style="background: #fff; border: 1px solid #edf2f7; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05); text-align: center; position: relative;">' +
-                 '<img src="' + imgSrc + '" alt="' + name + '" style="width: 100%; height: 110px; object-fit: cover; display: block;">' +
+                 '<img src="' + imgSrc + '" alt="' + displayName + '" style="width: 100%; height: 110px; object-fit: cover; display: block;">' +
                  '<div style="padding: 8px 6px; font-size: 13px; font-weight: bold; color: #2d3748; background: #fff; border-top: 1px solid #edf2f7;">' +
-                   '★ ' + name +
+                   '★ ' + displayName +
                  '</div>' +
                '</div>';
       }).join('');

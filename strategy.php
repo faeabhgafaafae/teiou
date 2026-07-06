@@ -119,6 +119,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .filter-bar { gap: 5px; padding: 6px 10px; }
 }
 </style>
+<script src="venue-display.js"></script>
 </head>
 <body>
 
@@ -194,8 +195,8 @@ function fmtDate(ds) {
 
 // ─── ヘッダー初期化 ────────────────────────────────────
 var vg = VENUE_GRADES[venue] || '一般';
-document.getElementById('pageTitle').textContent = (venue ? venue + ' ' + raceNo + 'R ' : '') + '戦略別予想';
-document.title = '艇王 - ' + (venue ? venue + ' ' : '') + '戦略別予想';
+document.getElementById('pageTitle').textContent = (venue ? venueDisplayName(venue) + ' ' + raceNo + 'R ' : '') + '戦略別予想';
+document.title = '艇王 - ' + (venue ? venueDisplayName(venue) + ' ' : '') + '戦略別予想';
 var badge = document.getElementById('pageBadge');
 badge.textContent = vg;
 badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');

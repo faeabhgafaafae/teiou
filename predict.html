@@ -55,6 +55,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .waku { width: 22px; height: 22px; font-size: 11px; }
 }
 </style>
+<script src="venue-display.js"></script>
 </head>
 <body>
 
@@ -87,9 +88,9 @@ function todayStr() {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
-document.getElementById('pageTitle').textContent = venue + ' ' + raceNo + 'R 直前情報';
+document.getElementById('pageTitle').textContent = venueDisplayName(venue) + ' ' + raceNo + 'R 直前情報';
 document.getElementById('backLink').href = 'races.html?venue=' + encodeURIComponent(venue) + '&date=' + date;
-document.title = '艇王 - ' + venue + ' ' + raceNo + 'R 直前情報';
+document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R 直前情報';
 
 var API_BASE = 'https://' + '2410049.moo.jp';
 

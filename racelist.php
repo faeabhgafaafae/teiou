@@ -79,6 +79,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .waku { width: 24px; height: 24px; font-size: 12px; }
 }
 </style>
+<script src="venue-display.js"></script>
 </head>
 <body>
 
@@ -126,8 +127,8 @@ var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平�
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
 var vg = VENUE_GRADES[venue] || '一般';
 
-document.getElementById('pageTitle').textContent = venue + ' ' + raceNo + 'R 出走表';
-document.title = '艇王 - ' + venue + ' ' + raceNo + 'R 出走表';
+document.getElementById('pageTitle').textContent = venueDisplayName(venue) + ' ' + raceNo + 'R 出走表';
+document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R 出走表';
 var badge = document.getElementById('pageBadge');
 badge.textContent = vg;
 badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
@@ -329,7 +330,7 @@ async function loadEntry() {
     var detail = document.getElementById('raceBarDetail');
     detail.textContent = '';
     var vs = document.createElement('strong');
-    vs.textContent = venue;
+    vs.textContent = venueDisplayName(venue);
     detail.appendChild(vs);
     var timeText = data.scheduled_time ? '  締切 ' + data.scheduled_time : '';
     detail.appendChild(document.createTextNode(' ' + fmtDate(date) + timeText));
