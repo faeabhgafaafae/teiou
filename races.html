@@ -285,29 +285,46 @@ window.addEventListener('DOMContentLoaded', function() {
 function formatDateJP(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
 function formatName(n) { return n.replace(/[\s ]+/g, ' ').trim(); }
 
-function getCountdownInfo(scheduledTime) {
-  if (!scheduledTime) return { text: '時間未定', cls: 'closed' };
+function getCountdownInfo(race) {
+  var scheduledTime = race.scheduled_time;
+
+  if (race.has_result) {
+    return { text: '', cls: 'closed', hide: true };
+  }
+  if (!scheduledTime) return { text: '時間未定', cls: 'closed', hide: false };
+
+  var todayDate = today();
+  if (date < todayDate) {
+    // 過去日: 結果未確定でも「あと◯分」のような相対時間は意味を持たないため終了表示のみ
+    return { text: '終了', cls: 'closed', hide: false };
+  }
+  if (date > todayDate) {
+    // 未来日: 締切時刻のみ表示し、相対時間(あと◯分)は計算・表示しない
+    return { text: '締切 ' + scheduledTime, cls: 'time-bright-green', hide: false };
+  }
+
+  // 本日: 従来通り現在時刻との差分でカウントダウンを計算
   var now = new Date();
   var p = scheduledTime.split(':').map(Number);
   var targetTime = new Date();
   targetTime.setHours(p[0], p[1], 0, 0);
   var diffMs = targetTime - now;
-  
-  if (diffMs <= 0) return { text: '締切済', cls: 'closed' };
-  
+
+  if (diffMs <= 0) return { text: '締切済', cls: 'closed', hide: false };
+
   var diffMins = Math.floor(diffMs / 60000);
-  
+
   if (diffMins <= 10) {
-    return { text: 'まもなく締切！あと ' + diffMins + ' 分', cls: 'time-red' };
+    return { text: 'まもなく締切！あと ' + diffMins + ' 分', cls: 'time-red', hide: false };
   } else if (diffMins <= 30) {
-    return { text: 'あと ' + diffMins + ' 分', cls: 'time-yellow' };
+    return { text: 'あと ' + diffMins + ' 分', cls: 'time-yellow', hide: false };
   } else if (diffMins <= 60) {
-    return { text: 'あと ' + diffMins + ' 分', cls: 'time-light-green' };
+    return { text: 'あと ' + diffMins + ' 分', cls: 'time-light-green', hide: false };
   } else {
     var hours = Math.floor(diffMins / 60);
     var mins = diffMins % 60;
     var textStr = 'あと ' + hours + '時間 ' + mins + '分';
-    return { text: textStr, cls: 'time-bright-green' };
+    return { text: textStr, cls: 'time-bright-green', hide: false };
   }
 }
 
@@ -317,10 +334,11 @@ function updateAllCountdowns() {
     var statusEl = document.getElementById('status-' + race.race_no);
     if (!badgeEl) return;
     
-    var info = getCountdownInfo(race.scheduled_time);
+    var info = getCountdownInfo(race);
     badgeEl.textContent = info.text;
     badgeEl.className = 'time-remaining ' + info.cls;
-    
+    badgeEl.style.display = info.hide ? 'none' : '';
+
     if (statusEl) {
       if (race.has_result) {
         statusEl.textContent = '結果確定';
@@ -373,7 +391,7 @@ function renderPlayerRow(p) {
 function renderRaceCard(race) {
   var timeStr = race.scheduled_time || '--:--';
   var rno = race.race_no;
-  var countdown = getCountdownInfo(race.scheduled_time);
+  var countdown = getCountdownInfo(race);
   
   var card = document.createElement('div');
   card.className = 'race-card';
@@ -393,7 +411,9 @@ function renderRaceCard(race) {
   remEl.id = 'countdown-' + rno;
   remEl.className = 'time-remaining ' + countdown.cls;
   remEl.textContent = countdown.text;
-  
+  if (countdown.hide) remEl.style.display = 'none';
+
+
   timeBlock.appendChild(tEl);
   timeBlock.appendChild(remEl);
   hdrL.appendChild(noEl); hdrL.appendChild(timeBlock);
