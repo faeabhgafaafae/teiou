@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>プラン変更 - 艇王</title>
 <script src="common-header.js"></script>
+<script src="plan-features.js"></script>
 <style>
 .upgrade-wrapper { max-width: 960px; margin: 40px auto; padding: 0 20px; }
 .btn-back { display: inline-flex; align-items: center; gap: 8px; color: #0055a4; text-decoration: none; font-size: 13px; font-weight: bold; margin-bottom: 20px; }
@@ -54,12 +55,7 @@
       <h3>Free</h3>
       <div class="plan-price">&yen;0</div>
       <div class="plan-price-sub">/ 月</div>
-      <ul>
-        <li class="ok">AI予想閲覧</li>
-        <li class="ok">全体AI解説</li>
-        <li class="ng">個別選手AI解説</li>
-        <li class="ng">優先サポート</li>
-      </ul>
+      <ul id="featuresFree"></ul>
       <button class="plan-btn plan-btn-free" id="btnFree" disabled>現在のプラン</button>
     </div>
 
@@ -68,12 +64,7 @@
       <h3>Standard</h3>
       <div class="plan-price">&yen;980</div>
       <div class="plan-price-sub">/ 月</div>
-      <ul>
-        <li class="ok">AI予想閲覧</li>
-        <li class="ok">全体AI解説</li>
-        <li class="ok">個別選手AI解説</li>
-        <li class="ng">優先サポート</li>
-      </ul>
+      <ul id="featuresStandard"></ul>
       <button class="plan-btn plan-btn-standard" id="btnStandard" onclick="changePlan('standard')">Standardに変更</button>
     </div>
 
@@ -82,12 +73,7 @@
       <h3>Premium</h3>
       <div class="plan-price">&yen;2,980</div>
       <div class="plan-price-sub">/ 月</div>
-      <ul>
-        <li class="ok">AI予想閲覧</li>
-        <li class="ok">全体AI解説</li>
-        <li class="ok">個別選手AI解説</li>
-        <li class="ok">優先サポート</li>
-      </ul>
+      <ul id="featuresPremium"></ul>
       <button class="plan-btn plan-btn-premium" id="btnPremium" onclick="changePlan('premium')">Premiumに変更</button>
     </div>
   </div>
@@ -97,6 +83,31 @@
 
 <script>
 var currentUserPlan = 'free';
+
+// プラン特典リストはplan-features.js(mypage.php・upgrade.htmlの共通データ)から描画する
+function renderPlanFeatures(ulId, tierKey) {
+  var ul = document.getElementById(ulId);
+  if (!ul) return;
+  ul.textContent = '';
+  PLAN_FEATURES.forEach(function(f) {
+    var val = f.tiers[tierKey];
+    var li = document.createElement('li');
+    if (val === false) {
+      li.className = 'ng';
+      li.textContent = f.label;
+    } else if (typeof val === 'string') {
+      li.className = 'ok';
+      li.textContent = f.label + ' (' + val + ')';
+    } else {
+      li.className = 'ok';
+      li.textContent = f.label;
+    }
+    ul.appendChild(li);
+  });
+}
+renderPlanFeatures('featuresFree', 'free');
+renderPlanFeatures('featuresStandard', 'standard');
+renderPlanFeatures('featuresPremium', 'premium');
 
 async function loadCurrentPlan() {
   try {
