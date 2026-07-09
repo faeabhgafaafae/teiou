@@ -10,9 +10,7 @@ header('Access-Control-Allow-Origin: *');
 
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
-if ($plan !== 'premium') {
-    json_response(['error' => 'premium_required', 'message' => 'データ分析はPremium会員限定です'], 403);
-}
+$isStandardPlus = in_array($plan, ['standard', 'premium']);
 
 $scope     = $_GET['scope']     ?? 'national';
 $venue     = $_GET['venue']     ?? '';
@@ -20,6 +18,13 @@ $min_races = max(1, (int)($_GET['min_races'] ?? 20));
 $sort      = $_GET['sort']      ?? 'rank1_rate';
 $order     = strtolower($_GET['order'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
 $limit     = min(200, max(1, (int)($_GET['limit'] ?? 50)));
+
+// Free: 全国上位10件のみ許可。それ以外は Standard+ 必須
+if (!$isStandardPlus) {
+    if ($limit > 10 || $scope !== 'national') {
+        json_response(['error' => 'standard_required', 'message' => '全件表示・当地絞り込みはStandard以上のプランが必要です'], 403);
+    }
+}
 
 $SORT_COLUMNS = ['win_score', 'rank1_rate', 'rank2_rate', 'rank3_rate', 'avg_st', 'race_count'];
 if (!in_array($sort, $SORT_COLUMNS, true)) {

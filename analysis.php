@@ -2,7 +2,7 @@
 require_once __DIR__ . '/auth.php';
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
-$isPremium = ($plan === 'premium');
+$isStandardPlus = ($plan === 'standard' || $plan === 'premium');
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -126,15 +126,7 @@ table.data-table tr.rank-1 { background: #fffbeb; }
   <h1>データ分析</h1>
 </header>
 
-<?php if (!$isPremium): ?>
-<div class="premium-lock" style="margin-top:20px;">
-  <span class="premium-lock-icon">&#128274;</span>
-  <p>データ分析はPremium会員限定機能です。</p>
-  <a href="upgrade.html">プランをアップグレード</a>
-</div>
-<?php endif; ?>
-
-<div class="container"<?php if (!$isPremium): ?> style="display:none"<?php endif; ?>>
+<div class="container">
 
   <!-- レーサー検索 -->
   <div class="card search-card">
@@ -225,7 +217,22 @@ table.data-table tr.rank-1 { background: #fffbeb; }
 </div>
 
 <script>
-var IS_PREMIUM = <?php echo $isPremium ? 'true' : 'false'; ?>;
+var IS_STANDARD_PLUS = <?php echo $isStandardPlus ? 'true' : 'false'; ?>;
+
+// Free ユーザー: 会場別・過去検索・払戻傾向パネルをロック表示に差し替え
+if (!IS_STANDARD_PLUS) {
+  (function() {
+    var lockHtml = '<div class="premium-lock" style="padding:24px 16px;"><span class="premium-lock-icon">&#128274;</span><p>Standard / Premiumプランでご利用いただけます。</p><a href="upgrade.html">プランをアップグレード</a></div>';
+    ['#panel-venue .card', '#panel-search .card'].forEach(function(sel) {
+      var el = document.querySelector(sel);
+      if (el) el.innerHTML = lockHtml;
+    });
+    document.querySelectorAll('#panel-payouts .card').forEach(function(el) {
+      el.innerHTML = lockHtml;
+    });
+  })();
+}
+
 var ALL_VENUES = [
   '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
   '蒲郡','常滑','津','三国','琵琶湖','住之江',
@@ -533,6 +540,13 @@ metricTabs.forEach(function(btn) {
 
 document.getElementById('showFullRankingBtn').addEventListener('click', function() {
   var full = document.getElementById('rankingFull');
+  if (!IS_STANDARD_PLUS) {
+    full.style.display = 'block';
+    full.innerHTML = '<div class="premium-lock" style="padding:20px;"><span class="premium-lock-icon">&#128274;</span><p>ランキング全件表示はStandard / Premiumプランでご利用いただけます。</p><a href="upgrade.html">プランをアップグレード</a></div>';
+    full.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    this.textContent = '一覧を閉じる';
+    return;
+  }
   var isHidden = full.style.display === 'none';
   full.style.display = isHidden ? 'block' : 'none';
   this.textContent = isHidden ? '一覧を閉じる' : 'ランキング一覧へ(条件を絞り込む)';
@@ -669,18 +683,20 @@ document.getElementById('playersSearchBtn').addEventListener('click', loadPlayer
 // 2. 会場別データ(グリッドカード)
 // ============================================================
 var venuePicker = document.getElementById('venuePicker');
-ALL_VENUES.forEach(function(v) {
-  var btn = document.createElement('button');
-  btn.className = 'venue-card-mini';
-  btn.type = 'button';
-  btn.textContent = venueDisplayName(v);
-  btn.addEventListener('click', function() {
-    venuePicker.querySelectorAll('.venue-card-mini').forEach(function(b) { b.classList.remove('active'); });
-    this.classList.add('active');
-    loadVenueAnalysis(v);
+if (venuePicker) {
+  ALL_VENUES.forEach(function(v) {
+    var btn = document.createElement('button');
+    btn.className = 'venue-card-mini';
+    btn.type = 'button';
+    btn.textContent = venueDisplayName(v);
+    btn.addEventListener('click', function() {
+      venuePicker.querySelectorAll('.venue-card-mini').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      loadVenueAnalysis(v);
+    });
+    venuePicker.appendChild(btn);
   });
-  venuePicker.appendChild(btn);
-});
+}
 
 function renderRateTable(title, rows, keyLabel, keyField) {
   var box = document.createElement('div');
@@ -790,17 +806,20 @@ async function loadVenueAnalysis(venue) {
 // 3. 過去レース検索
 // ============================================================
 var searchVenueSelect = document.getElementById('searchVenueSelect');
-ALL_VENUES.forEach(function(v) {
-  var opt = document.createElement('option');
-  opt.value = v; opt.textContent = venueDisplayName(v);
-  searchVenueSelect.appendChild(opt);
-});
+if (searchVenueSelect) {
+  ALL_VENUES.forEach(function(v) {
+    var opt = document.createElement('option');
+    opt.value = v; opt.textContent = venueDisplayName(v);
+    searchVenueSelect.appendChild(opt);
+  });
+}
 
 function todayStr() {
   var d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-document.getElementById('searchDateInput').value = todayStr();
+var searchDateEl = document.getElementById('searchDateInput');
+if (searchDateEl) searchDateEl.value = todayStr();
 
 async function searchRaces() {
   var resultEl = document.getElementById('searchResult');
@@ -841,7 +860,8 @@ async function searchRaces() {
     resultEl.appendChild(makeError('検索に失敗しました'));
   }
 }
-document.getElementById('searchBtn').addEventListener('click', searchRaces);
+var searchBtnEl = document.getElementById('searchBtn');
+if (searchBtnEl) searchBtnEl.addEventListener('click', searchRaces);
 
 // ============================================================
 // 4. 払戻金傾向
@@ -938,9 +958,8 @@ async function loadPayouts() {
 }
 
 // --- 初期実行 ---
-// Premium未満は画面がロック表示のみ(display:none)のため、無駄なAPI呼び出しをしない
-if (IS_PREMIUM) {
-  loadCompactRanking();
+loadCompactRanking(); // Free 含む全ユーザー
+if (IS_STANDARD_PLUS) {
   loadPayouts();
 }
 </script>
