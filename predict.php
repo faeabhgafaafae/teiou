@@ -111,7 +111,7 @@ foreach ($entries as $e) {
     $win_rate_local = ($local['total'] > 0) ? ($local['rank1'] / $local['total'] * 100) : $win_rate_national;
 
     $win_rate_weighted = $win_rate_national * 0.4 + $win_rate_local * 0.6;
-    $score_ability = min(40, $win_rate_weighted / 10 * 40);
+    $score_ability_raw = min(40, $win_rate_weighted / 10 * 40);
 
     $stmt2 = $pdo->prepare("
         SELECT COUNT(*) as total,
@@ -126,14 +126,16 @@ foreach ($entries as $e) {
     $stmt2->execute([$player_id, $lane, $date]);
     $course = $stmt2->fetch(PDO::FETCH_ASSOC);
 
+    // コース補正の配点は35点満点(旧20点満点から変更。2026-07シミュレーションでコース優位性が
+    // 過小評価されていたことが判明したため引き上げ。他要素との合算は正規化して100点満点を維持する)
     if ($course['total'] > 0) {
         $r1_rate = $course['rank1'] / $course['total'];
         $r2_rate = $course['rank2'] / $course['total'];
         $r3_rate = $course['rank3'] / $course['total'];
-        $score_course = ($r1_rate * 0.6 + $r2_rate * 0.25 + $r3_rate * 0.15) * 20;
+        $score_course_raw = ($r1_rate * 0.6 + $r2_rate * 0.25 + $r3_rate * 0.15) * 35;
     } else {
         $course_avg = [1=>0.50, 2=>0.15, 3=>0.12, 4=>0.10, 5=>0.08, 6=>0.05];
-        $score_course = ($course_avg[$lane] ?? 0.08) * 20;
+        $score_course_raw = ($course_avg[$lane] ?? 0.08) * 35;
     }
 
     $score_exhibit = 0;
@@ -157,19 +159,31 @@ foreach ($entries as $e) {
         $score_motor = min(10, $e['motor_2rate'] / 60 * 10);
     }
 
-    $score_today = $score_exhibit + $score_st + $score_motor;
+    $score_today_raw = $score_exhibit + $score_st + $score_motor;
 
     $wind_speed  = $race['wind_speed'] ?? 0;
     $wave_height = $race['wave_height'] ?? 0;
     $weather_penalty = min(1.0, ($wind_speed / 10 + $wave_height / 30) / 2);
     if ($lane == 1) {
-        $score_weather = 5 - $weather_penalty * 2;
+        $score_weather_raw = 5 - $weather_penalty * 2;
     } elseif ($lane <= 3) {
-        $score_weather = 3 - $weather_penalty;
+        $score_weather_raw = 3 - $weather_penalty;
     } else {
-        $score_weather = 2 + $weather_penalty;
+        $score_weather_raw = 2 + $weather_penalty;
     }
-    $score_weather = max(0, min(5, $score_weather));
+    $score_weather_raw = max(0, min(5, $score_weather_raw));
+
+    // 各要素の配点(能力40+コース35+当日情報35+気象5=115点満点)を、
+    // 従来通りの100点満点スケールに正規化する。
+    // 内訳の合算値が100を超えるとai-predict.phpのスコア内訳バー(width:X%)が
+    // はみ出すため、個々のraw値ではなく正規化後の値をpredictionsに保存・返却する。
+    $raw_max = 40 + 35 + 35 + 5;
+    $norm    = 100 / $raw_max;
+
+    $score_ability = $score_ability_raw * $norm;
+    $score_course  = $score_course_raw  * $norm;
+    $score_today   = $score_today_raw   * $norm;
+    $score_weather = $score_weather_raw * $norm;
 
     $score_total = $score_ability + $score_course + $score_today + $score_weather;
     if ($is_flying) $score_total -= 10;

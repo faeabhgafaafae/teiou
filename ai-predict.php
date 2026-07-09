@@ -571,7 +571,7 @@ function renderPredCard(r, rank) {
 
   var components = [
     { label: '選手能力', val: sAbility, max: 40, cls: 'fill-ability' },
-    { label: 'コース補正', val: sCourse, max: 20, cls: 'fill-course' },
+    { label: 'コース補正', val: sCourse, max: 35, cls: 'fill-course' },
     { label: '当日情報', val: sDaily, max: 35, cls: 'fill-daily' },
     { label: '気象', val: sWeather, max: 5, cls: 'fill-weather' }
   ];
