@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="venue-display.js"></script>
+  <script src="plan-features.js"></script>
   <style>
     /* マイページ固有のスタイル */
     .mypage-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 20px; }
@@ -100,40 +101,21 @@
           <div class="plan-card" id="planCardFree">
             <div class="plan-card-name">Free</div>
             <div class="plan-card-price">¥0 <span>/ 月</span></div>
-            <ul class="plan-card-features">
-              <li>レース場一覧の閲覧</li>
-              <li>お気に入りレース場 (3件)</li>
-              <li class="disabled">AI予測の閲覧</li>
-              <li class="disabled">成績・回収率の詳細</li>
-              <li class="disabled">詳細データ分析</li>
-            </ul>
+            <ul class="plan-card-features" id="featuresFree"></ul>
             <button class="btn-plan-change" id="btnSelectFree" disabled>現在のプラン</button>
           </div>
 
           <div class="plan-card" id="planCardStandard">
             <div class="plan-card-name">Standard</div>
             <div class="plan-card-price">¥980 <span>/ 月</span></div>
-            <ul class="plan-card-features">
-              <li>レース場一覧の閲覧</li>
-              <li>お気に入りレース場 (無制限)</li>
-              <li>AI予測の閲覧</li>
-              <li>成績・回収率の詳細</li>
-              <li class="disabled">詳細データ分析</li>
-            </ul>
+            <ul class="plan-card-features" id="featuresStandard"></ul>
             <button class="btn-plan-change" id="btnSelectStandard">このプランに変更</button>
           </div>
 
           <div class="plan-card premium-card" id="planCardPremium">
             <div class="plan-card-name">Premium</div>
             <div class="plan-card-price price-premium">¥1,980 <span>/ 月</span></div>
-            <ul class="plan-card-features">
-              <li>レース場一覧の閲覧</li>
-              <li>お気に入りレース場 (無制限)</li>
-              <li>AI予測の閲覧</li>
-              <li>成績・回収率の詳細</li>
-              <li>詳細データ分析</li>
-              <li>広告非表示</li>
-            </ul>
+            <ul class="plan-card-features" id="featuresPremium"></ul>
             <button class="btn-plan-change btn-premium" id="btnSelectPremium">このプランに変更</button>
           </div>
 
@@ -370,6 +352,29 @@
         }
       });
     }
+
+    // プラン特典リストはplan-features.js(mypage.php・upgrade.html共通)から描画する
+    function renderPlanFeatures(ulId, tierKey) {
+      var ul = document.getElementById(ulId);
+      if (!ul) return;
+      ul.textContent = '';
+      PLAN_FEATURES.forEach(function(f) {
+        var val = f.tiers[tierKey];
+        var li = document.createElement('li');
+        if (val === false) {
+          li.className = 'disabled';
+          li.textContent = f.label;
+        } else if (typeof val === 'string') {
+          li.textContent = f.label + ' (' + val + ')';
+        } else {
+          li.textContent = f.label;
+        }
+        ul.appendChild(li);
+      });
+    }
+    renderPlanFeatures('featuresFree', 'free');
+    renderPlanFeatures('featuresStandard', 'standard');
+    renderPlanFeatures('featuresPremium', 'premium');
 
     document.getElementById('headerLogo').addEventListener('click', function() { location.href = 'index.php'; });
     loadHeaderStats();
