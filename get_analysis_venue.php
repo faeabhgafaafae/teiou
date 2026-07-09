@@ -13,8 +13,8 @@ header('Access-Control-Allow-Origin: *');
 
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
-if ($plan !== 'premium') {
-    json_response(['error' => 'premium_required', 'message' => 'データ分析はPremium会員限定です'], 403);
+if (!in_array($plan, ['standard', 'premium'])) {
+    json_response(['error' => 'standard_required', 'message' => '会場別データはStandard以上のプランが必要です'], 403);
 }
 
 define('COURSE_DATA_SINCE', '2026-06-29');

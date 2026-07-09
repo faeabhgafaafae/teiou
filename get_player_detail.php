@@ -8,11 +8,7 @@ require_once __DIR__ . '/auth.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
-$user = current_user();
-$plan = $user['plan'] ?? 'free';
-if ($plan !== 'premium') {
-    json_response(['error' => 'premium_required', 'message' => 'データ分析はPremium会員限定です'], 403);
-}
+$user = current_user(); // Free ユーザーも利用可
 
 $player_id = (int)($_GET['player_id'] ?? 0);
 if (!$player_id) {
