@@ -6,7 +6,7 @@
  * 的中特化: 上位3艇の全順列（最大6点）
  * バランス: 上位2艇を1着に各固定 × 上位4艇の2,3着総流し（最大12点）
  * 一撃重視: 1位固定 × 4〜6位の2,3着総流し（最大6点）
- * 絞り込み: 1位→2位→3位の1点買い
+ * 絞り込み: 上位3艇を枠番の若い順に並べた1点買い
  */
 
 function _strat_permutations(array $arr) {
@@ -74,8 +74,12 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
     }
     $strats['一撃重視'] = $combos_i;
 
-    // 絞り込み: 1位→2位→3位の1点のみ
-    $strats['絞り込み'] = [$lanes[0] . '-' . $lanes[1] . '-' . $lanes[2]];
+    // 絞り込み: 上位3艇(選定はpredicted_rank基準のまま)を枠番の若い順に並べた1点のみ。
+    // 2026-07シミュレーションで、同じ上位3艇でもpredicted_rank順より枠番順の方が
+    // 3着までの的中率が高いことが確認されたため、順序決定ロジックを枠番ベースに変更。
+    $shiborikomi_lanes = array_slice($lanes, 0, 3);
+    sort($shiborikomi_lanes);
+    $strats['絞り込み'] = [$shiborikomi_lanes[0] . '-' . $shiborikomi_lanes[1] . '-' . $shiborikomi_lanes[2]];
 
     // DB保存（ON DUPLICATE KEY UPDATE で冪等）
     $upsert = $pdo->prepare('
