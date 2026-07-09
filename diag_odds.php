@@ -176,4 +176,49 @@ $out['today_already_closed_races_timing'] = [
     'avg' => $nt ? round(array_sum($todayDiffs) / $nt, 1) : null,
 ];
 
+// 10. odds=0 異常値の総数(サンプリングでなく正確な件数)
+$stmt = $pdo->prepare('
+    SELECT COUNT(*) AS total, SUM(CASE WHEN o.odds = 0 THEN 1 ELSE 0 END) AS zero_count
+    FROM odds_3t o
+    JOIN races r ON r.id = o.race_id
+    WHERE r.date IN (?, ?)
+');
+$stmt->execute([$today, $yesterday]);
+$out['odds3t_zero_total'] = $stmt->fetch();
+
+$stmt = $pdo->prepare("
+    SELECT om.bet_type, COUNT(*) AS total,
+           SUM(CASE WHEN CAST(om.odds AS DECIMAL(10,2)) = 0 THEN 1 ELSE 0 END) AS zero_count
+    FROM odds_multi om
+    JOIN races r ON r.id = om.race_id
+    WHERE r.date IN (?, ?) AND om.bet_type IN ('tansho','rentan2','renfuku2','sanrenfuku')
+    GROUP BY om.bet_type
+");
+$stmt->execute([$today, $yesterday]);
+$out['odds_multi_zero_total'] = $stmt->fetchAll();
+
+// 11. odds=0 のレースは「取得タイミングが古い」レースに偏っているか(相関確認)
+$stmt = $pdo->prepare('
+    SELECT r.id,
+           TIMESTAMPDIFF(MINUTE, r.before_updated_at, CONCAT(r.date, " ", r.scheduled_time)) AS diff_min,
+           (SELECT COUNT(*) FROM odds_3t o WHERE o.race_id = r.id AND o.odds = 0) AS zero_combos
+    FROM races r
+    WHERE r.date IN (?, ?) AND r.before_updated_at IS NOT NULL
+');
+$stmt->execute([$today, $yesterday]);
+$corrRows = $stmt->fetchAll();
+$withZero = array_filter($corrRows, function($r) { return (int)$r['zero_combos'] > 0; });
+$withoutZero = array_filter($corrRows, function($r) { return (int)$r['zero_combos'] === 0; });
+$avgDiff = function($rows) {
+    if (!$rows) return null;
+    $sum = array_sum(array_map(function($r) { return (int)$r['diff_min']; }, $rows));
+    return round($sum / count($rows), 1);
+};
+$out['zero_odds_vs_staleness_correlation'] = [
+    'races_with_zero_odds'    => count($withZero),
+    'races_without_zero_odds' => count($withoutZero),
+    'avg_staleness_min_with_zero_odds'    => $avgDiff($withZero),
+    'avg_staleness_min_without_zero_odds' => $avgDiff($withoutZero),
+];
+
 echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
