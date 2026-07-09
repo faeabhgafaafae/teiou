@@ -400,6 +400,103 @@ def send_odds(date_str: str, venue: str, race_no: int, odds: dict, odds_multi: d
         return False
 
 
+# ─── 2フェーズ制のタイムバジェット ─────────────────────
+# ワークフローの timeout-minutes: 15 (900秒) に対して、
+# フェーズ1(直前情報)5分 + フェーズ2(オッズ)9分 = 14分とし、
+# GitHub Actionsのcheckout/pip install等のセットアップ余白を1分確保する。
+PHASE1_BUDGET_SEC = 300   # 直前情報: 約5分
+PHASE2_BUDGET_SEC = 540   # オッズ: 約9分
+
+# 優先度設計③: オッズがこの分数以内に更新済みなら、締切間際でない限り再取得をスキップする
+ODDS_SKIP_RECENT_MIN = 5
+# 締切までこの分数以内のレースは、直近更新済みでも必ず再取得する(価値が最も高いため)
+ODDS_URGENT_DEADLINE_MIN = 15
+
+
+def _race_label(race) -> str:
+    sched = race.get('scheduled_time', '??:??')
+    mins  = race.get('minutes_until_deadline')
+    label = f'締切{sched}'
+    if mins is not None:
+        label += f' (残{mins}分=直前)' if mins <= 10 else f' (残{mins}分)'
+    return f'[{race["venue"]}] {int(race["race_no"])}R ({label})'
+
+
+def _scrape_beforeinfo_for_race(race) -> bool:
+    """直前情報を1レース分取得・送信する。成功したらTrueを返す"""
+    venue   = race['venue']
+    race_no = int(race['race_no'])
+    jcd     = VENUE_TO_JCD.get(venue)
+
+    print(f'\n  {_race_label(race)}')
+
+    if not jcd:
+        print(f'    [SKIP] 会場コード不明: {venue}')
+        return False
+
+    hd = race['date'].replace('-', '')
+
+    try:
+        data = scrape_beforeinfo(jcd, race_no, hd)
+        ok = False
+        if data and data['players']:
+            print(f'    直前情報: {len(data["players"])}選手', end=' ')
+            ok = send_data(data)
+        else:
+            print('    直前情報: データなし')
+        time.sleep(SLEEP_SEC)
+        return ok
+    except Exception as e:
+        print(f'    [ERROR] {e}')
+        return False
+
+
+def _scrape_odds_for_race(race) -> bool:
+    """オッズ(3連単 + 他券種)を1レース分取得・送信する。成功したらTrueを返す"""
+    date_str = race['date']
+    venue    = race['venue']
+    race_no  = int(race['race_no'])
+    jcd      = VENUE_TO_JCD.get(venue)
+
+    print(f'\n  {_race_label(race)}')
+
+    if not jcd:
+        print(f'    [SKIP] 会場コード不明: {venue}')
+        return False
+
+    hd = date_str.replace('-', '')
+
+    try:
+        odds = scrape_odds(jcd, race_no, hd)
+        time.sleep(ODDS_SLEEP_SEC)
+        odds_multi = scrape_all_odds(jcd, race_no, hd)
+        ok = False
+        if odds:
+            print(f'    オッズ: {len(odds)}通り', end=' ')
+            ok = send_odds(date_str, venue, race_no, odds, odds_multi)
+        else:
+            print('    オッズ: データなし')
+        time.sleep(SLEEP_SEC)
+        return ok
+    except Exception as e:
+        print(f'    [ERROR] {e}')
+        return False
+
+
+def _should_skip_odds(race) -> bool:
+    """優先度設計③: 直近更新済み(かつ締切間際でない)レースはオッズ再取得をスキップする"""
+    mins_since_update = race.get('minutes_since_odds_update')
+    if mins_since_update is None:
+        return False  # 未取得(NULL)は必ず取得する
+
+    mins_until_deadline = race.get('minutes_until_deadline')
+    is_urgent = mins_until_deadline is not None and mins_until_deadline <= ODDS_URGENT_DEADLINE_MIN
+    if is_urgent:
+        return False  # 締切間際は直近更新済みでも必ず再取得する
+
+    return mins_since_update < ODDS_SKIP_RECENT_MIN
+
+
 def main():
     import scrape_boatrace
     scrape_boatrace.API_URL = API_BEFOREINFO
@@ -417,58 +514,49 @@ def main():
         print('  対象レースなし')
         return
 
+    # ─── フェーズ1: 直前情報 (needs_scrape優先ソートのまま、予算5分) ───
+    print(f'\n[フェーズ1] 直前情報取得 (予算{PHASE1_BUDGET_SEC}秒)')
+    phase1_start = time.time()
     before_ok = 0
-    odds_ok = 0
-    total = len(races)
-
+    phase1_processed = 0
     for race in races:
-        date_str  = race['date']
-        venue     = race['venue']
-        race_no   = int(race['race_no'])
-        sched     = race.get('scheduled_time', '??:??')
-        mins      = race.get('minutes_until_deadline')
-        jcd       = VENUE_TO_JCD.get(venue)
+        if time.time() - phase1_start >= PHASE1_BUDGET_SEC:
+            print(f'  [予算超過] フェーズ1を打ち切り ({phase1_processed}/{len(races)}件処理)')
+            break
+        if _scrape_beforeinfo_for_race(race):
+            before_ok += 1
+        phase1_processed += 1
 
-        label = f'締切{sched}'
-        if mins is not None:
-            label += f' (残{mins}分=直前)' if mins <= 10 else f' (残{mins}分)'
-        print(f'\n  [{venue}] {race_no}R ({label})')
+    # ─── フェーズ2: オッズ (締切近接順に再ソート、予算9分) ───
+    # needs_scrapeを無視し、締切に近いレースほど優先して再取得する(優先度設計①)
+    odds_races = sorted(
+        races,
+        key=lambda r: r.get('minutes_until_deadline') if r.get('minutes_until_deadline') is not None else 9999,
+    )
 
-        if not jcd:
-            print(f'    [SKIP] 会場コード不明: {venue}')
+    print(f'\n[フェーズ2] オッズ取得 (予算{PHASE2_BUDGET_SEC}秒)')
+    phase2_start = time.time()
+    odds_ok = 0
+    odds_skipped = 0
+    phase2_processed = 0
+    for race in odds_races:
+        if time.time() - phase2_start >= PHASE2_BUDGET_SEC:
+            print(f'  [予算超過] フェーズ2を打ち切り ({phase2_processed}/{len(odds_races)}件処理, {odds_skipped}件スキップ)')
+            break
+
+        if _should_skip_odds(race):
+            odds_skipped += 1
             continue
 
-        hd = date_str.replace('-', '')
+        if _scrape_odds_for_race(race):
+            odds_ok += 1
+        phase2_processed += 1
 
-        try:
-            # 直前情報
-            data = scrape_beforeinfo(jcd, race_no, hd)
-            if data and data['players']:
-                print(f'    直前情報: {len(data["players"])}選手', end=' ')
-                if send_data(data):
-                    before_ok += 1
-            else:
-                print(f'    直前情報: データなし')
-
-            time.sleep(SLEEP_SEC)
-
-            # オッズ(3連単 + 他券種)
-            odds = scrape_odds(jcd, race_no, hd)
-            time.sleep(ODDS_SLEEP_SEC)
-            odds_multi = scrape_all_odds(jcd, race_no, hd)
-            if odds:
-                print(f'    オッズ: {len(odds)}通り', end=' ')
-                if send_odds(date_str, venue, race_no, odds, odds_multi):
-                    odds_ok += 1
-            else:
-                print(f'    オッズ: データなし')
-
-            time.sleep(SLEEP_SEC)
-
-        except Exception as e:
-            print(f'    [ERROR] {e}')
-
-    print(f'\n完了! 対象{total}レース中、直前情報{before_ok}件・オッズ{odds_ok}件 成功')
+    print(
+        f'\n完了! 対象{len(races)}レース中、'
+        f'直前情報{before_ok}件・オッズ{odds_ok}件 成功 '
+        f'(オッズ{odds_skipped}件は直近更新のためスキップ)'
+    )
 
 
 if __name__ == '__main__':

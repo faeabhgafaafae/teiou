@@ -43,9 +43,12 @@ if ($all) {
 } else {
     // 締切60分前〜締切5分後のレースを対象にする（締切直後の取り漏らしも拾う）
     // exhibit_time/start_timingがまだNULLのレースを優先して返す（needs_scrape）
+    // minutes_since_odds_update: オッズの最終更新からの経過分数(scrape_live.pyのフェーズ2で
+    // 直近更新済みレースをスキップする判定に使う。未取得ならNULL)
     $stmt = $pdo->prepare('
         SELECT r.id AS race_id, r.date, r.venue, r.race_no, r.scheduled_time,
                TIMESTAMPDIFF(MINUTE, NOW(), CONCAT(r.date, " ", r.scheduled_time)) AS minutes_until_deadline,
+               TIMESTAMPDIFF(MINUTE, r.odds_updated_at, NOW()) AS minutes_since_odds_update,
                EXISTS (
                    SELECT 1 FROM entries e
                    WHERE e.race_id = r.id

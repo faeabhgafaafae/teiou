@@ -94,7 +94,8 @@ foreach ($odds_multi as $bet_type => $combos) {
     }
 }
 
-$pdo->prepare('UPDATE races SET before_updated_at = NOW() WHERE id = ?')->execute([$race_id]);
+// オッズの更新時刻は直前情報用のbefore_updated_atとは独立して管理する
+$pdo->prepare('UPDATE races SET odds_updated_at = NOW() WHERE id = ?')->execute([$race_id]);
 
 echo json_encode([
     'race_id'  => (int)$race_id,
