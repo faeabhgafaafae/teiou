@@ -12,6 +12,6 @@ var PLAN_FEATURES = [
   { label: 'AI予測の閲覧', tiers: { free: false, standard: true, premium: true } },
   { label: '成績・回収率の詳細', tiers: { free: false, standard: true, premium: true } },
   { label: '詳細データ分析', tiers: { free: false, standard: false, premium: true } },
-  { label: '広告非表示', tiers: { free: false, standard: false, premium: true } },
+  { label: '広告非表示', tiers: { free: false, standard: true, premium: true } },
   { label: '優先サポート', tiers: { free: false, standard: false, premium: true } }
 ];
