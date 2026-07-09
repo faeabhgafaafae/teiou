@@ -14,6 +14,7 @@ var PLAN_FEATURES = [
   { label: 'データ分析', tiers: { free: '一部', standard: true, premium: true } },
   { label: '広告非表示', tiers: { free: false, standard: true, premium: true } },
   { label: 'スコア内訳フル開示', tiers: { free: false, standard: false, premium: true } },
+  { label: '戦略比較ビュー', tiers: { free: false, standard: false, premium: true } },
   { label: 'マイ的中トラッカー', tiers: { free: false, standard: false, premium: true } },
   { label: '優先サポート', tiers: { free: false, standard: false, premium: true } }
 ];
