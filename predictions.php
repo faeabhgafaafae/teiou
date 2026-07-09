@@ -386,7 +386,7 @@ function renderRaceCard(race) {
 
   var footer = document.createElement('div');
   footer.className = 'prc-footer' + (isFinished ? ' finished-footer' : '');
-  footer.textContent = isFinished ? '結果を見る →' : 'AI予想を見る →';
+  footer.textContent = isFinished ? '結果を見る →' : '予想を見る →';
   card.appendChild(footer);
 
   if (isFinished) {
