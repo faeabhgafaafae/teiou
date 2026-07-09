@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/auth.php';
+
 define('DB_HOST', 'mysql323.phy.lolipop.lan');
 define('DB_NAME', 'LAA1670504-12');
 define('DB_USER', 'LAA1670504');
@@ -14,6 +16,13 @@ $race_no = (int)($_GET['race_no'] ?? 0);
 if (!$venue || !$date || !$race_no) {
     echo json_encode(['strategies' => []], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+// AI予測由来の買い目候補の閲覧はStandard/Premium限定
+$user = current_user();
+$plan = $user['plan'] ?? 'free';
+if (!$user || $plan === 'free') {
+    json_response(['error' => 'premium_required', 'message' => 'AI予測はStandard/Premium会員限定です'], 403);
 }
 
 try {

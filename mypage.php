@@ -105,7 +105,6 @@
               <li>お気に入りレース場 (3件)</li>
               <li class="disabled">AI予測の閲覧</li>
               <li class="disabled">詳細データ分析</li>
-              <li class="disabled">広告非表示</li>
             </ul>
             <button class="btn-plan-change" id="btnSelectFree" disabled>現在のプラン</button>
           </div>
@@ -118,7 +117,6 @@
               <li>お気に入りレース場 (無制限)</li>
               <li>AI予測の閲覧</li>
               <li class="disabled">詳細データ分析</li>
-              <li class="disabled">広告非表示</li>
             </ul>
             <button class="btn-plan-change" id="btnSelectStandard">このプランに変更</button>
           </div>
@@ -131,7 +129,6 @@
               <li>お気に入りレース場 (無制限)</li>
               <li>AI予測の閲覧</li>
               <li>詳細データ分析</li>
-              <li>広告非表示</li>
             </ul>
             <button class="btn-plan-change btn-premium" id="btnSelectPremium">このプランに変更</button>
           </div>

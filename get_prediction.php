@@ -12,6 +12,13 @@ if (!$date || !$venue || !$race_no) {
     json_response(['error' => 'date, venue, race_no は必須です'], 400);
 }
 
+// AI予測(スコア・順位)の閲覧はStandard/Premium限定
+$user = current_user();
+$plan = $user['plan'] ?? 'free';
+if (!$user || $plan === 'free') {
+    json_response(['error' => 'premium_required', 'message' => 'AI予測はStandard/Premium会員限定です'], 403);
+}
+
 $pdo = get_db();
 
 $stmt = $pdo->prepare('SELECT id FROM races WHERE date = ? AND venue = ? AND race_no = ?');

@@ -10,6 +10,16 @@ if (!$race_id) {
 }
 
 $type = $_GET['type'] ?? 'overall';
+
+// 個別解説(type=personal)はStandard/Premium限定。全体解説は現状通りFreeでも許可する
+if ($type === 'personal') {
+    $user = current_user();
+    $plan = $user['plan'] ?? 'free';
+    if (!$user || $plan === 'free') {
+        json_response(['error' => 'premium_required', 'message' => '個別解説はStandard/Premiumプラン限定です'], 403);
+    }
+}
+
 $pdo = get_db();
 
 // ── 選手データ取得（共通） ──

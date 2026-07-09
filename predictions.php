@@ -83,6 +83,10 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .prc-footer { margin-top: 10px; font-size: 12px; font-weight: 700; color: #0055a4; text-align: right; }
 .prc-footer.finished-footer { color: #64748b; }
 
+.ai-locked-banner { background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: #92400e; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ai-locked-banner a { margin-left: auto; display: inline-block; padding: 7px 16px; border-radius: 8px; background: #d97706; color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.ai-locked-banner a:hover { background: #b45309; }
+
 @media (max-width: 600px) {
   .race-grid { grid-template-columns: 1fr; }
   .filter-label { width: 100%; margin-bottom: 2px; }
@@ -120,6 +124,11 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     </div>
   </div>
 
+  <div class="ai-locked-banner" id="aiLockedBanner" style="display:none">
+    <span>🔒 AI予想の1位候補・自信度はStandard/Premium会員限定です。</span>
+    <a href="upgrade.html">プランをアップグレード</a>
+  </div>
+
   <div class="race-summary" id="raceSummary"></div>
 
   <div id="raceListArea">
@@ -148,6 +157,7 @@ var selectedVenues = [];
 var selectedGrades = [];
 var allRaces = [];
 var raceCardRefs = {};
+var userPlan = 'free';
 
 function raceKey(venue, raceNo) { return venue + '-' + raceNo; }
 
@@ -292,6 +302,14 @@ function renderPickPlaceholder(pickRow) {
   var ph = document.createElement('span');
   ph.className = 'prc-pick-placeholder';
   ph.textContent = '予想準備中…';
+  pickRow.appendChild(ph);
+}
+
+function renderPickLocked(pickRow) {
+  pickRow.textContent = '';
+  var ph = document.createElement('span');
+  ph.className = 'prc-pick-placeholder';
+  ph.textContent = '🔒 Standard/Premium会員限定';
   pickRow.appendChild(ph);
 }
 
@@ -449,6 +467,18 @@ function runPool(items, worker, concurrency, onDone) {
 
 /* --- 初期化 --- */
 async function init() {
+  try {
+    var meRes = await fetch(API_HOST + '/me.php');
+    if (meRes.ok) {
+      var meData = await meRes.json();
+      if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
+    }
+  } catch (e) {}
+
+  if (userPlan === 'free') {
+    document.getElementById('aiLockedBanner').style.display = 'flex';
+  }
+
   var listArea = document.getElementById('raceListArea');
   try {
     allRaces = await loadAllRaces();
@@ -493,6 +523,12 @@ async function init() {
   });
 
   applyFilters();
+
+  if (userPlan === 'free') {
+    // Free会員はAPIが403を返すだけなので、無駄なリクエストをせずその場でロック表示にする
+    pending.forEach(function(item) { renderPickLocked(item.pickRow); });
+    return;
+  }
 
   runPool(pending, async function(item) {
     var predictions = await fetchPredictions(item.race);

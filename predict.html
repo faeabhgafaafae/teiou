@@ -99,6 +99,12 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .loading { text-align: center; padding: 40px; color: #999; font-size: 14px; }
 .error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; color: #dc2626; font-size: 14px; }
 
+.premium-lock { text-align: center; padding: 30px 16px; }
+.premium-lock-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+.premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }
+.premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
+.premium-lock a:hover { background: #b45309; }
+
 @media (max-width: 600px) {
   .pred-table { font-size: 12px; }
   .pred-table th, .pred-table td { padding: 6px 4px; }
@@ -460,9 +466,28 @@ function buildStartVisual(predictions) {
 }
 
 // --- オリジナル展示タブ(艇王AIスコア) ---
-function buildOriginalTable(predictions) {
+function buildOriginalTable(predictions, aiLocked) {
   var wrap = document.getElementById('originalTableWrap');
   wrap.textContent = '';
+
+  if (aiLocked) {
+    var lock = document.createElement('div');
+    lock.className = 'premium-lock';
+    var icon = document.createElement('span');
+    icon.className = 'premium-lock-icon';
+    icon.textContent = '🔒';
+    var p = document.createElement('p');
+    p.textContent = 'AI予想スコアはStandard/Premium会員限定です。';
+    var a = document.createElement('a');
+    a.href = 'upgrade.html';
+    a.textContent = 'プランをアップグレード';
+    lock.appendChild(icon);
+    lock.appendChild(p);
+    lock.appendChild(a);
+    wrap.appendChild(lock);
+    return;
+  }
+
   var table = document.createElement('table');
   table.className = 'pred-table';
 
@@ -585,7 +610,7 @@ async function loadPrediction() {
 
     buildStartVisual(data.predictions);
     buildOfficialTable(data.predictions);
-    buildOriginalTable(data.predictions);
+    buildOriginalTable(data.predictions, !!data.ai_locked);
   } catch(e) {
     document.getElementById('loadingArea').textContent = '';
     var err2 = document.createElement('div');

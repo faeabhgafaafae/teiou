@@ -289,6 +289,12 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .ct-col-cost { display: none; }
   .filter-bar { gap: 5px; padding: 6px 10px; }
 }
+
+.premium-lock { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; text-align: center; padding: 40px 20px; }
+.premium-lock-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+.premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }
+.premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
+.premium-lock a:hover { background: #b45309; }
 </style>
 <script src="venue-display.js"></script>
 </head>
@@ -329,6 +335,12 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
       <a class="nav-btn" id="btnPrev">&#9664; 前R</a>
       <a class="nav-btn" id="btnNext">次R &#9654;</a>
     </div>
+  </div>
+
+  <div class="premium-lock" id="aiPaywall" style="display:none">
+    <span class="premium-lock-icon">&#128274;</span>
+    <p>AI予想(スコア・順位・買い目)はStandard/Premium会員限定です。</p>
+    <a href="upgrade.html">プランをアップグレード</a>
   </div>
 
   <div id="predictSection">
@@ -671,13 +683,6 @@ function loadStats(tab) {
 var API_HOST = 'https://' + '2410049.moo.jp';
 
 async function loadData() {
-  try {
-    var meRes = await fetch(API_HOST + '/me.php');
-    if (meRes.ok) {
-      var meData = await meRes.json();
-      if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
-    }
-  } catch(e) {}
   var list = document.getElementById('predList');
   try {
     var url = API_HOST + '/get_prediction.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
@@ -1246,8 +1251,26 @@ async function loadStrategyTab() {
   renderStrategySections(results[1], results[0]);
 }
 
-loadData();
-loadStrategyTab();
+async function init() {
+  try {
+    var meRes = await fetch(API_HOST + '/me.php');
+    if (meRes.ok) {
+      var meData = await meRes.json();
+      if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
+    }
+  } catch (e) {}
+
+  if (userPlan === 'free') {
+    document.getElementById('aiPaywall').style.display = 'block';
+    document.getElementById('predictSection').style.display = 'none';
+    document.getElementById('strategySection').style.display = 'none';
+    return;
+  }
+
+  loadData();
+  loadStrategyTab();
+}
+init();
 </script>
 </body>
 </html>

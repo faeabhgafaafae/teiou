@@ -250,6 +250,10 @@ async function toggleFavoriteVenue(venueName) {
       await fetchFavoriteVenues();
       renderVenueGrid();
       renderFavoriteVenuesTop();
+    } else if (data.error === 'favorite_limit') {
+      if (confirm('Freeプランはお気に入り登録が3件までです。プランをアップグレードしますか？')) {
+        location.href = 'upgrade.html';
+      }
     }
   } catch (e) {
     alert('通信エラーが発生しました。');

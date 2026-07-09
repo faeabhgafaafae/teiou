@@ -118,6 +118,12 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .ct-col-cost { display: none; }
   .filter-bar { gap: 5px; padding: 6px 10px; }
 }
+
+.premium-lock { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; text-align: center; padding: 40px 20px; }
+.premium-lock-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+.premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }
+.premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
+.premium-lock a:hover { background: #b45309; }
 </style>
 <script src="venue-display.js"></script>
 </head>
@@ -592,8 +598,41 @@ async function fetchCombos() {
   return await res.json();
 }
 
+function renderPremiumLock() {
+  var area = document.getElementById('mainArea');
+  area.textContent = '';
+  var lock = document.createElement('div');
+  lock.className = 'premium-lock';
+  var icon = document.createElement('span');
+  icon.className = 'premium-lock-icon';
+  icon.textContent = '🔒';
+  var p = document.createElement('p');
+  p.textContent = '戦略別の買い目候補はStandard/Premium会員限定です。';
+  var a = document.createElement('a');
+  a.href = 'upgrade.html';
+  a.textContent = 'プランをアップグレード';
+  lock.appendChild(icon);
+  lock.appendChild(p);
+  lock.appendChild(a);
+  area.appendChild(lock);
+}
+
 // ─── 起動 ──────────────────────────────────────────────
 async function init() {
+  var userPlan = 'free';
+  try {
+    var meRes = await fetch(API_HOST + '/me.php');
+    if (meRes.ok) {
+      var meData = await meRes.json();
+      if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
+    }
+  } catch (e) {}
+
+  if (userPlan === 'free') {
+    renderPremiumLock();
+    return;
+  }
+
   try {
     var results = await Promise.all([fetchStats(), fetchCombos()]);
     renderSections(results[1], results[0]);
