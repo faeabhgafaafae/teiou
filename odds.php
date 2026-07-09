@@ -56,6 +56,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .cell-odds { display: flex; align-items: center; gap: 3px; padding: 1px 0; }
 .wm { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 2px; font-weight: 800; font-size: 9px; flex-shrink: 0; }
 .cell-odds-val { flex: 1; text-align: right; font-size: 11px; font-variant-numeric: tabular-nums; color: #333; }
+.cell-odds-val.dim { color: #bbb; }
 
 .popular-list { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; overflow: hidden; }
 .popular-header { display: flex; align-items: center; padding: 8px 16px; background: #f7f8fa; border-bottom: 1px solid #e0e3e8; font-size: 10px; font-weight: 700; color: #999; gap: 10px; }
@@ -65,10 +66,12 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .popular-row { display: flex; align-items: center; padding: 7px 16px; border-bottom: 1px solid #f5f5f5; gap: 10px; }
 .popular-row:last-child { border-bottom: none; }
 .popular-rank { width: 32px; text-align: center; font-size: 12px; font-weight: 700; color: #888; }
+.popular-rank.dim { color: #ccc; }
 .popular-combo { flex: 1; display: flex; align-items: center; gap: 2px; }
 .popular-sep { color: #999; font-size: 12px; margin: 0 1px; }
 .pw { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 3px; font-weight: 800; font-size: 12px; }
 .popular-odds { width: 70px; text-align: right; font-size: 14px; font-weight: 700; color: #0055a4; font-variant-numeric: tabular-nums; }
+.popular-odds.dim { color: #bbb; font-weight: 400; }
 
 @media (max-width: 600px) {
   .race-bar { flex-direction: column; align-items: flex-start; }
@@ -177,7 +180,8 @@ function buildMatrix(oddsData) {
     var key = o.combo;
     var v = Number(o.odds);
     oddsMap[key] = v;
-    allVals.push(v);
+    // 未成立(0以下)は色分けレンジ(gMin/gMax)の計算対象から除外する
+    if (v > 0) allVals.push(v);
   }
   allVals.sort(function(a, b) { return a - b; });
   var gMin = allVals.length > 0 ? allVals[0] : 0;
@@ -235,9 +239,12 @@ function buildMatrix(oddsData) {
           line.appendChild(badge2);
           var valSpan = document.createElement('span');
           valSpan.className = 'cell-odds-val';
-          if (odds != null) {
+          if (odds != null && odds > 0) {
             valSpan.textContent = odds.toFixed(1);
             if (odds < cellMin) cellMin = odds;
+          } else if (odds != null) {
+            valSpan.className = 'cell-odds-val dim';
+            valSpan.textContent = '未成立';
           } else {
             valSpan.textContent = '-';
           }
@@ -266,7 +273,14 @@ function oddsSortValue(v) {
   return isNaN(n) ? 0 : n;
 }
 
+// オッズ0以下(未成立・欠損の代表値)は実際の倍率ではないため、
+// 人気順ソート・最安値ハイライトの対象からは除外する。データ自体は非表示にしない。
+function isValidOdds(v) {
+  return oddsSortValue(v) > 0;
+}
+
 function formatOddsVal(v) {
+  if (!isValidOdds(v)) return '未成立';
   var s = String(v);
   var n = Number(s);
   if (!isNaN(n) && s.indexOf('-') === -1) return n.toFixed(1) + '倍';
@@ -274,7 +288,12 @@ function formatOddsVal(v) {
 }
 
 function buildPopularList(oddsData) {
-  var sorted = oddsData.slice().sort(function(a, b) { return oddsSortValue(a.odds) - oddsSortValue(b.odds); });
+  var valid = oddsData.filter(function(o) { return isValidOdds(o.odds); });
+  var invalid = oddsData.filter(function(o) { return !isValidOdds(o.odds); });
+  valid.sort(function(a, b) { return oddsSortValue(a.odds) - oddsSortValue(b.odds); });
+  // 未成立の組み合わせは人気順の対象にせず、末尾にそのまま残す
+  var sorted = valid.concat(invalid);
+
   var list = document.createElement('div');
   list.className = 'popular-list';
 
@@ -288,12 +307,13 @@ function buildPopularList(oddsData) {
 
   for (var i = 0; i < sorted.length; i++) {
     var o = sorted[i];
+    var isValid = isValidOdds(o.odds);
     var row = document.createElement('div');
     row.className = 'popular-row';
 
     var rk = document.createElement('div');
-    rk.className = 'popular-rank';
-    rk.textContent = i + 1;
+    rk.className = 'popular-rank' + (isValid ? '' : ' dim');
+    rk.textContent = isValid ? (i + 1) : '-';
 
     var combo = document.createElement('div');
     combo.className = 'popular-combo';
@@ -315,7 +335,7 @@ function buildPopularList(oddsData) {
     }
 
     var val = document.createElement('div');
-    val.className = 'popular-odds';
+    val.className = 'popular-odds' + (isValid ? '' : ' dim');
     val.textContent = formatOddsVal(o.odds);
 
     row.appendChild(rk);
