@@ -35,6 +35,8 @@ header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 24px;
 .nav-item .icon { width: 18px; text-align: center; font-size: 14px; }
 .nav-premium-badge { font-size: 8px; font-weight: 800; background: #fef3c7; color: #b45309; padding: 1px 5px; border-radius: 8px; margin-left: auto; }
 .nav-item:hover .nav-premium-badge, .nav-item.active .nav-premium-badge { background: #fff; color: #b45309; }
+.nav-standard-badge { font-size: 8px; font-weight: 800; background: #dbeafe; color: #2563eb; padding: 1px 5px; border-radius: 8px; margin-left: auto; }
+.nav-item:hover .nav-standard-badge, .nav-item.active .nav-standard-badge { background: #fff; color: #2563eb; }
 
 /* プレミアム広告箱 */
 .premium-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
