@@ -308,6 +308,46 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .bk-value { font-weight: 700; color: #222; font-variant-numeric: tabular-nums; }
 .bk-sub { color: #999; font-size: 10px; }
 .bk-chip { background: #eef2ff; color: #3b4fd8; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ─── 戦略比較ビュー ─── */
+.comp-wrap { background:#fff; border:1px solid #e0e3e8; border-radius:12px; margin-top:14px; overflow:hidden; }
+.comp-hdr { padding:12px 16px; border-bottom:1px solid #e0e3e8; display:flex; align-items:center; gap:10px; }
+.comp-hdr-text { flex:1; min-width:0; }
+.comp-hdr-title { font-size:14px; font-weight:800; color:#222; }
+.comp-hdr-desc { font-size:11px; color:#888; margin-top:2px; }
+.comp-prem-badge { background:#d97706; color:#fff; font-size:9px; font-weight:700; padding:2px 6px; border-radius:3px; }
+.comp-lock { padding:32px 16px; text-align:center; }
+.comp-lock-msg { font-size:13px; color:#666; margin-bottom:12px; }
+.comp-lock-btn { display:inline-block; padding:9px 22px; border-radius:8px; background:#d97706; color:#fff; font-size:13px; font-weight:700; text-decoration:none; }
+.comp-lock-btn:hover { background:#b45309; }
+.comp-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:10px; }
+.comp-col { border:1px solid #e0e3e8; border-radius:8px; overflow:hidden; min-width:0; }
+.comp-col-hdr { padding:7px 8px; text-align:center; color:#fff; }
+.comp-col-name { font-size:12px; font-weight:800; }
+.comp-col-sub { font-size:9px; opacity:0.9; display:block; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.comp-row { display:flex; align-items:center; justify-content:space-between; padding:4px 6px; border-top:1px solid #f0f0f0; gap:3px; }
+.comp-row-hl4 { background:#fefce8; }
+.comp-row-hl3 { background:#eff6ff; }
+.comp-row-hit { background:#fffde7; }
+.comp-waku-grp { display:flex; align-items:center; gap:1px; }
+.comp-right { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+.comp-ov { font-size:9px; font-weight:700; padding:1px 3px; border-radius:3px; }
+.comp-ov4 { background:#fde68a; color:#78350f; }
+.comp-ov3 { background:#bfdbfe; color:#1e40af; }
+.comp-ov2 { background:#e2e8f0; color:#555; }
+.comp-odds-sm { font-size:10px; font-weight:700; color:#0055a4; font-variant-numeric:tabular-nums; }
+.comp-more { padding:3px 8px; font-size:10px; color:#999; text-align:center; border-top:1px solid #f0f0f0; }
+.comp-consensus { padding:10px 12px; border-top:1px solid #e0e3e8; background:#f9fafb; }
+.comp-con-title { font-size:11px; font-weight:700; color:#555; margin-bottom:6px; }
+.comp-con-row { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed #eee; }
+.comp-con-row:last-child { border-bottom:none; }
+.comp-cnt { font-size:11px; font-weight:800; padding:2px 7px; border-radius:4px; flex-shrink:0; }
+.comp-cnt4 { background:#d97706; color:#fff; }
+.comp-cnt3 { background:#0055a4; color:#fff; }
+.comp-cnt2 { background:#e2e8f0; color:#555; }
+.comp-con-combo { display:flex; align-items:center; gap:2px; flex:1; }
+.comp-con-odds { font-size:12px; font-weight:700; color:#0055a4; font-variant-numeric:tabular-nums; flex-shrink:0; }
+@media (max-width:600px) { .comp-grid { grid-template-columns:repeat(2,1fr); } .comp-col-sub { display:none; } }
 </style>
 <script src="venue-display.js"></script>
 </head>
@@ -397,6 +437,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
       <div class="loading"><div class="loading-spinner"></div>データを取得中...</div>
     </div>
   </div>
+
+  <div id="comparisonSection" style="display:none;"></div>
 
   <div class="bottom-actions" id="bottomActions" style="display:none">
     <a class="bottom-btn" id="btnRacelist">出走表</a>
@@ -1388,9 +1430,228 @@ async function fetchStrategyCombos() {
   } catch(e) { return null; }
 }
 
+function renderComparisonView(comboData, statsMap) {
+  var section = document.getElementById('comparisonSection');
+  section.textContent = '';
+  section.style.display = '';
+
+  var wrap = document.createElement('div');
+  wrap.className = 'comp-wrap';
+
+  var hdr = document.createElement('div');
+  hdr.className = 'comp-hdr';
+  var hdrText = document.createElement('div');
+  hdrText.className = 'comp-hdr-text';
+  var hdrTitle = document.createElement('div');
+  hdrTitle.className = 'comp-hdr-title';
+  hdrTitle.textContent = '戦略比較ビュー';
+  var hdrDesc = document.createElement('div');
+  hdrDesc.className = 'comp-hdr-desc';
+  hdrDesc.textContent = '複数の戦略が同じ買い目を推奨 = 信頼度が高い';
+  hdrText.appendChild(hdrTitle);
+  hdrText.appendChild(hdrDesc);
+  var hdrBadge = document.createElement('span');
+  hdrBadge.className = 'comp-prem-badge';
+  hdrBadge.textContent = 'PREMIUM';
+  hdr.appendChild(hdrText);
+  hdr.appendChild(hdrBadge);
+  wrap.appendChild(hdr);
+
+  if (userPlan !== 'premium') {
+    var lockDiv = document.createElement('div');
+    lockDiv.className = 'comp-lock';
+    var lockMsg = document.createElement('div');
+    lockMsg.className = 'comp-lock-msg';
+    lockMsg.textContent = '🔒 戦略比較ビューはPremium限定です';
+    var lockBtn = document.createElement('a');
+    lockBtn.className = 'comp-lock-btn';
+    lockBtn.href = 'plan.php';
+    lockBtn.textContent = 'プランをアップグレード';
+    lockDiv.appendChild(lockMsg);
+    lockDiv.appendChild(lockBtn);
+    wrap.appendChild(lockDiv);
+    section.appendChild(wrap);
+    return;
+  }
+
+  if (!comboData || !(comboData.strategies && comboData.strategies.length)) {
+    var emptyEl = document.createElement('div');
+    emptyEl.style.cssText = 'padding:20px;text-align:center;color:#bbb;font-size:13px;';
+    emptyEl.textContent = '戦略データがありません（予想を生成すると表示されます）';
+    wrap.appendChild(emptyEl);
+    section.appendChild(wrap);
+    return;
+  }
+
+  var strats = comboData.strategies;
+
+  // 各コンボが何戦略に含まれるかカウント
+  var overlapMap = {};
+  for (var i = 0; i < strats.length; i++) {
+    var seenC = {};
+    var csArr = strats[i].combinations || [];
+    for (var j = 0; j < csArr.length; j++) {
+      var ck = csArr[j].combo;
+      if (!seenC[ck]) { seenC[ck] = true; overlapMap[ck] = (overlapMap[ck] || 0) + 1; }
+    }
+  }
+
+  var STRAT_COLORS = { '的中特化':'#2563eb', 'バランス':'#16a34a', '一撃重視':'#dc2626', '絞り込み':'#7c3aed' };
+  var MAX_ROWS = 6;
+  var grid = document.createElement('div');
+  grid.className = 'comp-grid';
+
+  for (var si = 0; si < strats.length; si++) {
+    var strat = strats[si];
+    var color = STRAT_COLORS[strat.strategy_type] || '#888';
+    var statRow = statsMap[strat.strategy_type] || null;
+
+    var col = document.createElement('div');
+    col.className = 'comp-col';
+
+    var colHdr = document.createElement('div');
+    colHdr.className = 'comp-col-hdr';
+    colHdr.style.background = color;
+    var colName = document.createElement('div');
+    colName.className = 'comp-col-name';
+    colName.textContent = strat.strategy_type;
+    var colSub = document.createElement('span');
+    colSub.className = 'comp-col-sub';
+    var hrTxt = statRow && statRow.total_races > 0 ? Number(statRow.hit_rate).toFixed(1) + '%' : '---';
+    var roiTxt = statRow && statRow.total_races > 0 ? (Number(statRow.roi) >= 0 ? '+' : '') + Number(statRow.roi).toFixed(1) + '%' : '---';
+    colSub.textContent = '的中 ' + hrTxt + ' ROI ' + roiTxt;
+    colHdr.appendChild(colName);
+    colHdr.appendChild(colSub);
+    col.appendChild(colHdr);
+
+    var combos = strat.combinations || [];
+    var shown = Math.min(combos.length, MAX_ROWS);
+
+    for (var ci = 0; ci < shown; ci++) {
+      var combo = combos[ci];
+      var isHit = comboData.is_finished && combo.is_hit;
+      var ov = overlapMap[combo.combo] || 1;
+      var rowCls = 'comp-row' + (isHit ? ' comp-row-hit' : ov >= 4 ? ' comp-row-hl4' : ov >= 3 ? ' comp-row-hl3' : '');
+
+      var comboRow = document.createElement('div');
+      comboRow.className = rowCls;
+
+      var wakuGrp = document.createElement('div');
+      wakuGrp.className = 'comp-waku-grp';
+      var parts = combo.combo.split('-');
+      for (var pi = 0; pi < parts.length; pi++) {
+        var wk = document.createElement('span');
+        wk.className = 'ct-waku';
+        wk.style.cssText = (WAKU_STYLES[Number(parts[pi])] || 'background:#eee;color:#333') + ';width:18px;height:18px;font-size:10px;border-radius:3px;';
+        wk.textContent = parts[pi];
+        wakuGrp.appendChild(wk);
+        if (pi < parts.length - 1) {
+          var spEl = document.createElement('span');
+          spEl.style.cssText = 'font-size:9px;color:#ccc;';
+          spEl.textContent = '-';
+          wakuGrp.appendChild(spEl);
+        }
+      }
+      comboRow.appendChild(wakuGrp);
+
+      var rightEl = document.createElement('div');
+      rightEl.className = 'comp-right';
+      if (ov >= 2) {
+        var ovBadge = document.createElement('span');
+        ovBadge.className = 'comp-ov ' + (ov >= 4 ? 'comp-ov4' : ov >= 3 ? 'comp-ov3' : 'comp-ov2');
+        ovBadge.textContent = ov + '/4';
+        rightEl.appendChild(ovBadge);
+      }
+      if (combo.odds !== null && combo.odds !== undefined) {
+        var oddsEl = document.createElement('span');
+        oddsEl.className = 'comp-odds-sm';
+        oddsEl.textContent = Number(combo.odds).toFixed(1);
+        rightEl.appendChild(oddsEl);
+      }
+      comboRow.appendChild(rightEl);
+      col.appendChild(comboRow);
+    }
+
+    if (combos.length > MAX_ROWS) {
+      var moreEl = document.createElement('div');
+      moreEl.className = 'comp-more';
+      moreEl.textContent = '他 ' + (combos.length - MAX_ROWS) + '点';
+      col.appendChild(moreEl);
+    }
+    grid.appendChild(col);
+  }
+  wrap.appendChild(grid);
+
+  // 共通推奨リスト（2戦略以上一致）
+  var consList = [];
+  for (var comboKey in overlapMap) {
+    if (overlapMap[comboKey] >= 2) {
+      var oddsV = null;
+      for (var sj = 0; sj < strats.length && oddsV === null; sj++) {
+        var sc = strats[sj].combinations || [];
+        for (var cj = 0; cj < sc.length; cj++) {
+          if (sc[cj].combo === comboKey) { oddsV = sc[cj].odds; break; }
+        }
+      }
+      consList.push({ combo: comboKey, count: overlapMap[comboKey], odds: oddsV });
+    }
+  }
+  consList.sort(function(a, b) { return b.count !== a.count ? b.count - a.count : (a.combo < b.combo ? -1 : 1); });
+
+  if (consList.length > 0) {
+    var conSec = document.createElement('div');
+    conSec.className = 'comp-consensus';
+    var conTitle = document.createElement('div');
+    conTitle.className = 'comp-con-title';
+    conTitle.textContent = '共通推奨買い目（複数戦略が一致）';
+    conSec.appendChild(conTitle);
+
+    for (var xi = 0; xi < consList.length; xi++) {
+      var cc = consList[xi];
+      var cRow = document.createElement('div');
+      cRow.className = 'comp-con-row';
+
+      var cntBadge = document.createElement('span');
+      cntBadge.className = 'comp-cnt ' + (cc.count >= 4 ? 'comp-cnt4' : cc.count >= 3 ? 'comp-cnt3' : 'comp-cnt2');
+      cntBadge.textContent = cc.count + '/4一致';
+      cRow.appendChild(cntBadge);
+
+      var cCombo = document.createElement('div');
+      cCombo.className = 'comp-con-combo';
+      var cparts = cc.combo.split('-');
+      for (var cpi = 0; cpi < cparts.length; cpi++) {
+        var cwk = document.createElement('span');
+        cwk.className = 'ct-waku';
+        cwk.style.cssText = WAKU_STYLES[Number(cparts[cpi])] || 'background:#eee;color:#333';
+        cwk.textContent = cparts[cpi];
+        cCombo.appendChild(cwk);
+        if (cpi < cparts.length - 1) {
+          var csp = document.createElement('span');
+          csp.style.cssText = 'font-size:11px;color:#bbb;';
+          csp.textContent = '-';
+          cCombo.appendChild(csp);
+        }
+      }
+      cRow.appendChild(cCombo);
+
+      if (cc.odds !== null && cc.odds !== undefined) {
+        var cOdds = document.createElement('span');
+        cOdds.className = 'comp-con-odds';
+        cOdds.textContent = Number(cc.odds).toFixed(1) + '倍';
+        cRow.appendChild(cOdds);
+      }
+      conSec.appendChild(cRow);
+    }
+    wrap.appendChild(conSec);
+  }
+
+  section.appendChild(wrap);
+}
+
 async function loadStrategyTab() {
   var results = await Promise.all([fetchStrategyStats(), fetchStrategyCombos()]);
   renderStrategySections(results[1], results[0]);
+  renderComparisonView(results[1], results[0]);
 }
 
 async function init() {
