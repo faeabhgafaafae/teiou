@@ -146,4 +146,34 @@ if (!empty($out['recent_scraped_races'])) {
     $out['sample_race_odds_multi'] = $stmt->fetchAll();
 }
 
+// 8. 取得タイミングの分布バケット化(締切からの乖離が大きいレースの割合を定量化)
+$buckets8 = ['fresh(-10~30分)' => 0, 'やや古い(30~60分)' => 0, '古い(60~180分)' => 0, '非常に古い(180分超)' => 0, '締切後スクレイプ(負値, -10分より前)' => 0];
+foreach ($diffs as $d) {
+    if ($d >= -10 && $d <= 30) $buckets8['fresh(-10~30分)']++;
+    elseif ($d > 30 && $d <= 60) $buckets8['やや古い(30~60分)']++;
+    elseif ($d > 60 && $d <= 180) $buckets8['古い(60~180分)']++;
+    elseif ($d > 180) $buckets8['非常に古い(180分超)']++;
+    else $buckets8['締切後スクレイプ(負値, -10分より前)']++;
+}
+$out['timing_bucket_distribution'] = $buckets8;
+
+// 9. 今日(未来のレース含む)だけに絞った同様の集計(進行中の当日運用が今も同じ傾向か)
+$stmt = $pdo->prepare("
+    SELECT TIMESTAMPDIFF(MINUTE, r.before_updated_at, CONCAT(r.date, ' ', r.scheduled_time)) AS diff
+    FROM races r
+    WHERE r.date = ? AND r.before_updated_at IS NOT NULL
+      AND CONCAT(r.date,' ',r.scheduled_time) <= NOW()
+");
+$stmt->execute([$today]);
+$todayDiffs = array_map(function($r) { return (int)$r['diff']; }, $stmt->fetchAll());
+sort($todayDiffs);
+$nt = count($todayDiffs);
+$out['today_already_closed_races_timing'] = [
+    'n' => $nt,
+    'min' => $nt ? $todayDiffs[0] : null,
+    'max' => $nt ? $todayDiffs[$nt - 1] : null,
+    'median' => $nt ? $todayDiffs[intdiv($nt, 2)] : null,
+    'avg' => $nt ? round(array_sum($todayDiffs) / $nt, 1) : null,
+];
+
 echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
