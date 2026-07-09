@@ -3,6 +3,7 @@ require_once __DIR__ . '/auth.php';
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
 $isStandardPlus = ($plan === 'standard' || $plan === 'premium');
+$isPremium       = ($plan === 'premium');
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -106,6 +107,32 @@ table.data-table tr.rank-1 { background: #fffbeb; }
 .race-search-item.confirmed { background: #dcfce7; border-color: #16a34a; color: #16a34a; }
 .race-search-item.confirmed:hover { background: #16a34a; color: #fff; }
 
+/* 高度検索 */
+.adv-divider { border: none; border-top: 1px dashed #e0e3e8; margin: 16px 0; }
+.adv-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.adv-prem-badge { background: #d97706; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
+.adv-lock { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #92400e; line-height: 1.6; }
+.adv-lock a { color: #d97706; font-weight: 700; text-decoration: none; }
+.adv-section-lbl { font-size: 11px; font-weight: 700; color: #888; margin: 8px 0 4px; letter-spacing: 0.03em; }
+.adv-venue-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 10px; }
+.adv-venue-cb { display: flex; align-items: center; gap: 3px; font-size: 12px; color: #333; cursor: pointer; white-space: nowrap; }
+.adv-venue-cb input { cursor: pointer; accent-color: #d97706; }
+.adv-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
+.adv-field { display: flex; flex-direction: column; gap: 2px; }
+.adv-field select, .adv-field input[type=number], .adv-field input[type=date], .adv-field input[type=text] { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: #333; }
+.adv-btn { padding: 8px 22px; border-radius: 6px; background: #d97706; color: #fff; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
+.adv-btn:hover { background: #b45309; }
+.adv-result-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid #e0e3e8; margin-top: 12px; }
+table.adv-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
+table.adv-table th { background: #f7f8fa; font-size: 10px; font-weight: 700; color: #999; padding: 7px 5px; border-bottom: 2px solid #e0e3e8; white-space: nowrap; text-align: center; }
+table.adv-table td { padding: 7px 5px; border-bottom: 1px solid #f0f0f0; text-align: center; white-space: nowrap; }
+table.adv-table tr:last-child td { border-bottom: none; }
+table.adv-table tr.adv-rank1 { background: #fffbeb; }
+.adv-link { color: #0055a4; text-decoration: none; font-weight: 700; }
+.adv-link.confirmed { color: #16a34a; }
+.adv-link:hover { text-decoration: underline; }
+@media (max-width: 460px) { .adv-venue-grid { grid-template-columns: repeat(4, 1fr); } }
+
 @media (max-width: 700px) {
   .venue-card-grid { grid-template-columns: repeat(3, 1fr); }
 }
@@ -199,6 +226,68 @@ table.data-table tr.rank-1 { background: #fffbeb; }
         <button id="searchBtn">検索</button>
       </div>
       <div id="searchResult"><div class="loading">会場・日付を選択して検索してください</div></div>
+
+      <hr class="adv-divider">
+      <div class="adv-header">
+        <span style="font-size:13px; font-weight:700; color:#222;">高度検索</span>
+        <span class="adv-prem-badge">PREMIUM</span>
+      </div>
+<?php if (!$isPremium): ?>
+      <div class="adv-lock">&#128274; 高度検索はPremiumプラン限定です。複合条件（選手名・天候・コース・期間など）で絞り込めます。<a href="upgrade.html">プランをアップグレード &rsaquo;</a></div>
+<?php else: ?>
+      <div id="advSearchForm">
+        <div class="adv-section-lbl">選手名（部分一致）</div>
+        <div style="margin-bottom:8px;">
+          <input type="text" id="advPlayerName" placeholder="例: 中辻博行" style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#333; width:200px; max-width:100%;">
+        </div>
+
+        <div class="adv-section-lbl">会場（複数選択可・空欄=全会場）</div>
+        <div class="adv-venue-grid" id="advVenueGrid"></div>
+
+        <div class="adv-row">
+          <div class="adv-field">
+            <span class="adv-section-lbl" style="margin:0 0 2px;">天候</span>
+            <select id="advWeather">
+              <option value="">指定なし</option>
+              <option value="晴">晴</option>
+              <option value="曇">曇</option>
+              <option value="雨">雨</option>
+              <option value="雪">雪</option>
+            </select>
+          </div>
+          <div class="adv-field">
+            <span class="adv-section-lbl" style="margin:0 0 2px;">風速 m/s 以上</span>
+            <input type="number" id="advWindMin" min="0" max="30" step="0.5" placeholder="例: 3" style="width:90px;">
+          </div>
+          <div class="adv-field">
+            <span class="adv-section-lbl" style="margin:0 0 2px;">波高 cm 以上</span>
+            <input type="number" id="advWaveMin" min="0" max="200" step="1" placeholder="例: 5" style="width:90px;">
+          </div>
+          <div class="adv-field">
+            <span class="adv-section-lbl" style="margin:0 0 2px;">進入コース</span>
+            <select id="advCourse">
+              <option value="">指定なし</option>
+              <option value="1">1コース</option>
+              <option value="2">2コース</option>
+              <option value="3">3コース</option>
+              <option value="4">4コース</option>
+              <option value="5">5コース</option>
+              <option value="6">6コース</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="adv-section-lbl">期間</div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+          <input type="date" id="advDateFrom" style="padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#333;">
+          <span style="color:#666; font-size:13px;">〜</span>
+          <input type="date" id="advDateTo" style="padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#333;">
+        </div>
+
+        <button class="adv-btn" id="advSearchBtn">高度検索を実行</button>
+      </div>
+      <div id="advSearchResult"></div>
+<?php endif; ?>
     </div>
   </div>
 
@@ -218,6 +307,7 @@ table.data-table tr.rank-1 { background: #fffbeb; }
 
 <script>
 var IS_STANDARD_PLUS = <?php echo $isStandardPlus ? 'true' : 'false'; ?>;
+var IS_PREMIUM       = <?php echo $isPremium      ? 'true' : 'false'; ?>;
 
 // Free ユーザー: 会場別・過去検索・払戻傾向パネルをロック表示に差し替え
 if (!IS_STANDARD_PLUS) {
@@ -862,6 +952,148 @@ async function searchRaces() {
 }
 var searchBtnEl = document.getElementById('searchBtn');
 if (searchBtnEl) searchBtnEl.addEventListener('click', searchRaces);
+
+// ============================================================
+// 3b. 高度検索 (Premium限定)
+// ============================================================
+if (IS_PREMIUM) {
+  var advVenueGrid = document.getElementById('advVenueGrid');
+  if (advVenueGrid) {
+    ALL_VENUES.forEach(function(v) {
+      var lbl = document.createElement('label');
+      lbl.className = 'adv-venue-cb';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = v;
+      cb.name = 'venues[]';
+      var txt = document.createTextNode(venueDisplayName(v));
+      lbl.appendChild(cb);
+      lbl.appendChild(txt);
+      advVenueGrid.appendChild(lbl);
+    });
+  }
+
+  async function searchRacesAdvanced() {
+    var resultEl = document.getElementById('advSearchResult');
+    resultEl.textContent = '';
+    resultEl.appendChild(makeLoading('検索中...'));
+
+    var playerName = document.getElementById('advPlayerName').value.trim();
+    var weather    = document.getElementById('advWeather').value;
+    var windMin    = document.getElementById('advWindMin').value.trim();
+    var waveMin    = document.getElementById('advWaveMin').value.trim();
+    var course     = document.getElementById('advCourse').value;
+    var dateFrom   = document.getElementById('advDateFrom').value;
+    var dateTo     = document.getElementById('advDateTo').value;
+
+    var checkedCbs = document.querySelectorAll('#advVenueGrid input:checked');
+    var venues = [];
+    for (var i = 0; i < checkedCbs.length; i++) venues.push(checkedCbs[i].value);
+
+    var params = [];
+    if (playerName) params.push('player_name=' + encodeURIComponent(playerName));
+    for (var j = 0; j < venues.length; j++) params.push('venues%5B%5D=' + encodeURIComponent(venues[j]));
+    if (weather)  params.push('weather='   + encodeURIComponent(weather));
+    if (windMin)  params.push('wind_min='  + encodeURIComponent(windMin));
+    if (waveMin)  params.push('wave_min='  + encodeURIComponent(waveMin));
+    if (course)   params.push('course='    + encodeURIComponent(course));
+    if (dateFrom) params.push('date_from=' + encodeURIComponent(dateFrom));
+    if (dateTo)   params.push('date_to='   + encodeURIComponent(dateTo));
+
+    try {
+      var res  = await fetch(API_HOST + '/search_races_advanced.php?' + params.join('&'));
+      var data = await res.json();
+      resultEl.textContent = '';
+
+      if (data.error) {
+        resultEl.appendChild(makeError(data.message || data.error));
+        return;
+      }
+      if (!data.races || data.races.length === 0) {
+        resultEl.appendChild(makeError('条件に一致するレースが見つかりませんでした'));
+        return;
+      }
+
+      var countEl = document.createElement('div');
+      countEl.style.cssText = 'font-size:12px; color:#888; margin-bottom:8px;';
+      countEl.textContent = data.count + '件' + (data.count >= 200 ? '（上限200件。条件を絞り込んでください）' : '');
+      resultEl.appendChild(countEl);
+
+      var hasPlayer = (data.races[0].player_name !== undefined);
+
+      var wrap  = document.createElement('div');
+      wrap.className = 'adv-result-wrap';
+      var table = document.createElement('table');
+      table.className = 'adv-table';
+
+      var thead = document.createElement('thead');
+      var hrow  = document.createElement('tr');
+      var cols  = hasPlayer
+        ? ['日付', '会場', 'R', '選手', '枠', 'C', '結果', '天候', '風', '波']
+        : ['日付', '会場', 'R', '天候', '風速', '波高'];
+      cols.forEach(function(c) {
+        var th = document.createElement('th');
+        th.textContent = c;
+        hrow.appendChild(th);
+      });
+      thead.appendChild(hrow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      data.races.forEach(function(r) {
+        var tr = document.createElement('tr');
+        if (hasPlayer && r.actual_rank === 1) tr.className = 'adv-rank1';
+
+        var q    = 'venue=' + encodeURIComponent(r.venue) + '&date=' + r.date + '&race_no=' + r.race_no;
+        var href = r.has_result ? ('result.php?' + q) : ('racelist.php?' + q);
+
+        function makeTd(text) {
+          var td = document.createElement('td');
+          td.textContent = text != null ? String(text) : '-';
+          tr.appendChild(td);
+          return td;
+        }
+        function makeLinkTd(text) {
+          var td = document.createElement('td');
+          var a  = document.createElement('a');
+          a.href = href;
+          a.className = 'adv-link' + (r.has_result ? ' confirmed' : '');
+          a.textContent = text;
+          td.appendChild(a);
+          tr.appendChild(td);
+          return td;
+        }
+
+        makeTd(r.date);
+        makeTd(venueDisplayName(r.venue));
+        makeLinkTd(r.race_no + 'R');
+
+        if (hasPlayer) {
+          makeTd(formatName(r.player_name));
+          makeTd(r.lane);
+          makeTd(r.exhibit_course);
+          makeTd(r.actual_rank != null ? r.actual_rank + '着' : '-');
+        }
+
+        makeTd(r.weather);
+        makeTd(r.wind_speed  != null ? r.wind_speed  + 'm'  : '-');
+        makeTd(r.wave_height != null ? r.wave_height + 'cm' : '-');
+
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      resultEl.appendChild(wrap);
+
+    } catch (e) {
+      resultEl.textContent = '';
+      resultEl.appendChild(makeError('検索に失敗しました'));
+    }
+  }
+
+  var advSearchBtnEl = document.getElementById('advSearchBtn');
+  if (advSearchBtnEl) advSearchBtnEl.addEventListener('click', searchRacesAdvanced);
+}
 
 // ============================================================
 // 4. 払戻金傾向

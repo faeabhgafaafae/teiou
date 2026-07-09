@@ -16,5 +16,6 @@ var PLAN_FEATURES = [
   { label: 'スコア内訳フル開示', tiers: { free: false, standard: false, premium: true } },
   { label: '戦略比較ビュー', tiers: { free: false, standard: false, premium: true } },
   { label: 'マイ的中トラッカー', tiers: { free: false, standard: false, premium: true } },
+  { label: '過去レース高度検索', tiers: { free: false, standard: false, premium: true } },
   { label: '優先サポート', tiers: { free: false, standard: false, premium: true } }
 ];
