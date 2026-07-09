@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/generate_strategies.php';
 
 define('DB_HOST', 'mysql323.phy.lolipop.lan');
@@ -265,12 +266,36 @@ try {
     // strategies テーブル未作成時など非致命的エラーは無視
 }
 
+// このAPIは直前情報(exhibit_time等)を無料機能(直前情報タブ・出走表フォールバック等)が
+// 参照するため誰でも呼び出せる状態を維持しつつ、AI予測由来のフィールド
+// (score_*・predicted_rank)はStandard/Premium限定として出力時のみ除去する。
+// DBへの保存・戦略生成は呼び出し元のプランに関わらず常に行う(データを最新に保つため)。
+$user   = current_user();
+$plan   = $user['plan'] ?? 'free';
+$isPaid = $user && in_array($plan, ['standard', 'premium'], true);
+
+$responseScores = $scores;
+if (!$isPaid) {
+    foreach ($responseScores as &$s) {
+        $s['score_ability']  = null;
+        $s['score_course']   = null;
+        $s['score_today']    = null;
+        $s['score_weather']  = null;
+        $s['score_total']    = null;
+        $s['predicted_rank'] = null;
+    }
+    unset($s);
+    // predicted_rank順のままだとAIの1位候補が並び順から推測できてしまうため、枠番順に戻す
+    usort($responseScores, function($a, $b) { return $a['lane'] <=> $b['lane']; });
+}
+
 echo json_encode([
     'date'        => $date,
     'venue'       => $venue,
     'race_no'     => $race_no,
     'race_id'     => $race_id,
     'entry_count' => count($entries),
+    'ai_locked'   => !$isPaid,
     'weather'     => [
         'wind_speed'        => $race['wind_speed'],
         'wind_dir'          => $race['wind_dir'],
@@ -279,5 +304,5 @@ echo json_encode([
         'temperature'       => $race['temperature'],
         'water_temperature' => $race['water_temperature'],
     ],
-    'predictions' => $scores,
+    'predictions' => $responseScores,
 ], JSON_UNESCAPED_UNICODE);

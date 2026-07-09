@@ -5,7 +5,7 @@
     <a href="predictions.php" class="nav-item"><i class="fas fa-bullseye icon"></i> 予測レース</a>
     <a href="mypage.php#favoritesSection" class="nav-item"><i class="fas fa-star icon"></i> お気に入り</a>
     <a href="performance.php" class="nav-item"><i class="fas fa-chart-line icon"></i> 成績・回収率 <span class="nav-premium-badge">PREMIUM</span></a>
-    <a href="analysis.php" class="nav-item"><i class="fas fa-database icon"></i> データ分析</a>
+    <a href="analysis.php" class="nav-item"><i class="fas fa-database icon"></i> データ分析 <span class="nav-premium-badge">PREMIUM</span></a>
   </nav>
 
   <div class="premium-box">
@@ -14,7 +14,6 @@
       <li><i class="fas fa-check"></i> 全レースのAI予想紐解き</li>
       <li><i class="fas fa-check"></i> AI分析</li>
       <li><i class="fas fa-check"></i> 回収率ランキング</li>
-      <li><i class="fas fa-check"></i> 広告非表示</li>
     </ul>
     <a href="plan.php" id="sidebarPromoBtn" class="btn-primary" style="display: block; text-align: center; text-decoration: none; line-height: 1.4;">詳しく見る</a>
   </div>

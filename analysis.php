@@ -1,3 +1,9 @@
+<?php
+require_once __DIR__ . '/auth.php';
+$user = current_user();
+$plan = $user['plan'] ?? 'free';
+$isPremium = ($plan === 'premium');
+?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -8,6 +14,11 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
 header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
+.premium-lock { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; text-align: center; padding: 40px 20px; margin: 0 auto; max-width: 1000px; }
+.premium-lock-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+.premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }
+.premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
+.premium-lock a:hover { background: #b45309; }
 .back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
 .back-btn:hover { background: #e8f0fd; }
 header h1 { font-size: 18px; font-weight: 700; color: #222; }
@@ -115,7 +126,15 @@ table.data-table tr.rank-1 { background: #fffbeb; }
   <h1>データ分析</h1>
 </header>
 
-<div class="container">
+<?php if (!$isPremium): ?>
+<div class="premium-lock" style="margin-top:20px;">
+  <span class="premium-lock-icon">&#128274;</span>
+  <p>データ分析はPremium会員限定機能です。</p>
+  <a href="upgrade.html">プランをアップグレード</a>
+</div>
+<?php endif; ?>
+
+<div class="container"<?php if (!$isPremium): ?> style="display:none"<?php endif; ?>>
 
   <!-- レーサー検索 -->
   <div class="card search-card">
@@ -206,6 +225,7 @@ table.data-table tr.rank-1 { background: #fffbeb; }
 </div>
 
 <script>
+var IS_PREMIUM = <?php echo $isPremium ? 'true' : 'false'; ?>;
 var ALL_VENUES = [
   '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
   '蒲郡','常滑','津','三国','琵琶湖','住之江',
@@ -918,8 +938,11 @@ async function loadPayouts() {
 }
 
 // --- 初期実行 ---
-loadCompactRanking();
-loadPayouts();
+// Premium未満は画面がロック表示のみ(display:none)のため、無駄なAPI呼び出しをしない
+if (IS_PREMIUM) {
+  loadCompactRanking();
+  loadPayouts();
+}
 </script>
 </body>
 </html>

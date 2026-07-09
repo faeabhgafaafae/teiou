@@ -34,6 +34,23 @@ try {
         $deleteStmt->execute([':id' => $favorite['id']]);
         echo json_encode(['success' => true, 'status' => 'removed']);
     } else {
+        // Freeプランはお気に入り登録数を3件までに制限する(Standard/Premiumは無制限)
+        $planStmt = $pdo->prepare("SELECT plan FROM users WHERE id = :user_id");
+        $planStmt->execute([':user_id' => $_SESSION['user_id']]);
+        $planRow = $planStmt->fetch(PDO::FETCH_ASSOC);
+        $plan = $planRow['plan'] ?? 'free';
+
+        if ($plan === 'free') {
+            $countStmt = $pdo->prepare("SELECT COUNT(*) AS cnt FROM user_favorites WHERE user_id = :user_id");
+            $countStmt->execute([':user_id' => $_SESSION['user_id']]);
+            $count = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['cnt'];
+
+            if ($count >= 3) {
+                echo json_encode(['success' => false, 'error' => 'favorite_limit', 'message' => 'Freeプランはお気に入り登録が3件までです']);
+                exit;
+            }
+        }
+
         $insertStmt = $pdo->prepare("INSERT INTO user_favorites (user_id, venue_name) VALUES (:user_id, :venue_name)");
         $insertStmt->execute([
             ':user_id' => $_SESSION['user_id'],

@@ -8,6 +8,12 @@ require_once __DIR__ . '/auth.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
+$user = current_user();
+$plan = $user['plan'] ?? 'free';
+if ($plan !== 'premium') {
+    json_response(['error' => 'premium_required', 'message' => 'データ分析はPremium会員限定です'], 403);
+}
+
 $pdo = get_db();
 
 // 賭式別 平均・最高・最低配当
