@@ -295,6 +295,19 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }
 .premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
 .premium-lock a:hover { background: #b45309; }
+
+/* ─── Premium スコア内訳 ─── */
+.bk-section { margin-top: 10px; border-top: 1px dashed #e0e3e8; padding-top: 8px; }
+.bk-lock { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; text-align: center; font-size: 11px; color: #92400e; }
+.bk-lock a { color: #d97706; font-weight: 700; text-decoration: none; }
+.bk-title { font-size: 11px; font-weight: 700; color: #555; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+.bk-badge { background: #d97706; color: #fff; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; vertical-align: middle; }
+.bk-group-title { font-size: 10px; font-weight: 700; color: #888; letter-spacing: 0.04em; margin: 7px 0 3px; border-left: 2px solid #cbd5e1; padding-left: 5px; }
+.bk-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 11px; color: #333; }
+.bk-label { width: 116px; flex-shrink: 0; color: #666; }
+.bk-value { font-weight: 700; color: #222; font-variant-numeric: tabular-nums; }
+.bk-sub { color: #999; font-size: 10px; }
+.bk-chip { background: #eef2ff; color: #3b4fd8; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
 </style>
 <script src="venue-display.js"></script>
 </head>
@@ -485,11 +498,138 @@ function buildResults(predictions) {
       score_ability: p.score_ability,
       score_course: p.score_course,
       score_today: p.score_today,
-      score_weather: p.score_weather
+      score_weather: p.score_weather,
+      exhibit_time: p.exhibit_time,
+      start_timing: p.start_timing,
+      motor_2rate: p.motor_2rate,
+      breakdown: p.breakdown || null
     });
   }
   results.sort(function(a, b) { return Number(b.score) - Number(a.score); });
   return results;
+}
+
+function makeBkRow(label, value, sub) {
+  var row = document.createElement('div');
+  row.className = 'bk-row';
+  var lbl = document.createElement('span');
+  lbl.className = 'bk-label';
+  lbl.textContent = label;
+  var val = document.createElement('span');
+  val.className = 'bk-value';
+  val.textContent = value;
+  row.appendChild(lbl);
+  row.appendChild(val);
+  if (sub) {
+    var subEl = document.createElement('span');
+    subEl.className = 'bk-sub';
+    subEl.textContent = sub;
+    row.appendChild(subEl);
+  }
+  return row;
+}
+
+function makeBkChipRow(label, val, max) {
+  var row = document.createElement('div');
+  row.className = 'bk-row';
+  var lbl = document.createElement('span');
+  lbl.className = 'bk-label';
+  lbl.textContent = label;
+  var chip = document.createElement('span');
+  chip.className = 'bk-chip';
+  chip.textContent = Number(val).toFixed(1) + ' / ' + max + 'pt';
+  row.appendChild(lbl);
+  row.appendChild(chip);
+  return row;
+}
+
+function makeBkGroupTitle(text) {
+  var el = document.createElement('div');
+  el.className = 'bk-group-title';
+  el.textContent = text;
+  return el;
+}
+
+function renderBreakdownSection(r) {
+  var section = document.createElement('div');
+  section.className = 'bk-section';
+
+  if (userPlan !== 'premium') {
+    var lockDiv = document.createElement('div');
+    lockDiv.className = 'bk-lock';
+    lockDiv.appendChild(document.createTextNode('🔒 詳細スコア内訳はPremium限定 '));
+    var lockLink = document.createElement('a');
+    lockLink.href = 'plan.php';
+    lockLink.textContent = 'アップグレード →';
+    lockDiv.appendChild(lockLink);
+    section.appendChild(lockDiv);
+    return section;
+  }
+
+  var bk = r.breakdown;
+  if (!bk) {
+    var noData = document.createElement('div');
+    noData.style.cssText = 'font-size:11px;color:#999;padding:4px 0;';
+    noData.textContent = '内訳データを取得できませんでした。レースを再読み込みしてください。';
+    section.appendChild(noData);
+    return section;
+  }
+
+  var title = document.createElement('div');
+  title.className = 'bk-title';
+  title.appendChild(document.createTextNode('詳細スコア内訳 '));
+  var badge = document.createElement('span');
+  badge.className = 'bk-badge';
+  badge.textContent = 'PREMIUM';
+  title.appendChild(badge);
+  section.appendChild(title);
+
+  // 選手能力
+  section.appendChild(makeBkGroupTitle('選手能力 (max 40pt)'));
+  section.appendChild(makeBkRow('全国勝率', bk.win_rate_national != null ? Number(bk.win_rate_national).toFixed(2) + '%' : '-'));
+  section.appendChild(makeBkRow('当地勝率', bk.win_rate_local != null ? Number(bk.win_rate_local).toFixed(2) + '%' : '-',
+    bk.local_total > 0 ? '(直近2年 ' + bk.local_total + '走)' : '(データなし→全国値を使用)'));
+  section.appendChild(makeBkRow('加重平均', bk.win_rate_weighted != null ? Number(bk.win_rate_weighted).toFixed(2) + '%' : '-', '(全国40%+当地60%)'));
+  section.appendChild(makeBkChipRow('素点', bk.score_ability_raw || 0, 40));
+
+  // コース補正
+  section.appendChild(makeBkGroupTitle('コース補正 (max 35pt)'));
+  if (bk.course_total > 0) {
+    section.appendChild(makeBkRow(r.lane + '号艇 (直近2年)', bk.course_total + '走'));
+    section.appendChild(makeBkRow('1着率', bk.course_win_rate != null ? Number(bk.course_win_rate).toFixed(1) + '%' : '-'));
+    section.appendChild(makeBkRow('2着以内率', bk.course_r2_rate != null ? Number(bk.course_r2_rate).toFixed(1) + '%' : '-'));
+    section.appendChild(makeBkRow('3着以内率', bk.course_r3_rate != null ? Number(bk.course_r3_rate).toFixed(1) + '%' : '-'));
+  } else {
+    section.appendChild(makeBkRow('データ', 'なし', '(レーン平均値を適用)'));
+  }
+  section.appendChild(makeBkChipRow('素点', bk.score_course_raw || 0, 35));
+
+  // 当日情報
+  section.appendChild(makeBkGroupTitle('当日情報 (max 35pt)'));
+  var etDisplay = r.exhibit_time != null ? Number(r.exhibit_time).toFixed(2) + '秒' : 'なし';
+  section.appendChild(makeBkRow('展示タイム', etDisplay, '→ ' + (bk.score_exhibit_raw || 0).toFixed(1) + 'pt / 15pt'));
+
+  var stDisplay, stSub;
+  if (bk.is_flying) {
+    stDisplay = 'F (フライング)';
+    stSub = '→ -10pt 適用';
+  } else {
+    stDisplay = r.start_timing != null ? Number(r.start_timing).toFixed(2) + '秒' : 'なし';
+    stSub = '→ ' + (bk.score_st_raw || 0).toFixed(1) + 'pt / 10pt';
+  }
+  section.appendChild(makeBkRow('スタートタイミング', stDisplay, stSub));
+
+  var mrDisplay = r.motor_2rate != null ? Number(r.motor_2rate).toFixed(1) + '%' : 'なし';
+  section.appendChild(makeBkRow('モーター2連率', mrDisplay, '→ ' + (bk.score_motor_raw || 0).toFixed(1) + 'pt / 10pt'));
+  section.appendChild(makeBkChipRow('小計', bk.score_today_raw || 0, 35));
+
+  // 気象
+  section.appendChild(makeBkGroupTitle('気象 (max 5pt)'));
+  section.appendChild(makeBkRow('風速', bk.wind_speed != null ? Number(bk.wind_speed).toFixed(1) + 'm/s' : '-', bk.wind_dir || ''));
+  section.appendChild(makeBkRow('波高', bk.wave_height != null ? Number(bk.wave_height).toFixed(0) + 'cm' : '-'));
+  section.appendChild(makeBkChipRow('素点', bk.score_weather_raw || 0, 5));
+
+  return section;
 }
 
 function renderPredCard(r, rank) {
@@ -617,6 +757,8 @@ function renderPredCard(r, rank) {
     dRow.appendChild(valEl);
     detail.appendChild(dRow);
   }
+
+  detail.appendChild(renderBreakdownSection(r));
 
   var personalBox = document.createElement('div');
   personalBox.style.cssText = 'background:#f5f6f8;border-radius:8px;padding:8px;margin-top:8px;font-size:12px;line-height:1.6;color:#555;display:none';
