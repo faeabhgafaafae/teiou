@@ -1,15 +1,11 @@
 <?php
+require_once __DIR__ . '/config.php';
+
 /**
  * 艇王 - 競走成績インポートAPI
  * download_results.py からJSONで受け取ってDBに登録し、
  * strategy_results に的中・払戻を記録する
  */
-
-define('DB_HOST', 'mysql323.phy.lolipop.lan');
-define('DB_NAME', 'LAA1670504-12');
-define('DB_USER', 'LAA1670504');
-define('DB_PASS', 'teiou');
-define('API_KEY', 'teio2025');
 
 header('Content-Type: application/json; charset=utf-8');
 

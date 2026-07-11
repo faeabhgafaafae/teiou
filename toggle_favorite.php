@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/config.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if (!isset($_SESSION['user_id'])) {
@@ -15,16 +16,15 @@ if (empty($venue_name)) {
     exit;
 }
 
-$dsn = 'mysql:host=mysql323.phy.lolipop.lan;dbname=LAA1670504-12;charset=utf8mb4';
-$username = 'LAA1670504';
-$password = 'teiou';
-
 try {
-    $pdo = new PDO($dsn, $username, $password);
+    $pdo = new PDO(
+        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
+        DB_USER, DB_PASS
+    );
 
     $stmt = $pdo->prepare("SELECT id FROM user_favorites WHERE user_id = :user_id AND venue_name = :venue_name");
     $stmt->execute([
-        ':user_id' => $_SESSION['user_id'],
+        ':user_id'    => $_SESSION['user_id'],
         ':venue_name' => $venue_name
     ]);
     $favorite = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -53,7 +53,7 @@ try {
 
         $insertStmt = $pdo->prepare("INSERT INTO user_favorites (user_id, venue_name) VALUES (:user_id, :venue_name)");
         $insertStmt->execute([
-            ':user_id' => $_SESSION['user_id'],
+            ':user_id'    => $_SESSION['user_id'],
             ':venue_name' => $venue_name
         ]);
         echo json_encode(['success' => true, 'status' => 'added']);

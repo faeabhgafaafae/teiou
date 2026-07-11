@@ -1,14 +1,10 @@
 <?php
+require_once __DIR__ . '/config.php';
+
 /**
  * 艇王 - 払戻金インポートAPI
  * download_results.py からJSONで受け取り、race_payouts に登録する
  */
-
-define('DB_HOST', 'mysql323.phy.lolipop.lan');
-define('DB_NAME', 'LAA1670504-12');
-define('DB_USER', 'LAA1670504');
-define('DB_PASS', 'teiou');
-define('API_KEY', 'teio2025');
 
 header('Content-Type: application/json; charset=utf-8');
 

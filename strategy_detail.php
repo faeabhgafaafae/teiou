@@ -1,11 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
 
-define('DB_HOST', 'mysql323.phy.lolipop.lan');
-define('DB_NAME', 'LAA1670504-12');
-define('DB_USER', 'LAA1670504');
-define('DB_PASS', 'teiou');
-
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 

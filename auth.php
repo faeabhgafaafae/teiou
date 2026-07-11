@@ -1,11 +1,10 @@
 <?php
 session_start();
-define('GEMINI_API_KEY', 'AQ.Ab8RN6JuHBfAkTG2QsXT3tXHs5N54oUyqyz8I7T3Otw7B_UqNg');
-define('GROQ_API_KEY', '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');
+require_once __DIR__ . '/config.php';
 
 function get_db(): PDO {
-    $dsn = 'mysql:host=mysql323.phy.lolipop.lan;dbname=LAA1670504-12;charset=utf8mb4';
-    $pdo = new PDO($dsn, 'LAA1670504', 'teiou', [
+    $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);

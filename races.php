@@ -1,12 +1,10 @@
 <?php
+require_once __DIR__ . '/config.php';
+
 /**
  * 艇王 - レース一覧API
  * GET /races.php?date=2026-06-17&venue=桐生
  */
-define('DB_HOST', 'mysql323.phy.lolipop.lan');
-define('DB_USER', 'LAA1670504');
-define('DB_PASS', 'teiou');
-define('DB_NAME', 'LAA1670504-12');
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');

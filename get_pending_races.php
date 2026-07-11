@@ -1,12 +1,7 @@
 <?php
+require_once __DIR__ . '/config.php';
 date_default_timezone_set('Asia/Tokyo');
 header('Content-Type: application/json; charset=utf-8');
-
-define('DB_HOST', 'mysql323.phy.lolipop.lan');
-define('DB_NAME', 'LAA1670504-12');
-define('DB_USER', 'LAA1670504');
-define('DB_PASS', 'teiou');
-define('API_KEY', 'teio2025');
 
 $api_key = $_GET['api_key'] ?? '';
 if ($api_key !== API_KEY) {

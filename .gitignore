@@ -1,0 +1,6 @@
+.claude/
+node_modules/
+package.json
+package-lock.json
+config.php
+.env
