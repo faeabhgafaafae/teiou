@@ -40,3 +40,4 @@ jobs:
             **/*.yml
             **/*.md
             **/auth.php
+            **/config.php
