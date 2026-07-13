@@ -66,8 +66,6 @@ header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 24px;
 .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .tab { background: #fff; border: 1px solid #e2e8f0; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #4a5568; cursor: pointer; }
 .tab.active { background: #0055a4; color: #fff; border-color: #0055a4; }
-.tab-date { background: #fff; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; color: #4a5568; cursor: pointer; }
-.tab-date i { margin-right: 4px; }
 .search-box input { background: #fff; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; width: 200px; }
 
 /* --- 会場グリッド＆カード --- */
@@ -85,7 +83,6 @@ header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 24px;
 .status-indicator { font-size: 11px; color: #38a169; font-weight: bold; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
 .status-indicator::before { content: '●'; font-size: 9px; }
 .race-round { font-size: 13px; font-weight: 700; color: #1a202c; }
-.deadline-time { font-size: 11px; color: #718096; margin-top: 2px; }
 
 /* 各バッジ色 */
 .grade-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; }
@@ -107,14 +104,6 @@ header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 24px;
 .featured-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f7fafc; border-radius: 8px; margin-bottom: 8px; text-decoration: none; color: inherit; }
 .featured-left { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: bold; }
 .btn-predict { background: #0055a4; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; }
-
-/* お知らせ一覧 */
-.info-list { list-style: none; font-size: 12px; }
-.info-list li { padding: 8px 0; border-bottom: 1px solid #edf2f7; display: flex; gap: 12px; }
-.info-list li:last-child { border: none; }
-.info-list .date { color: #a0aec0; font-variant-numeric: tabular-nums; }
-.info-list a { color: #4a5568; text-decoration: none; }
-.info-list a:hover { text-decoration: underline; }
 
 /* ユーザーメニュー等のドロップダウン */
 .user-menu { position: relative; }
