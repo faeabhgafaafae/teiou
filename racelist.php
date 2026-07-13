@@ -209,7 +209,7 @@ function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月',
 document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
-document.getElementById('backBtn').href = 'races.html?' + baseQ;
+document.getElementById('backBtn').href = 'races.php?' + baseQ;
 document.getElementById('btnPredict').href = 'ai-predict.php?' + baseQ + '&race_no=' + raceNo;
 
 var tabsEl = document.getElementById('raceTabs');

@@ -229,7 +229,7 @@ badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
 document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
-document.getElementById('backBtn').href = 'races.html?' + baseQ;
+document.getElementById('backBtn').href = 'races.php?' + baseQ;
 
 var prevNo = raceNo > 1 ? raceNo - 1 : 1;
 var nextNo = raceNo < 12 ? raceNo + 1 : 12;
