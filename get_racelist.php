@@ -22,33 +22,34 @@ if (!$race) {
     json_response(['error' => 'レースが見つかりません'], 404);
 }
 
-$stmt = $pdo->prepare('
-    SELECT e.waku, e.player_id, e.f_count, e.l_count, e.avg_st,
-           e.win_rate_national, e.fukusho_national, e.rank3_national,
-           e.win_rate_local, e.fukusho_local, e.rank3_local,
-           e.motor_no, e.motor_2rate, e.boat_no, e.boat_2rate,
-           pl.name, pl.grade,
-           pp.win_rate AS pp_win_rate,
-           pp.fukusho_rate AS pp_fukusho_rate
-    FROM entries e
-    LEFT JOIN players pl ON pl.id = e.player_id
-    LEFT JOIN player_periods pp
-      ON pp.player_id = e.player_id
-      AND pp.id = (
-        SELECT id FROM player_periods
-        WHERE player_id = e.player_id
-        ORDER BY year DESC, period DESC
-        LIMIT 1
-      )
-    WHERE e.race_id = ?
-    ORDER BY e.waku ASC
-');
-$stmt->execute([$race['id']]);
-$entries = $stmt->fetchAll();
+try {
+    $stmt = $pdo->prepare('
+        SELECT e.lane AS waku, e.player_id, e.motor_2rate,
+               pl.name, pl.grade,
+               pp.win_rate AS pp_win_rate,
+               pp.fukusho_rate AS pp_fukusho_rate
+        FROM entries e
+        LEFT JOIN players pl ON pl.id = e.player_id
+        LEFT JOIN player_periods pp
+          ON pp.player_id = e.player_id
+          AND pp.id = (
+            SELECT id FROM player_periods
+            WHERE player_id = e.player_id
+            ORDER BY year DESC, period DESC
+            LIMIT 1
+          )
+        WHERE e.race_id = ?
+        ORDER BY e.lane ASC
+    ');
+    $stmt->execute([$race['id']]);
+    $entries = $stmt->fetchAll();
 
-$stmt2 = $pdo->prepare('SELECT scheduled_time, wind_speed, wind_dir, wave_height FROM races WHERE id = ?');
-$stmt2->execute([$race['id']]);
-$raceInfo = $stmt2->fetch();
+    $stmt2 = $pdo->prepare('SELECT scheduled_time, wind_speed, wind_dir, wave_height FROM races WHERE id = ?');
+    $stmt2->execute([$race['id']]);
+    $raceInfo = $stmt2->fetch();
+} catch (PDOException $e) {
+    json_response(['error' => 'データ取得に失敗しました'], 500);
+}
 
 json_response([
     'date'    => $date,
