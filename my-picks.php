@@ -23,13 +23,13 @@ $pre_combo    = htmlspecialchars($_GET['combo']    ?? '', ENT_QUOTES);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>艇王 - マイ的中トラッカー</title>
+<link rel="stylesheet" href="style.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
-header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
 .back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
 .back-btn:hover { background: #e8f0fd; }
-header h1 { font-size: 18px; font-weight: 700; color: #222; }
+.page-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .container { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
 .card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 .card h2 { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 14px; }
@@ -92,10 +92,19 @@ table.picks-table tr:last-child td { border-bottom: none; }
 </head>
 <body>
 
-<header>
-  <a class="back-btn" href="index.php">&larr;</a>
-  <h1>マイ的中トラッカー</h1>
-</header>
+  <?php include 'header.php'; ?>
+
+<div class="dashboard-container">
+
+  <?php include 'sidebar.php'; ?>
+
+  <main class="main-content">
+  <div class="container">
+
+  <div class="page-title-row">
+    <a class="back-btn" href="index.php">&larr;</a>
+    <h2 class="section-title">マイ的中トラッカー</h2>
+  </div>
 
 <?php if (!$isPremium): ?>
 <div class="premium-lock">
@@ -104,8 +113,6 @@ table.picks-table tr:last-child td { border-bottom: none; }
   <a href="upgrade.html">プレミアムにアップグレード</a>
 </div>
 <?php else: ?>
-
-<div class="container">
 
   <!-- サマリー -->
   <div class="card">
@@ -186,11 +193,78 @@ table.picks-table tr:last-child td { border-bottom: none; }
     <div id="picksListArea"><div class="loading">読み込み中...</div></div>
   </div>
 
-</div>
-
 <?php endif; ?>
 
+  </div>
+  </main>
+
+</div>
+
 <script>
+// --- 共通ヘッダー(index.php/mypage.php/analysis.phpと同じロジック) ---
+(function() {
+  function formatHeaderDate(dateStr) {
+    var d = new Date(dateStr + 'T00:00:00');
+    var days = ['日','月','火','水','木','金','土'];
+    return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (' + days[d.getDay()] + ')';
+  }
+  async function loadHeaderDate() {
+    try {
+      var res = await fetch('https://2410049.moo.jp/venues.php');
+      if (res.ok) {
+        var data = await res.json();
+        var el = document.getElementById('headerDate');
+        if (el) el.textContent = formatHeaderDate(data.date);
+      }
+    } catch (e) { console.error(e); }
+  }
+  async function checkAuth() {
+    var authEl = document.getElementById('headerAuth');
+    if (!authEl) return;
+    try {
+      var res = await fetch('me.php');
+      if (!res.ok) {
+        authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
+        return;
+      }
+      var data = await res.json();
+      var user = data.user;
+      var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
+      var planClass = user.plan !== 'free' ? user.plan : '';
+
+      authEl.innerHTML = '<div class="user-menu">' +
+          '<button class="user-btn" id="userBtn">' +
+            '<span>' + user.name + '</span>' +
+            '<span class="plan-badge ' + planClass + '">' + (planLabel[user.plan] || 'Free') + '</span>' +
+          '</button>' +
+          '<div class="dropdown" id="userDropdown">' +
+            '<button class="dropdown-item" onclick="location.href=\'mypage.php\'"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px; vertical-align:-2px; color:#718096;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>マイページ</button>' +
+            '<button class="dropdown-item logout" id="logoutBtn" style="border-top: 1px solid #edf2f7; color: #dc2626;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px; vertical-align:-2px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>ログアウト</button>' +
+          '</div>' +
+        '</div>';
+
+      document.getElementById('userBtn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        document.getElementById('userDropdown').classList.toggle('open');
+      });
+      document.addEventListener('click', function() {
+        var dropdown = document.getElementById('userDropdown');
+        if (dropdown) dropdown.classList.remove('open');
+      });
+      document.getElementById('logoutBtn').addEventListener('click', async function() {
+        await fetch('logout.php');
+        location.href = 'index.php';
+      });
+    } catch (err) {
+      authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
+    }
+  }
+  var headerLogoEl = document.getElementById('headerLogo');
+  if (headerLogoEl) headerLogoEl.addEventListener('click', function() { location.href = 'index.php'; });
+  loadHeaderDate();
+  checkAuth();
+})();
+
 var API_HOST = 'https://' + '2410049.moo.jp';
 var ALL_VENUES = [
   '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
