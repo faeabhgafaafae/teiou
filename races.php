@@ -1,49 +1,447 @@
-<?php
-require_once __DIR__ . '/config.php';
+<?php require_once __DIR__ . '/auth.php'; ?>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>艇王 - レース一覧</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="venue-display.js"></script>
+<style>
+/* グレード badge */
+.grade-sg { background: #fed7d7; color: #e53e3e; }
+.grade-g1 { background: #feebc8; color: #dd6b20; }
+.grade-g2 { background: #ebf8ff; color: #2b6cb0; }
+.grade-g3 { background: #e6fffa; color: #319795; }
+.grade-ippan { background: #edf2f7; color: #718096; }
 
-/**
- * 艇王 - レース一覧API
- * GET /races.php?date=2026-06-17&venue=桐生
- */
+/* R数クイックナビ */
+.race-nav-sticky {
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  z-index: 100;
+  border-bottom: 2px solid #0055a4;
+  padding: 8px 12px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  white-space: nowrap;
+  display: flex;
+  gap: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.race-nav-sticky::-webkit-scrollbar { display: none; }
 
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+.race-nav-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #0055a4;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 52px;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+.race-nav-btn:hover { background: #0055a4; color: #ffffff; border-color: #0055a4; }
 
-$date  = $_GET['date']  ?? date('Y-m-d');
-$venue = $_GET['venue'] ?? '';
-
-if (!$venue) {
-    echo json_encode(['error' => 'venue は必須です']);
-    exit;
+/* ページトップボタン */
+.page-top-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  width: 46px;
+  height: 46px;
+  background: #0055a4;
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.5);
+  transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+}
+.page-top-btn.show {
+  opacity: 1;
+  visibility: visible;
+  animation: popInBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes popInBounce {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-        DB_USER, DB_PASS,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
-} catch (PDOException $e) {
-    echo json_encode(['error' => 'DB接続失敗']);
-    exit;
+.loading { text-align: center; padding: 60px 20px; color: #999; }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid #e0e3e8; border-top-color: #0055a4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px; color: #dc2626; font-size: 14px; }
+
+.venue-banner { background: linear-gradient(135deg, #0055a4, #0070cc); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+.venue-banner-left h2 { font-size: 18px; font-weight: 700; }
+.venue-banner-left p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+.venue-banner-right { text-align: right; }
+.venue-banner-right .race-total { font-size: 22px; font-weight: 800; }
+.venue-banner-right .race-total-label { font-size: 10px; opacity: 0.7; }
+
+.race-card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.race-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #eee; }
+.race-header-left { display: flex; align-items: center; gap: 10px; }
+.race-no { font-size: 16px; font-weight: 800; color: #0055a4; min-width: 36px; }
+.race-time-block { display: flex; flex-direction: column; gap: 2px; }
+.race-time { font-size: 14px; color: #333; font-weight: 700; font-variant-numeric: tabular-nums; }
+.race-time-label { font-size: 10px; color: #999; font-weight: 400; margin-right: 2px; }
+.time-remaining { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
+.time-remaining.time-bright-green { color: #f8fafc; background: #22c55e; }
+.time-remaining.time-light-green { color: #064e3b; background: #86efac; }
+.time-remaining.time-yellow { color: #451a03; background: #eab308; }
+.time-remaining.time-red { color: #f8fafc; background: #ef4444; animation: pulse 1s infinite alternate; }
+.time-remaining.closed { color: #6b7280; background: #f3f4f6; }
+@keyframes pulse { 0% { opacity: 0.85; } 100% { opacity: 1; } }
+
+.race-header-right { display: flex; align-items: center; gap: 8px; }
+.status-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+.status-yosen { background: #e0f2fe; color: #0369a1; }
+.status-kakutei { background: #f3f4f6; color: #6b7280; }
+.status-live { background: #fee2e2; color: #dc2626; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* 選手一覧 */
+.player-row { display: flex; align-items: center; padding: 7px 16px; border-bottom: 1px solid #f5f5f5; gap: 8px; }
+.player-row:last-child { border-bottom: none; }
+.player-row:hover { background: #fafbfc; }
+.waku { width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+.waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
+.waku-2 { background: #222; color: #fff; }
+.waku-3 { background: #e53e3e; color: #fff; }
+.waku-4 { background: #2563eb; color: #fff; }
+.waku-5 { background: #eab308; color: #222; }
+.waku-6 { background: #16a34a; color: #fff; }
+.player-id { font-size: 11px; color: #999; min-width: 36px; flex-shrink: 0; }
+.player-name { flex: 1; font-size: 14px; font-weight: 600; color: #222; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-grade { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
+.pg-A1 { background: #fff3cd; color: #b8860b; }
+.pg-A2 { background: #dbeafe; color: #2563eb; }
+.pg-B1 { background: #f3f4f6; color: #666; }
+.pg-B2 { background: #f3f4f6; color: #aaa; }
+.player-stats { display: flex; gap: 12px; flex-shrink: 0; }
+.player-stat { font-size: 11px; color: #999; text-align: right; }
+.player-stat strong { color: #333; font-weight: 600; }
+.player-stat-label { font-size: 9px; color: #bbb; display: block; }
+.player-loading { padding: 24px 16px; text-align: center; color: #bbb; font-size: 13px; }
+
+/* アクションボタン */
+.race-actions { display: flex; gap: 6px; padding: 8px 16px; border-top: 1px solid #f0f0f0; }
+.action-btn { flex: 1; padding: 8px 2px; border: 1px solid #e0e3e8; border-radius: 8px; background: #fff; font-size: 11px; font-weight: 600; color: #555; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.15s; }
+.action-btn:hover { border-color: #0055a4; color: #0055a4; background: #f0f5ff; }
+.action-btn.primary { background: #0055a4; color: #fff; border-color: #0055a4; }
+.action-btn.primary:hover { background: #003d7a; }
+.action-btn.result { background: #16a34a; color: #fff; border-color: #16a34a; }
+.action-btn.result:hover { background: #12833c; }
+
+@media (max-width: 600px) {
+  .venue-banner { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px 16px; }
+  .venue-banner-right { text-align: left; }
+  .player-row { padding: 6px 12px; gap: 6px; }
+  .player-name { font-size: 13px; }
+  .player-id, .player-stats { display: none; }
+  .race-actions { gap: 4px; padding: 8px 12px; }
+  .action-btn { font-size: 10px; padding: 7px 1px; }
+  .page-top-btn { bottom: 16px; right: 16px; width: 40px; height: 40px; font-size: 16px; }
+  .race-nav-btn { min-width: 44px; padding: 6px 10px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<?php require_once __DIR__ . '/header.php'; ?>
+<div class="dashboard-container">
+  <?php require_once __DIR__ . '/sidebar.php'; ?>
+  <main class="main-content">
+    <div id="raceTopNav" class="race-nav-sticky" style="display: none;"></div>
+
+    <div class="venue-banner" id="venueBanner" style="display:none">
+      <div class="venue-banner-left">
+        <h2 id="bannerTitle"></h2>
+        <p id="bannerSub"></p>
+      </div>
+      <div class="venue-banner-right">
+        <div class="race-total" id="bannerTotal">-</div>
+        <div class="race-total-label">レース</div>
+      </div>
+    </div>
+
+    <div id="raceList">
+      <div class="loading"><div class="loading-spinner"></div>レース情報を取得中...</div>
+    </div>
+  </main>
+</div>
+
+<button id="scrollToTopBtn" class="page-top-btn" onclick="scrollToTop()">▲</button>
+
+<script>
+var params = new URLSearchParams(location.search);
+var venue = params.get('venue') || '';
+var date  = params.get('date')  || today();
+function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
+var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
+var venueGrade = VENUE_GRADES[venue] || '一般';
+
+var activeRaces = [];
+
+window.addEventListener('DOMContentLoaded', function() {
+  document.title = '艇王 - ' + venueDisplayName(venue) + ' レース一覧';
+});
+
+function formatDateJP(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
+function formatName(n) { return n.replace(/[\s ]+/g, ' ').trim(); }
+
+function getCountdownInfo(race) {
+  var scheduledTime = race.scheduled_time;
+
+  if (race.has_result) {
+    return { text: '', cls: 'closed', hide: true };
+  }
+  if (!scheduledTime) return { text: '時間未定', cls: 'closed', hide: false };
+
+  var todayDate = today();
+  if (date < todayDate) {
+    return { text: '終了', cls: 'closed', hide: false };
+  }
+  if (date > todayDate) {
+    return { text: '締切 ' + scheduledTime, cls: 'time-bright-green', hide: false };
+  }
+
+  var now = new Date();
+  var p = scheduledTime.split(':').map(Number);
+  var targetTime = new Date();
+  targetTime.setHours(p[0], p[1], 0, 0);
+  var diffMs = targetTime - now;
+
+  if (diffMs <= 0) return { text: '締切済', cls: 'closed', hide: false };
+
+  var diffMins = Math.floor(diffMs / 60000);
+
+  if (diffMins <= 10) {
+    return { text: 'まもなく締切！あと ' + diffMins + ' 分', cls: 'time-red', hide: false };
+  } else if (diffMins <= 30) {
+    return { text: 'あと ' + diffMins + ' 分', cls: 'time-yellow', hide: false };
+  } else if (diffMins <= 60) {
+    return { text: 'あと ' + diffMins + ' 分', cls: 'time-light-green', hide: false };
+  } else {
+    var hours = Math.floor(diffMins / 60);
+    var mins = diffMins % 60;
+    return { text: 'あと ' + hours + '時間 ' + mins + '分', cls: 'time-bright-green', hide: false };
+  }
 }
 
-$stmt = $pdo->prepare("
-    SELECT race_no, scheduled_time, wind_speed, wind_dir, wave_height,
-           EXISTS(SELECT 1 FROM results res WHERE res.race_id = races.id) AS has_result
-    FROM races
-    WHERE date = ? AND venue = ?
-    ORDER BY race_no
-");
-$stmt->execute([$date, $venue]);
-$races = $stmt->fetchAll(PDO::FETCH_ASSOC);
-foreach ($races as &$r) {
-    $r['has_result'] = (bool)$r['has_result'];
-}
-unset($r);
+function updateAllCountdowns() {
+  activeRaces.forEach(function(race) {
+    var badgeEl = document.getElementById('countdown-' + race.race_no);
+    var statusEl = document.getElementById('status-' + race.race_no);
+    if (!badgeEl) return;
 
-echo json_encode([
-    'date'  => $date,
-    'venue' => $venue,
-    'races' => $races,
-], JSON_UNESCAPED_UNICODE);
+    var info = getCountdownInfo(race);
+    badgeEl.textContent = info.text;
+    badgeEl.className = 'time-remaining ' + info.cls;
+    badgeEl.style.display = info.hide ? 'none' : '';
+
+    if (statusEl) {
+      if (race.has_result) {
+        statusEl.textContent = '結果確定';
+        statusEl.className = 'status-badge status-kakutei';
+      } else if (info.cls === 'time-red') {
+        statusEl.textContent = '締切間近';
+        statusEl.className = 'status-badge status-live';
+      } else {
+        statusEl.textContent = '予選';
+        statusEl.className = 'status-badge status-yosen';
+      }
+    }
+  });
+}
+setInterval(updateAllCountdowns, 60000);
+
+var API_HOST = 'https://2410049.moo.jp';
+function buildApiUrl(ep, pr) { var qs=Object.keys(pr).map(function(k){return k+'='+encodeURIComponent(pr[k]);}).join('&'); return API_HOST+'/'+ep+'?'+qs; }
+
+function renderPlayerRow(p) {
+  var row = document.createElement('div');
+  row.className = 'player-row';
+  var waku = document.createElement('div');
+  waku.className = 'waku waku-' + p.lane;
+  waku.textContent = p.lane;
+  var pid = document.createElement('span');
+  pid.className = 'player-id';
+  pid.textContent = p.player_id;
+  var nameEl = document.createElement('div');
+  nameEl.className = 'player-name';
+  nameEl.textContent = formatName(p.name);
+  var gradeEl = document.createElement('span');
+  gradeEl.className = 'player-grade pg-' + p.grade.replace(/\s/g,'');
+  gradeEl.textContent = p.grade;
+  var statsEl = document.createElement('div');
+  statsEl.className = 'player-stats';
+  var s1 = document.createElement('div'); s1.className = 'player-stat';
+  var l1 = document.createElement('span'); l1.className = 'player-stat-label'; l1.textContent = '全国';
+  var v1 = document.createElement('strong'); v1.textContent = p.win_rate_national != null ? p.win_rate_national.toFixed(2) : '-';
+  s1.appendChild(l1); s1.appendChild(v1);
+  var s2 = document.createElement('div'); s2.className = 'player-stat';
+  var l2 = document.createElement('span'); l2.className = 'player-stat-label'; l2.textContent = '当地';
+  var v2 = document.createElement('strong'); v2.textContent = p.win_rate_local != null ? Number(p.win_rate_local).toFixed(2) : '-';
+  s2.appendChild(l2); s2.appendChild(v2);
+  statsEl.appendChild(s1); statsEl.appendChild(s2);
+  row.appendChild(waku); row.appendChild(pid); row.appendChild(nameEl); row.appendChild(gradeEl); row.appendChild(statsEl);
+  return row;
+}
+
+function renderRaceCard(race) {
+  var timeStr = race.scheduled_time || '--:--';
+  var rno = race.race_no;
+  var countdown = getCountdownInfo(race);
+
+  var card = document.createElement('div');
+  card.className = 'race-card';
+  card.id = 'race-' + rno;
+
+  var hdr = document.createElement('div'); hdr.className = 'race-header';
+  var hdrL = document.createElement('div'); hdrL.className = 'race-header-left';
+  var noEl = document.createElement('span'); noEl.className = 'race-no'; noEl.textContent = rno + 'R';
+
+  var timeBlock = document.createElement('div');
+  timeBlock.className = 'race-time-block';
+  var tEl = document.createElement('span'); tEl.className = 'race-time';
+  var tLbl = document.createElement('span'); tLbl.className = 'race-time-label'; tLbl.textContent = '締切';
+  tEl.appendChild(tLbl); tEl.appendChild(document.createTextNode(timeStr));
+
+  var remEl = document.createElement('span');
+  remEl.id = 'countdown-' + rno;
+  remEl.className = 'time-remaining ' + countdown.cls;
+  remEl.textContent = countdown.text;
+  if (countdown.hide) remEl.style.display = 'none';
+
+  timeBlock.appendChild(tEl);
+  timeBlock.appendChild(remEl);
+  hdrL.appendChild(noEl); hdrL.appendChild(timeBlock);
+
+  var hdrR = document.createElement('div'); hdrR.className = 'race-header-right';
+  var sb = document.createElement('span');
+  sb.id = 'status-' + rno;
+  if (race.has_result) {
+    sb.className = 'status-badge status-kakutei'; sb.textContent = '結果確定';
+  } else if (countdown.cls === 'time-red') {
+    sb.className = 'status-badge status-live'; sb.textContent = '締切間近';
+  } else {
+    sb.className = 'status-badge status-yosen'; sb.textContent = '予選';
+  }
+
+  hdrR.appendChild(sb);
+  hdr.appendChild(hdrL); hdr.appendChild(hdrR);
+
+  var panel1 = document.createElement('div'); panel1.className = 'tab-panel active'; panel1.id = 'players-' + rno;
+  var ld = document.createElement('div'); ld.className = 'player-loading'; ld.textContent = '選手データを読み込み中...';
+  panel1.appendChild(ld);
+
+  var actions = document.createElement('div'); actions.className = 'race-actions';
+  function fill(v){ return encodeURIComponent(v); }
+  var b1 = document.createElement('a'); b1.className = 'action-btn'; b1.href = 'racelist.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b1.textContent = '出走表';
+  var b2 = document.createElement('a'); b2.className = 'action-btn'; b2.href = 'predict.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b2.textContent = '直前情報';
+  var b3 = document.createElement('a'); b3.className = 'action-btn'; b3.href = 'odds.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b3.textContent = 'オッズ';
+  var b4 = document.createElement('a'); b4.className = 'action-btn primary'; b4.href = 'ai-predict.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b4.textContent = '予想';
+  actions.appendChild(b1); actions.appendChild(b2); actions.appendChild(b3); actions.appendChild(b4);
+  if (race.has_result) {
+    var b5 = document.createElement('a'); b5.className = 'action-btn result'; b5.href = 'result.php?venue=' + fill(venue) + '&date=' + date + '&race_no=' + rno; b5.textContent = '結果';
+    actions.appendChild(b5);
+  }
+
+  card.appendChild(hdr); card.appendChild(panel1); card.appendChild(actions);
+  return card;
+}
+
+function renderRaceNavigation(races) {
+  var nav = document.getElementById('raceTopNav');
+  if (!nav) return;
+  if (!races || races.length === 0) { nav.style.display = 'none'; return; }
+  nav.style.display = 'flex';
+  nav.innerHTML = races.map(function(r) { return '<button class="race-nav-btn" onclick="jumpToRace(' + r.race_no + ')">' + r.race_no + 'R</button>'; }).join('');
+}
+
+function jumpToRace(raceNo) {
+  var target = document.getElementById('race-' + raceNo);
+  if (target) {
+    var nav = document.getElementById('raceTopNav');
+    var navH = nav ? nav.offsetHeight : 60;
+    var offsetPosition = target.getBoundingClientRect().top + window.pageYOffset - navH - 8;
+    window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+  }
+}
+
+window.addEventListener('scroll', function() {
+  var topBtn = document.getElementById('scrollToTopBtn');
+  if (!topBtn) return;
+  if (window.pageYOffset > 300) { topBtn.classList.add('show'); } else { topBtn.classList.remove('show'); }
+});
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+async function loadPlayerData(raceNo) {
+  try {
+    var url = buildApiUrl('api_predict.php', { date: date, venue: venue, race_no: raceNo });
+    var res = await fetch(url); if (!res.ok) return;
+    var data = await res.json();
+    if (data.error || !data.predictions || data.predictions.length === 0) return;
+    var sorted = data.predictions.slice().sort(function(a, b) { return a.lane - b.lane; });
+    var el = document.getElementById('players-' + raceNo);
+    if (el) { el.textContent = ''; sorted.forEach(function(p) { el.appendChild(renderPlayerRow(p)); }); }
+  } catch(e) {}
+}
+
+async function loadRaces() {
+  var list = document.getElementById('raceList');
+  try {
+    var url = buildApiUrl('api_races.php', { date: date, venue: venue });
+    var res = await fetch(url); if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    if (!data.races || data.races.length === 0) {
+      list.textContent = '';
+      var err = document.createElement('div'); err.className = 'error-msg'; err.textContent = 'レース情報が見つかりません';
+      list.appendChild(err); return;
+    }
+
+    activeRaces = data.races;
+
+    document.getElementById('bannerTitle').textContent = venueDisplayName(venue);
+    document.getElementById('bannerSub').textContent = formatDateJP(date) + ' 開催';
+    document.getElementById('bannerTotal').textContent = data.races.length + 'R';
+    document.getElementById('venueBanner').style.display = 'flex';
+    list.textContent = '';
+
+    data.races.forEach(function(r) { list.appendChild(renderRaceCard(r)); });
+    renderRaceNavigation(data.races);
+
+    updateAllCountdowns();
+
+    await Promise.all(data.races.map(function(r) { return loadPlayerData(r.race_no); }));
+  } catch(e) {
+    list.textContent = '';
+    var err = document.createElement('div'); err.className = 'error-msg'; err.textContent = 'データの取得に失敗しました';
+    list.appendChild(err);
+  }
+}
+loadRaces();
+</script>
+</body>
+</html>

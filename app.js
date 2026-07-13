@@ -93,7 +93,7 @@ function createVenueCard(venueName, venueData) {
   }
 
   var totalRaces = venueData.race_count;
-  var href = 'races.html?venue=' + encodeURIComponent(venueName) + '&date=' + window.PAGE_DATE;
+  var href = 'races.php?venue=' + encodeURIComponent(venueName) + '&date=' + window.PAGE_DATE;
 
   return '<a href="' + href + '" class="venue-card">' +
       '<div style="display:flex; justify-content:space-between; align-items:center;">' +
@@ -143,7 +143,7 @@ function renderFeaturedBanner(venues) {
   featuredVenues.forEach(function(featured) {
     var grade = VENUE_GRADES[featured.venue];
     var gradeClass = GRADE_CLASSES[grade];
-    var href = 'races.html?venue=' + encodeURIComponent(featured.venue) + '&date=' + window.PAGE_DATE;
+    var href = 'races.php?venue=' + encodeURIComponent(featured.venue) + '&date=' + window.PAGE_DATE;
 
     html += '<div class="featured-item">' +
         '<div class="featured-left">' +

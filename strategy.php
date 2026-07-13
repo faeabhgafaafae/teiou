@@ -282,9 +282,9 @@ badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
 document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
-document.getElementById('backBtn').href = 'races.html?venue=' + encodeURIComponent(venue) + '&date=' + date;
+document.getElementById('backBtn').href = 'races.php?venue=' + encodeURIComponent(venue) + '&date=' + date;
 document.getElementById('btnRacelist').href  = 'racelist.php?'  + baseQ;
-document.getElementById('btnPredict').href   = 'predict.html?'   + baseQ;
+document.getElementById('btnPredict').href   = 'predict.php?'   + baseQ;
 document.getElementById('btnAiPredict').href = 'ai-predict.php?' + baseQ;
 document.getElementById('bottomActions').style.display = 'flex';
 

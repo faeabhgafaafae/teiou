@@ -333,7 +333,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   <div class="container">
 
   <div class="header-left">
-    <a class="back-btn" id="backBtn" href="races.html">&larr;</a>
+    <a class="back-btn" id="backBtn" href="races.php">&larr;</a>
     <div class="header-venue-info">
       <div class="header-venue-row">
         <h1 id="pageTitle" class="header-page-title"></h1>
@@ -491,7 +491,7 @@ var vg = VENUE_GRADES[venue] || '一般';
 
 var backBtnEl = document.getElementById('backBtn');
 if (backBtnEl) {
-  backBtnEl.href = 'races.html?venue=' + encodeURIComponent(venue) + '&date=' + date;
+  backBtnEl.href = 'races.php?venue=' + encodeURIComponent(venue) + '&date=' + date;
 }
 
 function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
@@ -507,7 +507,7 @@ document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;
 document.getElementById('btnRacelist').href = 'racelist.php?' + baseQ + '&race_no=' + raceNo;
-document.getElementById('btnPredict').href = 'predict.html?' + baseQ + '&race_no=' + raceNo;
+document.getElementById('btnPredict').href = 'predict.php?' + baseQ + '&race_no=' + raceNo;
 
 var prevNo = raceNo > 1 ? raceNo - 1 : 1;
 var nextNo = raceNo < 12 ? raceNo + 1 : 12;

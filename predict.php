@@ -1,303 +1,605 @@
-<?php
-require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/generate_strategies.php';
+<?php require_once __DIR__ . '/auth.php'; ?>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>艇王 - 直前情報</title>
+<link rel="stylesheet" href="style.css">
+<script src="venue-display.js"></script>
+<style>
+.page-title { font-size: 18px; font-weight: 700; color: #1a202c; margin-bottom: 16px; }
 
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Cache-Control: no-store, no-cache, must-revalidate');
-header('Pragma: no-cache');
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.tab-btn { flex-shrink: 0; padding: 9px 16px; border-radius: 8px; background: #fff; border: 1px solid #e0e3e8; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; }
+.tab-btn.active { background: #0055a4; color: #fff; border-color: #0055a4; }
+.panel { display: none; }
+.panel.active { display: block; }
 
-$date    = $_GET['date']    ?? date('Y-m-d');
-$venue   = $_GET['venue']   ?? '';
-$race_no = (int)($_GET['race_no'] ?? 0);
+.card { background: #fff; border: 1px solid #e0e3e8; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+.card h2 { font-size: 13px; font-weight: 700; color: #222; margin-bottom: 10px; }
 
-if (!$venue || !$race_no) {
-    http_response_code(400);
-    echo json_encode(['error' => 'venue と race_no は必須です']);
-    exit;
+.note { font-size: 11px; color: #a0724b; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 12px; margin-top: 10px; line-height: 1.6; }
+
+/* 水面気象情報 */
+.wx-top { display: flex; gap: 10px; margin-bottom: 10px; }
+.wx-mini-card { flex: 1; min-width: 0; background: #f0f5ff; border: 1px solid #c7d8f5; border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+.wx-icon-wrap { flex-shrink: 0; }
+.wx-vals { flex: 1; min-width: 0; }
+.wx-row { display: flex; align-items: baseline; gap: 5px; margin-bottom: 5px; }
+.wx-row:last-child { margin-bottom: 0; }
+.wx-lbl { font-size: 11px; color: #888; white-space: nowrap; }
+.wx-num { font-size: 18px; font-weight: 800; color: #0055a4; }
+.wx-num-sm { font-size: 14px; }
+.wx-unit { font-size: 11px; color: #888; }
+.wx-water-bar { position: relative; background: linear-gradient(180deg, #7dd3fc 0%, #0284c7 55%, #0369a1 100%); border-radius: 10px; height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; margin-bottom: 10px; overflow: hidden; }
+.wx-wave-deco { position: absolute; top: 0; left: 0; width: 100%; height: 22px; }
+.wx-water-center { flex: 1; text-align: center; position: relative; z-index: 1; }
+.wx-water-row { display: flex; align-items: baseline; justify-content: center; gap: 5px; margin-bottom: 3px; }
+.wx-water-row:last-child { margin-bottom: 0; }
+.wx-water-lbl { font-size: 11px; color: rgba(255,255,255,0.82); }
+.wx-water-num { font-size: 19px; font-weight: 800; color: #fff; }
+.wx-water-unit { font-size: 11px; color: rgba(255,255,255,0.82); }
+@media (max-width: 480px) {
+  .wx-mini-card { padding: 10px; gap: 8px; }
+  .wx-num { font-size: 15px; }
+  .wx-water-num { font-size: 16px; }
 }
 
-try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-        DB_USER, DB_PASS,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'DB接続失敗']);
-    exit;
+.pred-table-wrap { overflow-x: auto; }
+.pred-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
+.pred-table th { background: #f7f8fa; font-size: 11px; font-weight: 700; color: #888; padding: 8px 6px; text-align: center; border-bottom: 2px solid #e0e3e8; white-space: nowrap; }
+.pred-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+.pred-table tr:last-child td { border-bottom: none; }
+.pred-table tr:hover { background: #fafbfc; }
+.td-name { text-align: left; }
+.td-name-inner { font-weight: 600; color: #222; }
+.td-grade { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 6px; }
+.pg-A1 { background: #fff3cd; color: #b8860b; }
+.pg-A2 { background: #dbeafe; color: #2563eb; }
+.pg-B1 { background: #f3f4f6; color: #666; }
+.pg-B2 { background: #f3f4f6; color: #aaa; }
+.na { color: #ccc; }
+
+.waku { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+.waku-1 { background: #fff; color: #222; border: 2px solid #ccc; }
+.waku-2 { background: #222; color: #fff; }
+.waku-3 { background: #e53e3e; color: #fff; }
+.waku-4 { background: #2563eb; color: #fff; }
+.waku-5 { background: #eab308; color: #222; }
+.waku-6 { background: #16a34a; color: #fff; }
+
+.score-total { font-size: 15px; font-weight: 700; color: #0055a4; }
+.score-cell { font-variant-numeric: tabular-nums; }
+
+/* スタート情報(水面イメージ) */
+.start-track-wrap { display: flex; flex-direction: column; gap: 8px; }
+.start-track-row { display: flex; align-items: center; gap: 8px; }
+.start-track-bar { flex: 1; height: 30px; background: linear-gradient(180deg, #e0f2fe, #bae6fd); border-radius: 6px; position: relative; overflow: hidden; }
+.start-track-line { position: absolute; right: 8px; top: 0; bottom: 0; width: 2px; background: #0055a4; opacity: 0.4; }
+.start-track-boat { position: absolute; top: 3px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; transition: left 0.2s; }
+.start-track-st { width: 54px; text-align: right; font-size: 12px; font-weight: 700; color: #222; flex-shrink: 0; }
+.start-track-st.flying { color: #dc2626; }
+
+/* 同時間帯の他会場レース */
+.nearby-scroll { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+.nearby-card { flex-shrink: 0; background: #f7f8fa; border: 1px solid #e0e3e8; border-radius: 8px; padding: 10px 14px; text-decoration: none; text-align: center; min-width: 84px; }
+.nearby-card:hover { border-color: #0055a4; background: #f0f5ff; }
+.nearby-card-venue { font-size: 12px; font-weight: 700; color: #222; }
+.nearby-card-race { font-size: 11px; color: #0055a4; font-weight: 700; margin-top: 2px; }
+.nearby-card-time { font-size: 10px; color: #999; margin-top: 2px; }
+
+.loading { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+.error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; color: #dc2626; font-size: 14px; }
+
+.premium-lock { text-align: center; padding: 30px 16px; }
+.premium-lock-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+.premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }
+.premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
+.premium-lock a:hover { background: #b45309; }
+
+@media (max-width: 600px) {
+  .pred-table { font-size: 12px; }
+  .pred-table th, .pred-table td { padding: 6px 4px; }
+  .waku { width: 22px; height: 22px; font-size: 11px; }
+  .start-track-bar { height: 26px; }
+  .start-track-boat { width: 20px; height: 20px; font-size: 10px; }
+}
+</style>
+</head>
+<body>
+<?php require_once __DIR__ . '/header.php'; ?>
+<div class="dashboard-container">
+  <?php require_once __DIR__ . '/sidebar.php'; ?>
+  <main class="main-content">
+    <h1 class="page-title" id="pageTitle">直前情報</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="official">直前情報</button>
+      <button class="tab-btn" data-tab="original">オリジナル展示</button>
+    </div>
+
+    <div id="loadingArea"><div class="loading">直前情報を取得中...</div></div>
+    <div id="errorArea"></div>
+
+    <!-- 直前情報タブ -->
+    <div class="panel active" id="panel-official">
+      <div id="weatherCard" class="card" style="display:none">
+        <h2>水面気象情報</h2>
+        <div class="wx-top">
+          <div class="wx-mini-card">
+            <div class="wx-icon-wrap">
+              <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="19" cy="19" r="18" fill="#dbeafe"/>
+                <path d="M7 14 H22 Q26 14 26 10 Q26 6 22 6 Q18 6 18 10" stroke="#0055a4" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M7 19 H28" stroke="#0055a4" stroke-width="2" stroke-linecap="round"/>
+                <path d="M7 24 H21 Q25 24 25 28 Q25 32 21 32 Q17 32 17 28" stroke="#0055a4" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="wx-vals">
+              <div class="wx-row"><span class="wx-lbl">風速</span><strong class="wx-num" id="windSpeed">-</strong><span class="wx-unit">m/s</span></div>
+              <div class="wx-row"><span class="wx-lbl">風向</span><strong class="wx-num wx-num-sm" id="windDir">-</strong></div>
+            </div>
+          </div>
+          <div class="wx-mini-card">
+            <div class="wx-icon-wrap" id="wxIconWrap">
+              <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="19" cy="19" r="18" fill="#fef9c3"/>
+                <circle cx="19" cy="19" r="7" fill="#fbbf24"/>
+                <line x1="19" y1="7" x2="19" y2="4" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="19" y1="31" x2="19" y2="34" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="7" y1="19" x2="4" y2="19" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="31" y1="19" x2="34" y2="19" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="10.8" y1="10.8" x2="8.7" y2="8.7" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+                <line x1="27.2" y1="27.2" x2="29.3" y2="29.3" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+                <line x1="27.2" y1="10.8" x2="29.3" y2="8.7" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+                <line x1="10.8" y1="27.2" x2="8.7" y2="29.3" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="wx-vals">
+              <div class="wx-row"><span class="wx-lbl">天候</span><strong class="wx-num wx-num-sm" id="wxWeather">-</strong></div>
+              <div class="wx-row"><span class="wx-lbl">気温</span><strong class="wx-num wx-num-sm" id="wxTemp">-</strong><span class="wx-unit">℃</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="wx-water-bar">
+          <svg class="wx-wave-deco" viewBox="0 0 400 22" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 11 Q50 2 100 11 Q150 20 200 11 Q250 2 300 11 Q350 20 400 11 L400 0 L0 0 Z" fill="rgba(255,255,255,0.18)"/>
+          </svg>
+          <svg width="34" height="48" viewBox="0 0 34 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;flex-shrink:0">
+            <line x1="17" y1="4" x2="17" y2="30" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+            <path d="M17 5 L30 28 L17 28 Z" fill="rgba(255,255,255,0.85)"/>
+            <path d="M5 31 Q17 37 29 31 L27 41 Q17 45 7 41 Z" fill="rgba(255,255,255,0.8)"/>
+          </svg>
+          <div class="wx-water-center">
+            <div class="wx-water-row"><span class="wx-water-lbl">波高</span><strong class="wx-water-num" id="waveHeight">-</strong><span class="wx-water-unit">cm</span></div>
+            <div class="wx-water-row"><span class="wx-water-lbl">水温</span><strong class="wx-water-num" id="wxWaterTemp">-</strong><span class="wx-water-unit">℃</span></div>
+          </div>
+          <svg width="34" height="48" viewBox="0 0 34 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;flex-shrink:0">
+            <line x1="17" y1="4" x2="17" y2="30" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+            <path d="M17 5 L4 28 L17 28 Z" fill="rgba(255,255,255,0.85)"/>
+            <path d="M5 31 Q17 37 29 31 L27 41 Q17 45 7 41 Z" fill="rgba(255,255,255,0.8)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>スタート情報</h2>
+        <div class="start-track-wrap" id="startVisual"></div>
+        <div class="note">進入コースの実測データがないため、枠番の並び順でスタート展示の目安位置を表しています(実際の進入とは異なる場合があります)。</div>
+      </div>
+
+      <div class="card">
+        <h2>選手一覧</h2>
+        <div class="pred-table-wrap" id="officialTableWrap"></div>
+      </div>
+    </div>
+
+    <!-- オリジナル展示タブ -->
+    <div class="panel" id="panel-original">
+      <div class="card">
+        <h2>艇王オリジナル展示(AI予想スコア)</h2>
+        <div class="pred-table-wrap" id="originalTableWrap"></div>
+      </div>
+    </div>
+
+    <div class="card" id="nearbyCard" style="display:none">
+      <h2>発走直前のレース(同時間帯・他会場)</h2>
+      <div class="nearby-scroll" id="nearbyRaces"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+var params = new URLSearchParams(location.search);
+var venue = params.get('venue') || '';
+var date = params.get('date') || todayStr();
+var raceNo = params.get('race_no') || '1';
+
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
-$stmt = $pdo->prepare("
-    SELECT id, wind_speed, wind_dir, wave_height, weather, temperature, water_temperature
-    FROM races
-    WHERE date=? AND venue=? AND race_no=?
-    LIMIT 1
-");
-$stmt->execute([$date, $venue, $race_no]);
-$race = $stmt->fetch(PDO::FETCH_ASSOC);
+document.getElementById('pageTitle').textContent = venueDisplayName(venue) + ' ' + raceNo + 'R 直前情報';
+document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R 直前情報';
 
-if (!$race) {
-    echo json_encode(['error' => 'レースが見つかりません']);
-    exit;
+var API_BASE = 'https://' + '2410049.moo.jp';
+
+function formatName(n) { return n.replace(/[\s　]+/g, ''); }
+function fmtVal(v, decimals) {
+  if (v == null || v === '') return '-';
+  return Number(v).toFixed(decimals);
 }
 
-$race_id = $race['id'];
-
-$stmt = $pdo->prepare("
-    SELECT e.id, e.lane, e.player_id, e.exhibit_time, e.start_timing, e.motor_2rate, e.odds,
-           e.adjust_weight, e.tilt, e.propeller_mark, e.parts_exchange, e.exhibit_course,
-           p.name, p.grade
-    FROM entries e
-    JOIN players p ON e.player_id = p.id
-    WHERE e.race_id = ?
-    ORDER BY e.lane ASC, e.id DESC
-");
-$stmt->execute([$race_id]);
-$all_entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$entries = [];
-$seen_lanes = [];
-foreach ($all_entries as $e) {
-    if (!in_array($e['lane'], $seen_lanes)) {
-        $entries[] = $e;
-        $seen_lanes[] = $e['lane'];
-    }
+// タブ切り替え
+var tabButtons = document.querySelectorAll('.tab-btn');
+for (var i = 0; i < tabButtons.length; i++) {
+  tabButtons[i].addEventListener('click', function() {
+    var tab = this.getAttribute('data-tab');
+    for (var j = 0; j < tabButtons.length; j++) tabButtons[j].classList.remove('active');
+    this.classList.add('active');
+    var panels = document.querySelectorAll('.panel');
+    for (var k = 0; k < panels.length; k++) panels[k].classList.remove('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+  });
 }
 
-if (empty($entries)) {
-    echo json_encode(['error' => '出走表データがありません']);
-    exit;
+function getWeatherIconSVG(w) {
+  if (w.indexOf('雨') !== -1) {
+    return '<svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<circle cx="19" cy="19" r="18" fill="#dbeafe"/>' +
+      '<ellipse cx="15" cy="19" rx="7" ry="6" fill="#90c4e8" stroke="#5ba7d1" stroke-width="1.5"/>' +
+      '<ellipse cx="22" cy="17" rx="6" ry="5" fill="#90c4e8" stroke="#5ba7d1" stroke-width="1.5"/>' +
+      '<rect x="10" y="20" width="16" height="5" rx="2.5" fill="#90c4e8"/>' +
+      '<line x1="14" y1="26" x2="12" y2="31" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round"/>' +
+      '<line x1="19" y1="26" x2="17" y2="31" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round"/>' +
+      '<line x1="24" y1="26" x2="22" y2="31" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round"/>' +
+      '</svg>';
+  }
+  if (w.indexOf('曇') !== -1) {
+    return '<svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<circle cx="19" cy="19" r="18" fill="#f1f5f9"/>' +
+      '<ellipse cx="14" cy="21" rx="7" ry="6" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5"/>' +
+      '<ellipse cx="22" cy="19" rx="6" ry="5" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5"/>' +
+      '<rect x="8" y="21" width="20" height="6" rx="3" fill="#cbd5e1"/>' +
+      '</svg>';
+  }
+  return '<svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+    '<circle cx="19" cy="19" r="18" fill="#fef9c3"/>' +
+    '<circle cx="19" cy="19" r="7" fill="#fbbf24"/>' +
+    '<line x1="19" y1="7" x2="19" y2="4" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="19" y1="31" x2="19" y2="34" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="7" y1="19" x2="4" y2="19" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="31" y1="19" x2="34" y2="19" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="10.8" y1="10.8" x2="8.7" y2="8.7" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="27.2" y1="27.2" x2="29.3" y2="29.3" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="27.2" y1="10.8" x2="29.3" y2="8.7" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="10.8" y1="27.2" x2="8.7" y2="29.3" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>' +
+    '</svg>';
 }
 
-$exhibit_times = array_filter(array_column($entries, 'exhibit_time'), fn($v) => $v !== null);
-$exhibit_min = $exhibit_times ? min($exhibit_times) : null;
-$exhibit_max = $exhibit_times ? max($exhibit_times) : null;
+function gradeSpanFor(grade) {
+  var s = document.createElement('span');
+  s.className = 'td-grade pg-' + (grade || 'B1').replace(/\s/g, '');
+  s.textContent = grade || '-';
+  return s;
+}
 
-$scores = [];
+function buildOfficialTable(predictions) {
+  var wrap = document.getElementById('officialTableWrap');
+  wrap.textContent = '';
+  var table = document.createElement('table');
+  table.className = 'pred-table';
 
-foreach ($entries as $e) {
-    $player_id = $e['player_id'];
-    $lane      = $e['lane'];
+  var thead = document.createElement('thead');
+  var htr = document.createElement('tr');
+  var cols = ['枠', '選手名', '調整体重', '展示T', 'チルト', 'プロペラ', '部品交換', 'ST'];
+  cols.forEach(function(c) {
+    var th = document.createElement('th');
+    th.textContent = c;
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr);
+  table.appendChild(thead);
 
-    $stmt2 = $pdo->prepare("
-        SELECT win_rate, fukusho_rate, race_count
-        FROM player_periods
-        WHERE player_id = ?
-        ORDER BY year DESC, period DESC
-        LIMIT 1
-    ");
-    $stmt2->execute([$player_id]);
-    $period = $stmt2->fetch(PDO::FETCH_ASSOC);
+  var byLaneOfficial = {};
+  predictions.forEach(function(p) { byLaneOfficial[p.lane] = p; });
 
-    $win_rate_national = $period['win_rate'] ?? 0;
-    $race_count        = $period['race_count'] ?? 0;
+  var tbody = document.createElement('tbody');
+  [1, 2, 3, 4, 5, 6].forEach(function(lane) {
+    var p = byLaneOfficial[lane];
+    if (!p) return;
+    var tr = document.createElement('tr');
 
-    $stmt2 = $pdo->prepare("
-        SELECT COUNT(*) as total,
-               SUM(CASE WHEN r2.actual_rank = 1 THEN 1 ELSE 0 END) as rank1
-        FROM results r2
-        JOIN races rc ON r2.race_id = rc.id
-        WHERE r2.player_id = ? AND rc.venue = ?
-        AND rc.date >= DATE_SUB(?, INTERVAL 2 YEAR)
-    ");
-    $stmt2->execute([$player_id, $venue, $date]);
-    $local = $stmt2->fetch(PDO::FETCH_ASSOC);
-    $win_rate_local = ($local['total'] > 0) ? ($local['rank1'] / $local['total'] * 100) : $win_rate_national;
+    var tdWaku = document.createElement('td');
+    var wakuEl = document.createElement('span');
+    wakuEl.className = 'waku waku-' + p.lane;
+    wakuEl.textContent = p.lane;
+    tdWaku.appendChild(wakuEl);
+    tr.appendChild(tdWaku);
 
-    $win_rate_weighted = $win_rate_national * 0.4 + $win_rate_local * 0.6;
-    $score_ability_raw = min(40, $win_rate_weighted / 10 * 40);
+    var tdName = document.createElement('td');
+    tdName.className = 'td-name';
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'td-name-inner';
+    nameSpan.textContent = formatName(p.name);
+    tdName.appendChild(nameSpan);
+    tdName.appendChild(gradeSpanFor(p.grade));
+    tr.appendChild(tdName);
 
-    $stmt2 = $pdo->prepare("
-        SELECT COUNT(*) as total,
-               SUM(CASE WHEN r2.actual_rank = 1 THEN 1 ELSE 0 END) as rank1,
-               SUM(CASE WHEN r2.actual_rank <= 2 THEN 1 ELSE 0 END) as rank2,
-               SUM(CASE WHEN r2.actual_rank <= 3 THEN 1 ELSE 0 END) as rank3
-        FROM results r2
-        JOIN races rc ON r2.race_id = rc.id
-        WHERE r2.player_id = ? AND r2.lane = ?
-        AND rc.date >= DATE_SUB(?, INTERVAL 2 YEAR)
-    ");
-    $stmt2->execute([$player_id, $lane, $date]);
-    $course = $stmt2->fetch(PDO::FETCH_ASSOC);
-
-    // コース補正の配点は35点満点(旧20点満点から変更。2026-07シミュレーションでコース優位性が
-    // 過小評価されていたことが判明したため引き上げ。他要素との合算は正規化して100点満点を維持する)
-    if ($course['total'] > 0) {
-        $r1_rate = $course['rank1'] / $course['total'];
-        $r2_rate = $course['rank2'] / $course['total'];
-        $r3_rate = $course['rank3'] / $course['total'];
-        $score_course_raw = ($r1_rate * 0.6 + $r2_rate * 0.25 + $r3_rate * 0.15) * 35;
+    var tdAdjWeight = document.createElement('td');
+    if (p.adjust_weight != null) {
+      tdAdjWeight.textContent = p.adjust_weight + 'kg';
     } else {
-        $course_avg = [1=>0.50, 2=>0.15, 3=>0.12, 4=>0.10, 5=>0.08, 6=>0.05];
-        $score_course_raw = ($course_avg[$lane] ?? 0.08) * 35;
+      tdAdjWeight.className = 'na';
+      tdAdjWeight.textContent = '-';
     }
+    tr.appendChild(tdAdjWeight);
 
-    $score_exhibit = 0;
-    if ($e['exhibit_time'] !== null && $exhibit_min !== null && $exhibit_max !== null) {
-        $range = $exhibit_max - $exhibit_min;
-        $score_exhibit = ($range > 0) ? (($exhibit_max - $e['exhibit_time']) / $range) * 15 : 7.5;
-    }
+    var tdExhibit = document.createElement('td');
+    tdExhibit.className = 'score-cell';
+    tdExhibit.textContent = fmtVal(p.exhibit_time, 2);
+    tr.appendChild(tdExhibit);
 
-    $score_st = 0;
-    $is_flying = false;
-    if ($e['start_timing'] !== null) {
-        if ($e['start_timing'] < 0) {
-            $is_flying = true;
-        } else {
-            $score_st = max(0, (0.30 - $e['start_timing']) / 0.30 * 10);
-        }
-    }
-
-    $score_motor = 0;
-    if ($e['motor_2rate'] !== null) {
-        $score_motor = min(10, $e['motor_2rate'] / 60 * 10);
-    }
-
-    $score_today_raw = $score_exhibit + $score_st + $score_motor;
-
-    $wind_speed  = $race['wind_speed'] ?? 0;
-    $wave_height = $race['wave_height'] ?? 0;
-    $weather_penalty = min(1.0, ($wind_speed / 10 + $wave_height / 30) / 2);
-    if ($lane == 1) {
-        $score_weather_raw = 5 - $weather_penalty * 2;
-    } elseif ($lane <= 3) {
-        $score_weather_raw = 3 - $weather_penalty;
+    var tdTilt = document.createElement('td');
+    if (p.tilt != null) {
+      tdTilt.textContent = p.tilt;
     } else {
-        $score_weather_raw = 2 + $weather_penalty;
+      tdTilt.className = 'na';
+      tdTilt.textContent = '-';
     }
-    $score_weather_raw = max(0, min(5, $score_weather_raw));
+    tr.appendChild(tdTilt);
 
-    // 各要素の配点(能力40+コース35+当日情報35+気象5=115点満点)を、
-    // 従来通りの100点満点スケールに正規化する。
-    // 内訳の合算値が100を超えるとai-predict.phpのスコア内訳バー(width:X%)が
-    // はみ出すため、個々のraw値ではなく正規化後の値をpredictionsに保存・返却する。
-    $raw_max = 40 + 35 + 35 + 5;
-    $norm    = 100 / $raw_max;
+    var tdProp = document.createElement('td');
+    if (p.propeller_mark) {
+      tdProp.textContent = p.propeller_mark;
+    } else {
+      tdProp.className = 'na';
+      tdProp.textContent = '-';
+    }
+    tr.appendChild(tdProp);
 
-    $score_ability = $score_ability_raw * $norm;
-    $score_course  = $score_course_raw  * $norm;
-    $score_today   = $score_today_raw   * $norm;
-    $score_weather = $score_weather_raw * $norm;
+    var tdParts = document.createElement('td');
+    if (p.parts_exchange) {
+      tdParts.style.fontSize = '11px';
+      tdParts.textContent = p.parts_exchange;
+    } else {
+      tdParts.className = 'na';
+      tdParts.textContent = '-';
+    }
+    tr.appendChild(tdParts);
 
-    $score_total = $score_ability + $score_course + $score_today + $score_weather;
-    if ($is_flying) $score_total -= 10;
-    if ($race_count < 10) $score_total *= 0.70;
-    $score_total = max(0, $score_total);
+    var tdSt = document.createElement('td');
+    tdSt.className = 'score-cell';
+    tdSt.textContent = p.is_flying ? 'F' : fmtVal(p.start_timing, 2);
+    tr.appendChild(tdSt);
 
-    $scores[] = [
-        'lane'              => (int)$lane,
-        'player_id'         => (int)$player_id,
-        'name'              => $e['name'],
-        'grade'             => $e['grade'],
-        'exhibit_time'      => $e['exhibit_time'],
-        'start_timing'      => $e['start_timing'],
-        'motor_2rate'       => $e['motor_2rate'],
-        'adjust_weight'     => $e['adjust_weight'],
-        'tilt'              => $e['tilt'],
-        'propeller_mark'    => $e['propeller_mark'],
-        'parts_exchange'    => $e['parts_exchange'],
-        'exhibit_course'    => $e['exhibit_course'] !== null ? (int)$e['exhibit_course'] : null,
-        'win_rate_national' => round($win_rate_national, 2),
-        'win_rate_local'    => round($win_rate_local, 2),
-        'score_ability'     => round($score_ability, 2),
-        'score_course'      => round($score_course, 2),
-        'score_today'       => round($score_today, 2),
-        'score_weather'     => round($score_weather, 2),
-        'score_total'       => round($score_total, 2),
-        'is_flying'         => $is_flying,
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+}
+
+function buildStartVisual(predictions) {
+  var wrap = document.getElementById('startVisual');
+  wrap.textContent = '';
+
+  var hasCourseData = predictions.some(function(p) { return p.exhibit_course != null; });
+
+  var byCourse = {};
+  predictions.forEach(function(p) {
+    var course = hasCourseData ? (p.exhibit_course || p.lane) : p.lane;
+    byCourse[course] = p;
+  });
+
+  var MIN_ST = 0.00, MAX_ST = 0.35;
+
+  for (var course = 1; course <= 6; course++) {
+    var p = byCourse[course];
+    var lane = p ? p.lane : course;
+    var row = document.createElement('div');
+    row.className = 'start-track-row';
+
+    var wakuEl = document.createElement('span');
+    wakuEl.className = 'waku waku-' + lane;
+    wakuEl.textContent = lane;
+    row.appendChild(wakuEl);
+
+    var bar = document.createElement('div');
+    bar.className = 'start-track-bar';
+    var line = document.createElement('div');
+    line.className = 'start-track-line';
+    bar.appendChild(line);
+
+    var boat = document.createElement('div');
+    boat.className = 'waku waku-' + lane + ' start-track-boat';
+    boat.textContent = lane;
+
+    var st = p ? p.start_timing : null;
+    var isFlying = p ? p.is_flying : false;
+    var percent = 6;
+    if (isFlying) {
+      percent = 92;
+    } else if (st != null) {
+      var clamped = Math.max(MIN_ST, Math.min(MAX_ST, st));
+      percent = 6 + (1 - (clamped - MIN_ST) / (MAX_ST - MIN_ST)) * 84;
+    }
+    boat.style.left = percent + '%';
+    bar.appendChild(boat);
+    row.appendChild(bar);
+
+    var stLabel = document.createElement('div');
+    stLabel.className = 'start-track-st' + (isFlying ? ' flying' : '');
+    stLabel.textContent = isFlying ? 'F' : fmtVal(st, 2);
+    row.appendChild(stLabel);
+
+    wrap.appendChild(row);
+  }
+
+  var note = wrap.nextElementSibling;
+  if (note && note.className === 'note') {
+    note.textContent = hasCourseData
+      ? 'スタート展示の実際の進入コース順・STタイムを表示しています。'
+      : '進入コースの実測データがないため、枠番の並び順でスタート展示の目安位置を表しています(実際の進入とは異なる場合があります)。';
+  }
+}
+
+function buildOriginalTable(predictions, aiLocked) {
+  var wrap = document.getElementById('originalTableWrap');
+  wrap.textContent = '';
+
+  if (aiLocked) {
+    var lock = document.createElement('div');
+    lock.className = 'premium-lock';
+    var icon = document.createElement('span');
+    icon.className = 'premium-lock-icon';
+    icon.textContent = '🔒';
+    var p = document.createElement('p');
+    p.textContent = 'AI予想スコアはStandard/Premium会員限定です。';
+    var a = document.createElement('a');
+    a.href = 'upgrade.html';
+    a.textContent = 'プランをアップグレード';
+    lock.appendChild(icon);
+    lock.appendChild(p);
+    lock.appendChild(a);
+    wrap.appendChild(lock);
+    return;
+  }
+
+  var table = document.createElement('table');
+  table.className = 'pred-table';
+
+  var thead = document.createElement('thead');
+  var htr = document.createElement('tr');
+  var cols = ['枠', '選手名', '展示T', 'ST', '能力', 'コース', '当日', '気象', '総合'];
+  cols.forEach(function(c) {
+    var th = document.createElement('th');
+    th.textContent = c;
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  predictions.forEach(function(p) {
+    var tr = document.createElement('tr');
+
+    var tdWaku = document.createElement('td');
+    var wakuEl = document.createElement('span');
+    wakuEl.className = 'waku waku-' + p.lane;
+    wakuEl.textContent = p.lane;
+    tdWaku.appendChild(wakuEl);
+    tr.appendChild(tdWaku);
+
+    var tdName = document.createElement('td');
+    tdName.className = 'td-name';
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'td-name-inner';
+    nameSpan.textContent = formatName(p.name);
+    tdName.appendChild(nameSpan);
+    tdName.appendChild(gradeSpanFor(p.grade));
+    tr.appendChild(tdName);
+
+    var vals = [
+      fmtVal(p.exhibit_time, 2),
+      p.is_flying ? 'F' : fmtVal(p.start_timing, 2),
+      fmtVal(p.score_ability, 1),
+      fmtVal(p.score_course, 1),
+      fmtVal(p.score_today, 1),
+      fmtVal(p.score_weather, 1),
     ];
+    vals.forEach(function(v) {
+      var td = document.createElement('td');
+      td.className = 'score-cell';
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+
+    var tdTotal = document.createElement('td');
+    tdTotal.className = 'score-total';
+    tdTotal.textContent = fmtVal(p.score_total, 1);
+    tr.appendChild(tdTotal);
+
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
 }
 
-// スコア降順でソート（同点の場合はlane順）
-usort($scores, function($a, $b) {
-    if ($b['score_total'] != $a['score_total']) {
-        return $b['score_total'] <=> $a['score_total'];
+async function loadNearbyRaces() {
+  try {
+    var url = API_BASE + '/get_nearby_races.php?date=' + date + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
+    var res = await fetch(url);
+    var data = await res.json();
+    if (!data.nearby || data.nearby.length === 0) return;
+
+    var card = document.getElementById('nearbyCard');
+    var scroll = document.getElementById('nearbyRaces');
+    scroll.textContent = '';
+    data.nearby.forEach(function(r) {
+      var a = document.createElement('a');
+      a.className = 'nearby-card';
+      a.href = 'predict.php?venue=' + encodeURIComponent(r.venue) + '&date=' + date + '&race_no=' + r.race_no;
+      var v = document.createElement('div');
+      v.className = 'nearby-card-venue';
+      v.textContent = venueDisplayName(r.venue);
+      var rno = document.createElement('div');
+      rno.className = 'nearby-card-race';
+      rno.textContent = r.race_no + 'R';
+      var t = document.createElement('div');
+      t.className = 'nearby-card-time';
+      t.textContent = r.scheduled_time || '';
+      a.appendChild(v); a.appendChild(rno); a.appendChild(t);
+      scroll.appendChild(a);
+    });
+    card.style.display = 'block';
+  } catch (e) {}
+}
+
+async function loadPrediction() {
+  try {
+    var url = API_BASE + '/api_predict.php?date=' + date + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
+    var res = await fetch(url);
+    var data = await res.json();
+
+    document.getElementById('loadingArea').textContent = '';
+
+    if (data.error || !data.predictions || data.predictions.length === 0) {
+      var err = document.createElement('div');
+      err.className = 'error-msg';
+      err.textContent = data.error || '直前情報が見つかりません';
+      document.getElementById('errorArea').appendChild(err);
+      return;
     }
-    return $a['lane'] <=> $b['lane'];
-});
 
-// 予測順位を付与（参照渡しを使わない）
-for ($i = 0; $i < count($scores); $i++) {
-    $scores[$i]['predicted_rank'] = $i + 1;
-}
-
-// 予測結果をDBに保存
-$stmt = $pdo->prepare("
-    INSERT INTO predictions
-        (race_id, player_id, predicted_rank, score_total,
-         score_ability, score_course, score_today, score_weather, created_at)
-    VALUES
-        (:race_id, :player_id, :predicted_rank, :score_total,
-         :score_ability, :score_course, :score_today, :score_weather, NOW())
-    ON DUPLICATE KEY UPDATE
-        predicted_rank=VALUES(predicted_rank),
-        score_total=VALUES(score_total),
-        score_ability=VALUES(score_ability),
-        score_course=VALUES(score_course),
-        score_today=VALUES(score_today),
-        score_weather=VALUES(score_weather),
-        created_at=NOW()
-");
-
-for ($i = 0; $i < count($scores); $i++) {
-    $stmt->execute([
-        ':race_id'        => $race_id,
-        ':player_id'      => $scores[$i]['player_id'],
-        ':predicted_rank' => $scores[$i]['predicted_rank'],
-        ':score_total'    => $scores[$i]['score_total'],
-        ':score_ability'  => $scores[$i]['score_ability'],
-        ':score_course'   => $scores[$i]['score_course'],
-        ':score_today'    => $scores[$i]['score_today'],
-        ':score_weather'  => $scores[$i]['score_weather'],
-    ]);
-}
-
-// 予測生成のタイミングで戦略買い目を自動生成
-try {
-    generate_and_save_strategies($pdo, $race_id);
-} catch (Exception $e) {
-    // strategies テーブル未作成時など非致命的エラーは無視
-}
-
-// このAPIは直前情報(exhibit_time等)を無料機能(直前情報タブ・出走表フォールバック等)が
-// 参照するため誰でも呼び出せる状態を維持しつつ、AI予測由来のフィールド
-// (score_*・predicted_rank)はStandard/Premium限定として出力時のみ除去する。
-// DBへの保存・戦略生成は呼び出し元のプランに関わらず常に行う(データを最新に保つため)。
-$user   = current_user();
-$plan   = $user['plan'] ?? 'free';
-$isPaid = $user && in_array($plan, ['standard', 'premium'], true);
-
-$responseScores = $scores;
-if (!$isPaid) {
-    foreach ($responseScores as &$s) {
-        $s['score_ability']  = null;
-        $s['score_course']   = null;
-        $s['score_today']    = null;
-        $s['score_weather']  = null;
-        $s['score_total']    = null;
-        $s['predicted_rank'] = null;
+    if (data.weather) {
+      var wx = data.weather;
+      document.getElementById('windDir').textContent = wx.wind_dir || '-';
+      document.getElementById('windSpeed').textContent = wx.wind_speed != null ? wx.wind_speed : '-';
+      document.getElementById('waveHeight').textContent = wx.wave_height != null ? wx.wave_height : '-';
+      document.getElementById('wxWeather').textContent = wx.weather || '-';
+      document.getElementById('wxTemp').textContent = wx.temperature != null ? wx.temperature : '-';
+      document.getElementById('wxWaterTemp').textContent = wx.water_temperature != null ? wx.water_temperature : '-';
+      var iconWrap = document.getElementById('wxIconWrap');
+      if (iconWrap) { iconWrap.innerHTML = getWeatherIconSVG(wx.weather || ''); }
+      document.getElementById('weatherCard').style.display = 'block';
     }
-    unset($s);
-    // predicted_rank順のままだとAIの1位候補が並び順から推測できてしまうため、枠番順に戻す
-    usort($responseScores, function($a, $b) { return $a['lane'] <=> $b['lane']; });
+
+    buildStartVisual(data.predictions);
+    buildOfficialTable(data.predictions);
+    buildOriginalTable(data.predictions, !!data.ai_locked);
+  } catch(e) {
+    document.getElementById('loadingArea').textContent = '';
+    var err2 = document.createElement('div');
+    err2.className = 'error-msg';
+    err2.textContent = 'データの取得に失敗しました';
+    document.getElementById('errorArea').appendChild(err2);
+  }
 }
 
-echo json_encode([
-    'date'        => $date,
-    'venue'       => $venue,
-    'race_no'     => $race_no,
-    'race_id'     => $race_id,
-    'entry_count' => count($entries),
-    'ai_locked'   => !$isPaid,
-    'weather'     => [
-        'wind_speed'        => $race['wind_speed'],
-        'wind_dir'          => $race['wind_dir'],
-        'wave_height'       => $race['wave_height'],
-        'weather'           => $race['weather'],
-        'temperature'       => $race['temperature'],
-        'water_temperature' => $race['water_temperature'],
-    ],
-    'predictions' => $responseScores,
-], JSON_UNESCAPED_UNICODE);
+loadPrediction();
+loadNearbyRaces();
+</script>
+</body>
+</html>
