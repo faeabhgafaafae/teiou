@@ -122,6 +122,12 @@
         </div>
       </div>
 
+      <div class="mypage-card">
+        <h3 style="font-size: 15px; font-weight: 800; color: #1a202c; margin-bottom: 4px;"><i class="fas fa-trophy" style="margin-right: 8px; color: #d97706;"></i>マイ的中トラッカー <span class="nav-premium-badge">PREMIUM</span></h3>
+        <p style="font-size: 13px; color: #718096; margin-bottom: 16px;">自分の買い目を登録して、的中実績を記録・管理できます。</p>
+        <a href="my-picks.php" class="btn-primary" style="display: inline-block; width: auto; max-width: 220px; padding: 10px 20px; text-align: center; text-decoration: none;">マイ的中トラッカーを開く</a>
+      </div>
+
       <div class="section-header" id="favoritesSection" style="margin-top: 32px;">
         <h2 class="section-title"><i class="fas fa-star" style="color: #d97706; margin-right: 6px;"></i>お気に入りのレース場</h2>
       </div>
