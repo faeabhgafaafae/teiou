@@ -1,0 +1,33 @@
+name: 一時 テストユーザー削除(使い捨て)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-and-cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: スクリプト生成・アップロード・実行・削除
+        env:
+          TEMP_DELETE_SCRIPT: ${{ secrets.TEMP_DELETE_SCRIPT }}
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          set -e
+          printf '%s\n' "$TEMP_DELETE_SCRIPT" > delete_test_user.php
+
+          echo "--- uploading ---"
+          curl -sS -T delete_test_user.php --user "$FTP_USER:$FTP_PASS" "ftp://$FTP_HOST/delete_test_user.php"
+
+          sleep 2
+
+          echo "--- executing deletion ---"
+          curl -sS "https://2410049.moo.jp/delete_test_user.php?api_key=$API_KEY"
+          echo ""
+
+          echo "--- removing script from server ---"
+          curl -sS --user "$FTP_USER:$FTP_PASS" "ftp://$FTP_HOST/" -Q "DELE delete_test_user.php"
+
+          rm -f delete_test_user.php
