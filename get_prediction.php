@@ -12,10 +12,9 @@ if (!$date || !$venue || !$race_no) {
     json_response(['error' => 'date, venue, race_no は必須です'], 400);
 }
 
-// AI予測(スコア・順位)はFree以上で公開。買い目はStandard以上、詳細スコア内訳はPremium限定。
+// AI予測(スコア・順位)はFree以上で公開。詳細スコア内訳はPremium限定。
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
-$isStandardPlus = in_array($plan, ['standard', 'premium'], true);
 $isPremium = ($plan === 'premium');
 
 $pdo = get_db();
@@ -57,12 +56,6 @@ $stmt = $pdo->prepare('
 ');
 $stmt->execute([$raceId]);
 $predictions = $stmt->fetchAll();
-
-// Standard以上限定: 予想順位上位3艇による推奨舟券(3連単)
-$recommendedTicket = null;
-if ($isStandardPlus && count($predictions) >= 3) {
-    $recommendedTicket = implode('-', array_slice(array_column($predictions, 'lane'), 0, 3));
-}
 
 // Premium限定: スコア内訳の生データを計算して付加する
 if ($isPremium && !empty($predictions)) {
@@ -172,13 +165,11 @@ if ($isPremium && !empty($predictions)) {
 }
 
 json_response([
-    'race_id'            => $raceId,
-    'date'               => $date,
-    'venue'              => $venue,
-    'race_no'            => (int)$race_no,
-    'plan'               => $plan,
-    'is_standard_plus'   => $isStandardPlus,
-    'is_premium'         => $isPremium,
-    'recommended_ticket' => $recommendedTicket,
-    'predictions'        => $predictions,
+    'race_id'     => $raceId,
+    'date'        => $date,
+    'venue'       => $venue,
+    'race_no'     => (int)$race_no,
+    'plan'        => $plan,
+    'is_premium'  => $isPremium,
+    'predictions' => $predictions,
 ]);
