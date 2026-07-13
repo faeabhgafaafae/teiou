@@ -82,7 +82,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .stats-tabs { display: flex; gap: 4px; margin-bottom: 8px; padding: 4px; background: #e9ecef; border-radius: 10px; }
 .stats-tab { flex: 1; padding: 8px 4px; border: none; border-radius: 8px; background: transparent; font-size: 12px; font-weight: 600; color: #888; cursor: pointer; text-align: center; transition: all 0.15s; }
 .stats-tab:hover { color: #555; background: #dde0e4; }
-.stats-tab.active { background: #1a56db; color: #fff; }
+.stats-tab.active { background: #0055a4; color: #fff; }
 
 .pred-table-header { display: flex; align-items: center; padding: 8px 12px; background: #f7f8fa; border: 1px solid #e0e3e8; border-radius: 12px 12px 0 0; gap: 8px; font-size: 10px; font-weight: 700; color: #999; }
 .th-waku { width: 28px; flex-shrink: 0; text-align: center; }
