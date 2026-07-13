@@ -11,6 +11,7 @@ $isPremium       = ($plan === 'premium');
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>艇王 - データ分析</title>
+<link rel="stylesheet" href="style.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
@@ -153,7 +154,12 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
   <h1>データ分析</h1>
 </header>
 
-<div class="container">
+<div class="dashboard-container">
+
+  <?php include 'sidebar.php'; ?>
+
+  <main class="main-content">
+  <div class="container">
 
   <!-- レーサー検索 -->
   <div class="card search-card">
@@ -302,6 +308,9 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
       <div id="payoutsPopularity"></div>
     </div>
   </div>
+
+  </div>
+  </main>
 
 </div>
 
