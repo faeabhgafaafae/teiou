@@ -232,9 +232,9 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .show-all-btn { display: block; width: 100%; padding: 11px 16px; border: none; border-top: 1px solid #ebebeb; background: #fafbfc; font-size: 13px; font-weight: 600; color: #0055a4; cursor: pointer; text-align: center; }
 .show-all-btn:hover { background: #eff6ff; }
 
-/* ブレークポイントはmax-widthの降順(820→600→480)で記述し、
+/* ブレークポイントはmax-widthの降順(900→600)で記述し、
    幅が狭くなるほど後段のルールが優先されるようにする */
-@media (max-width: 820px) {
+@media (max-width: 900px) {
   .header-left { gap: 12px; }
   .header-page-title { font-size: 15px; }
   .header-main-date { font-size: 12px; }
@@ -260,9 +260,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .pred-detail { padding: 0 10px 10px 10px; }
   .score-detail-label { width: 60px; font-size: 11px; }
   .score-detail-value { width: 80px; font-size: 11px; }
-}
-
-@media (max-width: 480px) {
   .strat-stats-wrap { gap: 10px; }
   .strat-stat-val { font-size: 13px; }
   .ct-col-cost { display: none; }

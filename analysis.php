@@ -128,15 +128,12 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
 .adv-link { color: #0055a4; text-decoration: none; font-weight: 700; }
 .adv-link.confirmed { color: #16a34a; }
 .adv-link:hover { text-decoration: underline; }
-@media (max-width: 460px) { .adv-venue-grid { grid-template-columns: repeat(4, 1fr); } }
-
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .venue-card-grid { grid-template-columns: repeat(3, 1fr); }
 }
-@media (max-width: 460px) {
-  .venue-card-grid { grid-template-columns: repeat(2, 1fr); }
-}
 @media (max-width: 600px) {
+  .adv-venue-grid { grid-template-columns: repeat(4, 1fr); }
+  .venue-card-grid { grid-template-columns: repeat(2, 1fr); }
   .controls { flex-direction: column; align-items: stretch; }
   .stat-row { gap: 6px; }
 }
