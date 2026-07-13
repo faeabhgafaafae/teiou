@@ -15,7 +15,6 @@ $isPremium       = ($plan === 'premium');
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
-header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
 .premium-lock { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; text-align: center; padding: 40px 20px; margin: 0 auto; max-width: 1000px; }
 .premium-lock-icon { font-size: 28px; margin-bottom: 10px; display: block; }
 .premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }
@@ -23,7 +22,7 @@ header { background: #fff; border-bottom: 3px solid #0055a4; padding: 12px 20px;
 .premium-lock a:hover { background: #b45309; }
 .back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
 .back-btn:hover { background: #e8f0fd; }
-header h1 { font-size: 18px; font-weight: 700; color: #222; }
+.page-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px; }
 
 .card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
@@ -149,10 +148,7 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
 </head>
 <body>
 
-<header>
-  <a class="back-btn" href="index.php">&larr;</a>
-  <h1>データ分析</h1>
-</header>
+  <?php include 'header.php'; ?>
 
 <div class="dashboard-container">
 
@@ -160,6 +156,11 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
 
   <main class="main-content">
   <div class="container">
+
+  <div class="page-title-row">
+    <a class="back-btn" href="index.php">&larr;</a>
+    <h2 class="section-title">データ分析</h2>
+  </div>
 
   <!-- レーサー検索 -->
   <div class="card search-card">
@@ -317,6 +318,71 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
 <script>
 var IS_STANDARD_PLUS = <?php echo $isStandardPlus ? 'true' : 'false'; ?>;
 var IS_PREMIUM       = <?php echo $isPremium      ? 'true' : 'false'; ?>;
+
+// --- 共通ヘッダー(index.php/mypage.phpと同じロジック) ---
+function formatHeaderDate(dateStr) {
+  var d = new Date(dateStr + 'T00:00:00');
+  var days = ['日','月','火','水','木','金','土'];
+  return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (' + days[d.getDay()] + ')';
+}
+
+async function loadHeaderDate() {
+  try {
+    var res = await fetch('https://2410049.moo.jp/venues.php');
+    if (res.ok) {
+      var data = await res.json();
+      var el = document.getElementById('headerDate');
+      if (el) el.textContent = formatHeaderDate(data.date);
+    }
+  } catch (e) { console.error(e); }
+}
+
+async function checkAuth() {
+  var authEl = document.getElementById('headerAuth');
+  if (!authEl) return;
+  try {
+    var res = await fetch('me.php');
+    if (!res.ok) {
+      authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
+      return;
+    }
+    var data = await res.json();
+    var user = data.user;
+    var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
+    var planClass = user.plan !== 'free' ? user.plan : '';
+
+    authEl.innerHTML = '<div class="user-menu">' +
+        '<button class="user-btn" id="userBtn">' +
+          '<span>' + user.name + '</span>' +
+          '<span class="plan-badge ' + planClass + '">' + (planLabel[user.plan] || 'Free') + '</span>' +
+        '</button>' +
+        '<div class="dropdown" id="userDropdown">' +
+          '<button class="dropdown-item" onclick="location.href=\'mypage.php\'"><i class="fas fa-user-cog" style="margin-right: 8px; color: #718096;"></i>マイページ</button>' +
+          '<button class="dropdown-item logout" id="logoutBtn" style="border-top: 1px solid #edf2f7; color: #dc2626;"><i class="fas fa-sign-out-alt" style="margin-right: 8px; color: #dc2626;"></i>ログアウト</button>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('userBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.getElementById('userDropdown').classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+      var dropdown = document.getElementById('userDropdown');
+      if (dropdown) dropdown.classList.remove('open');
+    });
+    document.getElementById('logoutBtn').addEventListener('click', async function() {
+      await fetch('logout.php');
+      location.href = 'index.php';
+    });
+  } catch (err) {
+    authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
+  }
+}
+
+var headerLogoEl = document.getElementById('headerLogo');
+if (headerLogoEl) headerLogoEl.addEventListener('click', function() { location.href = 'index.php'; });
+loadHeaderDate();
+checkAuth();
 
 // Free ユーザー: 会場別・過去検索・払戻傾向パネルをロック表示に差し替え
 if (!IS_STANDARD_PLUS) {
