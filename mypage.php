@@ -270,8 +270,9 @@
     }
 
     function setupPlanChange() {
-      ['standard', 'premium'].forEach(function(plan) {
-        var btnId = plan === 'standard' ? 'btnSelectStandard' : 'btnSelectPremium';
+      var btnIds = { free: 'btnSelectFree', standard: 'btnSelectStandard', premium: 'btnSelectPremium' };
+      ['free', 'standard', 'premium'].forEach(function(plan) {
+        var btnId = btnIds[plan];
         var btn = document.getElementById(btnId);
         if (!btn) return;
         btn.addEventListener('click', async function() {
