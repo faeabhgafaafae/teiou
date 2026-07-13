@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>艇王 - 期別成績インポート</title>
+<style>
+  body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; background: #f5f5f5; }
+  h1 { color: #1a4a8a; }
+  .card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+  label { display: block; margin-bottom: 8px; font-weight: bold; }
+  input[type=file] { width: 100%; padding: 10px; border: 2px dashed #ccc; border-radius: 6px; margin-bottom: 16px; box-sizing: border-box; }
+  input[type=text] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 16px; box-sizing: border-box; }
+  button { background: #1a4a8a; color: white; border: none; padding: 12px 32px; border-radius: 6px; font-size: 16px; cursor: pointer; }
+  button:disabled { background: #999; cursor: not-allowed; }
+  #log { background: #1a1a1a; color: #00ff88; padding: 16px; border-radius: 6px; font-family: monospace; font-size: 13px; min-height: 100px; white-space: pre-wrap; overflow-y: auto; max-height: 400px; }
+  .success { color: #00ff88; }
+  .error { color: #ff4444; }
+  .info { color: #aaa; }
+  progress { width: 100%; height: 20px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<h1>🚤 艇王 - 期別成績インポート</h1>
+
+<div class="card">
+  <label>① APIキー</label>
+  <input type="text" id="apikey" placeholder="APIキーを入力">
+
+  <label>② インポートするファイルを選択（複数OK）</label>
+  <input type="file" id="files" multiple accept=".txt,.lzh">
+
+  <label>③ アップロード先URL</label>
+  <input type="text" id="url" placeholder="https://あなたのドメイン/import_fan.php">
+
+  <button id="btn" onclick="startImport()">インポート開始</button>
+</div>
+
+<div class="card">
+  <div id="progress_wrap" style="display:none">
+    <progress id="progress" value="0" max="100"></progress>
+    <div id="status">準備中...</div>
+  </div>
+  <div id="log">ログがここに表示されます...</div>
+</div>
+
+<script>
+async function startImport() {
+  const files   = document.getElementById('files').files;
+  const url     = document.getElementById('url').value.trim();
+  const apikey  = document.getElementById('apikey').value.trim();
+  const btn     = document.getElementById('btn');
+  const log     = document.getElementById('log');
+  const prog    = document.getElementById('progress');
+  const status  = document.getElementById('status');
+  const progWrap = document.getElementById('progress_wrap');
+
+  if (!files.length) { alert('ファイルを選択してください'); return; }
+  if (!url)          { alert('アップロード先URLを入力してください'); return; }
+
+  btn.disabled = true;
+  log.textContent = '';
+  progWrap.style.display = 'block';
+
+  let ok = 0, err = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const pct  = Math.round((i / files.length) * 100);
+    prog.value = pct;
+    status.textContent = `処理中: ${i+1} / ${files.length} ファイル`;
+
+    appendLog(`\n📄 ${file.name} を送信中...`, 'info');
+
+    const fd = new FormData();
+    fd.append('api_key', apikey);
+    fd.append('fanfile', file);
+
+    try {
+      const res  = await fetch(url, { method: 'POST', body: fd });
+      const json = await res.json();
+
+      if (json.error) {
+        appendLog(`  ❌ エラー: ${json.error}`, 'error');
+        err++;
+      } else {
+        appendLog(`  ✅ ${json.year}年${json.period} → ${json.ok}件登録 (スキップ: ${json.skip}件)`, 'success');
+        ok++;
+      }
+    } catch (e) {
+      appendLog(`  ❌ 通信エラー: ${e.message}`, 'error');
+      err++;
+    }
+
+    // サーバー負荷対策で少し待つ
+    await sleep(500);
+  }
+
+  prog.value = 100;
+  status.textContent = '完了';
+  appendLog(`\n━━━━━━━━━━━━━━━━━━━━`, 'info');
+  appendLog(`完了: 成功 ${ok}件 / 失敗 ${err}件`, ok > 0 ? 'success' : 'error');
+  btn.disabled = false;
+}
+
+function appendLog(text, cls) {
+  const log  = document.getElementById('log');
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = text + '\n';
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+</script>
+
+</body>
+</html>
