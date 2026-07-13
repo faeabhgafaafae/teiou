@@ -31,8 +31,6 @@ body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; backgr
 .back-btn:hover { background: #e8f0fd; }
 .page-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .container { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
-.card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-.card h2 { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 14px; }
 .premium-lock { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; text-align: center; padding: 40px 20px; margin: 20px auto; max-width: 500px; }
 .premium-lock-icon { font-size: 28px; margin-bottom: 10px; display: block; }
 .premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }

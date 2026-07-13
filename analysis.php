@@ -25,9 +25,6 @@ body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; backgr
 .page-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px; }
 
-.card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-.card h2 { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 12px; }
-
 /* レーサー検索 */
 .search-card .controls { margin-bottom: 0; }
 .player-search-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
