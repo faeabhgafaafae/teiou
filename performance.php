@@ -209,9 +209,9 @@ async function loadSummary() {
       var roiRow = document.createElement('div');
       roiRow.className = 'strategy-card-row ' + (s.profit >= 0 ? 'profit-plus' : 'profit-minus');
       var roiLbl = document.createElement('span');
-      roiLbl.textContent = '回収率(損益率)';
+      roiLbl.textContent = '回収率';
       var roiVal = document.createElement('strong');
-      roiVal.textContent = (s.roi >= 0 ? '+' : '') + s.roi.toFixed(1) + '%';
+      roiVal.textContent = (s.roi + 100).toFixed(1) + '%';
       roiRow.appendChild(roiLbl); roiRow.appendChild(roiVal);
       card.appendChild(roiRow);
 
