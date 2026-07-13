@@ -367,7 +367,7 @@ async function loadEntry() {
     }
 
     if (useFallback) {
-      var url2 = API_HOST + '/predict.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
+      var url2 = API_HOST + '/api_predict.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
       var res2 = await fetch(url2);
       if (!res2.ok) throw new Error('HTTP ' + res2.status);
       var pData = await res2.json();

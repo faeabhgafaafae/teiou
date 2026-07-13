@@ -990,7 +990,7 @@ async function searchRaces() {
   if (!date) { resultEl.textContent = ''; resultEl.appendChild(makeError('日付を選択してください')); return; }
 
   try {
-    var res = await fetch(API_HOST + '/races.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue));
+    var res = await fetch(API_HOST + '/api_races.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue));
     var data = await res.json();
     resultEl.textContent = '';
     if (!data.races || data.races.length === 0) {
