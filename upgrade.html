@@ -56,7 +56,7 @@
       <div class="plan-price">&yen;0</div>
       <div class="plan-price-sub">/ 月</div>
       <ul id="featuresFree"></ul>
-      <button class="plan-btn plan-btn-free" id="btnFree" disabled>現在のプラン</button>
+      <button class="plan-btn plan-btn-free" id="btnFree" onclick="changePlan('free')">Freeに変更</button>
     </div>
 
     <div class="plan-card" id="cardStandard">
@@ -132,16 +132,10 @@ async function loadCurrentPlan() {
     btn.disabled = true;
     btn.textContent = '現在のプラン';
   }
-  var btnFree = document.getElementById('btnFree');
-  if (currentUserPlan === 'free') {
-    btnFree.style.display = '';
-  } else {
-    btnFree.style.display = 'none';
-  }
 }
 
 async function changePlan(plan) {
-  var labels = { standard: 'Standard', premium: 'Premium' };
+  var labels = { free: 'Free', standard: 'Standard', premium: 'Premium' };
   try {
     var res = await fetch('update_plan.php', {
       method: 'POST',
