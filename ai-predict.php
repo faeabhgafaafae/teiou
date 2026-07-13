@@ -391,8 +391,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   </div>
 
   <div id="predictSection">
-    <div id="recommendedTicketBox" style="margin-bottom:10px;"></div>
-
     <div class="stats-tabs" id="statsTabs" style="display:none">
       <button class="stats-tab active" data-tab="recent10">直近10走</button>
       <button class="stats-tab" data-tab="recent6m">直近6ヶ月</button>
@@ -586,31 +584,6 @@ function makeBkGroupTitle(text) {
   el.className = 'bk-group-title';
   el.textContent = text;
   return el;
-}
-
-function renderRecommendedTicket(data) {
-  var box = document.getElementById('recommendedTicketBox');
-  if (!box) return;
-  box.textContent = '';
-
-  if (userPlan === 'free') {
-    var lockDiv = document.createElement('div');
-    lockDiv.className = 'bk-lock';
-    lockDiv.appendChild(document.createTextNode('🔒 買い目(推奨舟券)はStandard会員限定 '));
-    var lockLink = document.createElement('a');
-    lockLink.href = 'upgrade.html';
-    lockLink.textContent = 'アップグレード →';
-    lockDiv.appendChild(lockLink);
-    box.appendChild(lockDiv);
-    return;
-  }
-
-  if (data.recommended_ticket) {
-    var ticketDiv = document.createElement('div');
-    ticketDiv.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:13px;font-weight:700;color:#1e40af;text-align:center;';
-    ticketDiv.textContent = '推奨舟券(3連単): ' + data.recommended_ticket;
-    box.appendChild(ticketDiv);
-  }
 }
 
 function renderBreakdownSection(r) {
@@ -916,8 +889,6 @@ async function loadData() {
     document.getElementById('statsTabs').style.display = 'flex';
     document.getElementById('bottomActions').style.display = 'flex';
     document.getElementById('pikaichiBar').style.display = 'block';
-
-    renderRecommendedTicket(data);
 
     var results = buildResults(data.predictions);
     topScoreLane = results.length ? results[0].lane : null;
