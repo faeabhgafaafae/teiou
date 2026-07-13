@@ -4,32 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>艇王 - 予想</title>
+<link rel="stylesheet" href="style.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; padding-top: 130px; /* ヘッダーとナビの高さ分余白を追加 */ }
+body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
 
-/* --- ヘッダー全体を上部に固定 --- */
-header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; height: 71px; /* ヘッダーの高さを固定 */ }
-
-/* 左：戻るボタン・ロゴ ＆ レース場情報エリア */
-.header-left { display: flex; align-items: center; gap: 20px; }
+/* 左：戻るボタン ＆ レース場情報エリア */
+.header-left { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; }
 .back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; flex-shrink: 0; }
 .back-btn:hover { background: #e8f0fd; }
-.logo img { height: 44px; width: auto; display: block; cursor: pointer; }
 
 .header-venue-info { display: flex; flex-direction: column; }
 .header-venue-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
 .header-page-title { font-size: 18px; font-weight: 800; color: #1a202c; }
 .gh-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
 .header-main-date { font-size: 14px; color: #4a5568; font-weight: 700; font-variant-numeric: tabular-nums; }
-
-/* 右：ログイン・新規登録ボタン */
-.header-right { display: flex; align-items: center; gap: 16px; }
-.header-auth { display: flex; align-items: center; gap: 8px; }
-.auth-link { font-size: 12px; color: #0055a4; text-decoration: none; font-weight: 600; padding: 6px 14px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; transition: background 0.2s; }
-.auth-link:hover { background: #f8fafc; }
-.auth-link.register { background: #0055a4; color: #fff; border: none; }
-.auth-link.register:hover { background: #004488; }
 
 /* グレード badge カラーマスタ */
 .grade-sg { background: #fff3cd; color: #b8860b; }
@@ -40,18 +29,18 @@ header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px;
 
 /* --- R数クイックナビ --- */
 .race-nav-sticky {
-  position: fixed;
-  top: 71px; /* ヘッダーの下に配置 */
-  left: 0;
-  width: 100%;
+  position: sticky;
+  top: 0;
   background: #ffffff;
-  z-index: 1000;
+  z-index: 900;
   border-bottom: 2px solid #0055a4;
+  border-radius: 8px 8px 0 0;
   padding: 8px 12px;
   overflow-x: auto;
   white-space: nowrap;
   display: flex;
   gap: 6px;
+  margin-bottom: 12px;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 .race-nav-sticky::-webkit-scrollbar { display: none; }
@@ -250,19 +239,13 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 /* ブレークポイントはmax-widthの降順(820→600→480)で記述し、
    幅が狭くなるほど後段のルールが優先されるようにする */
 @media (max-width: 820px) {
-  header { padding: 12px 16px; min-height: 110px; height: auto; flex-direction: column; }
   .header-left { gap: 12px; }
-  .logo img { height: 36px; }
   .header-page-title { font-size: 15px; }
   .header-main-date { font-size: 12px; }
-  body { padding-top: 170px; }
 }
 
 @media (max-width: 600px) {
-  header { flex-wrap: wrap; justify-content: space-between; padding: 10px 12px; gap: 8px; min-height: 110px; height: auto; }
-  .header-left { width: auto; order: 1; }
-  .header-right { width: auto; order: 2; gap: 8px; }
-  .header-venue-info { flex-direction: row; align-items: center; width: 100%; order: 3; padding-top: 4px; border-top: 1px dashed #e2e8f0; justify-content: center; gap: 8px; }
+  .header-venue-info { flex-direction: row; align-items: center; gap: 8px; }
   .race-nav-btn { min-width: 44px; padding: 6px 10px; font-size: 12px; }
   .race-bar { flex-direction: column; align-items: flex-start; }
   .race-bar-right { width: 100%; }
@@ -347,12 +330,17 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 </head>
 <body>
 
-<header>
+  <?php include 'header.php'; ?>
+
+<div class="dashboard-container">
+
+  <?php include 'sidebar.php'; ?>
+
+  <main class="main-content">
+  <div class="container">
+
   <div class="header-left">
     <a class="back-btn" id="backBtn" href="races.html">&larr;</a>
-    <div class="logo" id="headerLogo" onclick="location.href='index.php'">
-      <img src="艇王.jpg" alt="艇王 BOATRACE ROYAL">
-    </div>
     <div class="header-venue-info">
       <div class="header-venue-row">
         <h1 id="pageTitle" class="header-page-title"></h1>
@@ -362,17 +350,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     </div>
   </div>
 
-  <div class="header-right">
-    <div class="header-auth" id="headerAuth">
-      <a class="auth-link" href="login.html">ログイン</a>
-      <a class="auth-link register" href="register.html">新規登録</a>
-    </div>
-  </div>
-</header>
+  <div id="raceTopNav" class="race-nav-sticky" style="display: none;"></div>
 
-<div id="raceTopNav" class="race-nav-sticky" style="display: none;"></div>
-
-<div class="container">
   <div class="race-bar" id="raceBar" style="display:none">
     <div class="race-bar-left">
       <div class="race-no-lg" id="raceNoLg"></div>
@@ -432,11 +411,79 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     <a class="bottom-btn" id="btnRacelist">出走表</a>
     <a class="bottom-btn" id="btnPredict">直前情報</a>
   </div>
+
+  </div>
+  </main>
+
 </div>
 
 <footer>艇王 &copy; 2026</footer>
 
 <script>
+// --- 共通ヘッダー(index.php/mypage.php/analysis.phpと同じロジック) ---
+(function() {
+  function formatHeaderDate(dateStr) {
+    var d = new Date(dateStr + 'T00:00:00');
+    var days = ['日','月','火','水','木','金','土'];
+    return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (' + days[d.getDay()] + ')';
+  }
+  async function loadHeaderDate() {
+    try {
+      var res = await fetch('https://2410049.moo.jp/venues.php');
+      if (res.ok) {
+        var data = await res.json();
+        var el = document.getElementById('headerDate');
+        if (el) el.textContent = formatHeaderDate(data.date);
+      }
+    } catch (e) { console.error(e); }
+  }
+  async function checkAuth() {
+    var authEl = document.getElementById('headerAuth');
+    if (!authEl) return;
+    try {
+      var res = await fetch('me.php');
+      if (!res.ok) {
+        authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
+        return;
+      }
+      var data = await res.json();
+      var user = data.user;
+      var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
+      var planClass = user.plan !== 'free' ? user.plan : '';
+
+      authEl.innerHTML = '<div class="user-menu">' +
+          '<button class="user-btn" id="userBtn">' +
+            '<span>' + user.name + '</span>' +
+            '<span class="plan-badge ' + planClass + '">' + (planLabel[user.plan] || 'Free') + '</span>' +
+          '</button>' +
+          '<div class="dropdown" id="userDropdown">' +
+            '<button class="dropdown-item" onclick="location.href=\'mypage.php\'"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px; vertical-align:-2px; color:#718096;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>マイページ</button>' +
+            '<button class="dropdown-item logout" id="logoutBtn" style="border-top: 1px solid #edf2f7; color: #dc2626;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px; vertical-align:-2px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>ログアウト</button>' +
+          '</div>' +
+        '</div>';
+
+      document.getElementById('userBtn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        document.getElementById('userDropdown').classList.toggle('open');
+      });
+      document.addEventListener('click', function() {
+        var dropdown = document.getElementById('userDropdown');
+        if (dropdown) dropdown.classList.remove('open');
+      });
+      document.getElementById('logoutBtn').addEventListener('click', async function() {
+        await fetch('logout.php');
+        location.href = 'index.php';
+      });
+    } catch (err) {
+      authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
+    }
+  }
+  var headerLogoEl = document.getElementById('headerLogo');
+  if (headerLogoEl) headerLogoEl.addEventListener('click', function() { location.href = 'index.php'; });
+  loadHeaderDate();
+  checkAuth();
+})();
+
 var params = new URLSearchParams(location.search);
 var venue = params.get('venue') || '';
 var date = params.get('date') || todayStr();
@@ -485,18 +532,6 @@ for (var rn = 1; rn <= 12; rn++) {
   navBtn.textContent = rn + 'R';
   raceNav.appendChild(navBtn);
 }
-
-// ヘッダーは画面幅によって行数が変わり高さが可変のため、
-// 実際の高さを測ってbody余白とレースナビの位置に反映する(固定px値だと375px幅等で崩れるため)
-function syncHeaderOffsets() {
-  var headerEl = document.querySelector('header');
-  if (!headerEl) return;
-  var headerH = headerEl.offsetHeight;
-  raceNav.style.top = headerH + 'px';
-  document.body.style.paddingTop = (headerH + raceNav.offsetHeight) + 'px';
-}
-syncHeaderOffsets();
-window.addEventListener('resize', syncHeaderOffsets);
 
 var rateRefs = {};
 var renderedPlayers = [];
