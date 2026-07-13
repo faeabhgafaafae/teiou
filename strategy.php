@@ -11,7 +11,7 @@
 .header-left { display: flex; align-items: center; gap: 12px; flex: 1; margin-bottom: 16px; }
 .back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; flex-shrink: 0; }
 .back-btn:hover { background: #e8f0fd; }
-.header-info h1 { font-size: 17px; font-weight: 700; color: #222; }
+.header-info h1 { font-size: 18px; font-weight: 700; color: #1a202c; }
 .header-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
 .header-meta .date { font-size: 12px; color: #888; }
 .grade-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
@@ -112,7 +112,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 @media (max-width: 600px) {
   .strat-stats-wrap { gap: 10px; }
   .strat-stat-val { font-size: 13px; }
-  .header-info h1 { font-size: 15px; }
+  .header-info h1 { font-size: 16px; }
   .ct-col-cost { display: none; }
   .filter-bar { gap: 5px; padding: 6px 10px; }
 }
@@ -138,6 +138,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   <div class="container">
 
   <div class="header-left">
+    <!-- [戻るボタン] パターンB: レース詳細系ページ → JS起動後に races.php?venue=...&date=... へ上書き。新規ページも同パターンで。 -->
     <a class="back-btn" id="backBtn" href="index.php">&larr;</a>
     <div class="header-info">
       <h1 id="pageTitle">戦略別予想</h1>
@@ -282,6 +283,7 @@ badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
 document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+// [戻るボタン] パターンB: venue+date を付けてレース一覧へ戻す
 document.getElementById('backBtn').href = 'races.php?venue=' + encodeURIComponent(venue) + '&date=' + date;
 document.getElementById('btnRacelist').href  = 'racelist.php?'  + baseQ;
 document.getElementById('btnPredict').href   = 'predict.php?'   + baseQ;
