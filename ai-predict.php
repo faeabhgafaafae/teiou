@@ -290,12 +290,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .filter-bar { gap: 5px; padding: 6px 10px; }
 }
 
-.premium-lock { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; text-align: center; padding: 40px 20px; }
-.premium-lock-icon { font-size: 28px; margin-bottom: 10px; display: block; }
-.premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }
-.premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
-.premium-lock a:hover { background: #b45309; }
-
 /* ─── Premium スコア内訳 ─── */
 .bk-section { margin-top: 10px; border-top: 1px dashed #e0e3e8; padding-top: 8px; }
 .bk-lock { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; text-align: center; font-size: 11px; color: #92400e; }
