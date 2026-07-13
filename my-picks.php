@@ -26,7 +26,6 @@ $pre_combo    = htmlspecialchars($_GET['combo']    ?? '', ENT_QUOTES);
 <link rel="stylesheet" href="style.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
 .back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
 .back-btn:hover { background: #e8f0fd; }
 .page-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }

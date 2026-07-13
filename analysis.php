@@ -14,7 +14,6 @@ $isPremium       = ($plan === 'premium');
 <link rel="stylesheet" href="style.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
 .premium-lock { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; text-align: center; padding: 40px 20px; margin: 0 auto; max-width: 1000px; }
 .premium-lock-icon { font-size: 28px; margin-bottom: 10px; display: block; }
 .premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }

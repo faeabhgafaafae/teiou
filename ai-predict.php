@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="style.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
 
 /* 左：戻るボタン ＆ レース場情報エリア */
 .header-left { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; }
