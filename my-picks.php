@@ -81,6 +81,14 @@ table.picks-table tr:last-child td { border-bottom: none; }
 .filter-row select { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; color: #333; }
 .filter-row label { font-size: 11px; color: #888; }
 
+/* グラフ */
+.chart-section-title { font-size: 12px; font-weight: 700; color: #555; margin: 10px 0 4px; }
+svg.trend-chart { width: 100%; height: auto; }
+
+/* 削除ボタン */
+.btn-delete { padding: 3px 8px; border-radius: 5px; background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.btn-delete:hover { background: #dc2626; color: #fff; }
+
 @media (max-width: 600px) {
   .controls { flex-direction: column; align-items: stretch; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
@@ -117,6 +125,12 @@ table.picks-table tr:last-child td { border-bottom: none; }
   <div class="card">
     <h2>集計サマリー</h2>
     <div id="summaryArea"><div class="loading">読み込み中...</div></div>
+  </div>
+
+  <!-- グラフ -->
+  <div class="card">
+    <h2>推移グラフ</h2>
+    <div id="chartsArea"><div class="loading">読み込み中...</div></div>
   </div>
 
   <!-- 買い目記録フォーム -->
@@ -427,6 +441,7 @@ async function loadPicks() {
     var data = await res.json();
     allPicks = data.picks || [];
     renderSummary(data.summary);
+    renderCharts(allPicks);
     renderPicksList();
   } catch (e) {
     document.getElementById('picksListArea').innerHTML = '<div class="error-msg">' + e.message + '</div>';
@@ -451,6 +466,113 @@ function renderSummary(s) {
     '<div class="summary-box"><div class="summary-label">総払戻額</div><div class="summary-value ' + (s.total_payout > 0 ? 'positive' : '') + '">' + (s.total_payout || 0).toLocaleString() + '<span style="font-size:11px;color:#888;"> 円</span></div></div>' +
     '</div>' +
     '<div style="margin-top:8px;font-size:11px;color:#aaa;">未確定 ' + (s.total - s.decided) + '件を除いた ' + s.decided + '件で集計</div>';
+}
+
+function buildPnlChart(picks) {
+  var decided = picks.filter(function(p) { return p.is_hit !== null; });
+  if (decided.length === 0) return null;
+  var sorted = decided.slice().sort(function(a, b) {
+    return a.date.localeCompare(b.date) || a.created_at.localeCompare(b.created_at);
+  });
+  var dateMap = {};
+  var running = 0;
+  sorted.forEach(function(p) {
+    running += (p.payout - p.cost);
+    dateMap[p.date] = running;
+  });
+  var dates = Object.keys(dateMap).sort();
+  var values = dates.map(function(d) { return dateMap[d]; });
+
+  var W = 640, H = 200, padL = 60, padR = 10, padT = 12, padB = 24;
+  var plotW = W - padL - padR, plotH = H - padT - padB;
+  var minV = Math.min(0, Math.min.apply(null, values));
+  var maxV = Math.max(0, Math.max.apply(null, values));
+  var range = maxV - minV || 1;
+
+  function xPos(i) { return padL + (dates.length <= 1 ? plotW / 2 : (i / (dates.length - 1)) * plotW); }
+  function yPos(v) { return padT + plotH - ((v - minV) / range) * plotH; }
+
+  var svgParts = [];
+  svgParts.push('<svg class="trend-chart" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">');
+  var zeroY = yPos(0);
+  svgParts.push('<line x1="' + padL + '" y1="' + zeroY + '" x2="' + (W - padR) + '" y2="' + zeroY + '" stroke="#e0e3e8" stroke-width="1" />');
+  if (maxV !== 0) svgParts.push('<text x="' + (padL - 4) + '" y="' + (padT + 5) + '" font-size="9" fill="#aaa" text-anchor="end">' + Math.round(maxV).toLocaleString() + '円</text>');
+  if (minV !== 0) svgParts.push('<text x="' + (padL - 4) + '" y="' + (padT + plotH) + '" font-size="9" fill="#aaa" text-anchor="end">' + Math.round(minV).toLocaleString() + '円</text>');
+  svgParts.push('<text x="' + (padL - 4) + '" y="' + (zeroY + 4) + '" font-size="9" fill="#ccc" text-anchor="end">0</text>');
+  var pts = dates.map(function(d, i) { return xPos(i) + ',' + yPos(dateMap[d]); });
+  if (pts.length > 1) svgParts.push('<polyline points="' + pts.join(' ') + '" fill="none" stroke="#0055a4" stroke-width="2" stroke-linejoin="round" />');
+  dates.forEach(function(d, i) {
+    var v = dateMap[d];
+    svgParts.push('<circle cx="' + xPos(i) + '" cy="' + yPos(v) + '" r="3" fill="' + (v >= 0 ? '#0055a4' : '#dc2626') + '" />');
+  });
+  svgParts.push('<text x="' + padL + '" y="' + (H - 6) + '" font-size="9" fill="#999">' + dates[0] + '</text>');
+  if (dates.length > 1) svgParts.push('<text x="' + (W - padR) + '" y="' + (H - 6) + '" font-size="9" fill="#999" text-anchor="end">' + dates[dates.length - 1] + '</text>');
+  svgParts.push('</svg>');
+  var wrap = document.createElement('div');
+  wrap.innerHTML = svgParts.join('');
+  return wrap.firstChild;
+}
+
+function buildBetTypeChart(picks) {
+  var decided = picks.filter(function(p) { return p.is_hit !== null; });
+  if (decided.length === 0) return null;
+  var byType = {};
+  decided.forEach(function(p) {
+    if (!byType[p.bet_type]) byType[p.bet_type] = { total: 0, hit: 0 };
+    byType[p.bet_type].total++;
+    if (p.is_hit === 1) byType[p.bet_type].hit++;
+  });
+  var types = Object.keys(byType).sort(function(a, b) {
+    return (byType[b].hit / byType[b].total) - (byType[a].hit / byType[a].total);
+  });
+  if (types.length === 0) return null;
+
+  var BAR_H = 22, GAP = 8, padL = 54, padR = 110, W = 640;
+  var H = GAP + types.length * (BAR_H + GAP);
+  var plotW = W - padL - padR;
+
+  var svgParts = [];
+  svgParts.push('<svg class="trend-chart" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">');
+  types.forEach(function(type, i) {
+    var y = GAP + i * (BAR_H + GAP);
+    var d = byType[type];
+    var rate = d.total > 0 ? d.hit / d.total : 0;
+    var barW = Math.max(2, rate * plotW);
+    var color = rate >= 0.3 ? '#16a34a' : rate >= 0.15 ? '#d97706' : '#dc2626';
+    svgParts.push('<rect x="' + padL + '" y="' + y + '" width="' + plotW + '" height="' + BAR_H + '" rx="4" fill="#f0f4f8" />');
+    svgParts.push('<rect x="' + padL + '" y="' + y + '" width="' + barW + '" height="' + BAR_H + '" rx="4" fill="' + color + '" />');
+    svgParts.push('<text x="' + (padL - 6) + '" y="' + (y + BAR_H / 2 + 4) + '" font-size="11" fill="#555" text-anchor="end">' + type + '</text>');
+    svgParts.push('<text x="' + (padL + barW + 6) + '" y="' + (y + BAR_H / 2 + 4) + '" font-size="10" fill="#555">' + Math.round(rate * 100) + '% (' + d.hit + '/' + d.total + '件)</text>');
+  });
+  svgParts.push('</svg>');
+  var wrap = document.createElement('div');
+  wrap.innerHTML = svgParts.join('');
+  return wrap.firstChild;
+}
+
+function renderCharts(picks) {
+  var el = document.getElementById('chartsArea');
+  var decided = picks.filter(function(p) { return p.is_hit !== null; });
+  if (decided.length === 0) {
+    el.innerHTML = '<div style="color:#999;font-size:13px;">確定済みの記録がないため、グラフを表示できません。</div>';
+    return;
+  }
+  el.textContent = '';
+
+  var t1 = document.createElement('div');
+  t1.className = 'chart-section-title';
+  t1.textContent = '累計損益の推移 (確定済みのみ、単位: 円)';
+  el.appendChild(t1);
+  var pnlChart = buildPnlChart(picks);
+  if (pnlChart) el.appendChild(pnlChart);
+
+  var t2 = document.createElement('div');
+  t2.className = 'chart-section-title';
+  t2.style.marginTop = '20px';
+  t2.textContent = '賭式別 的中率 (確定済みのみ)';
+  el.appendChild(t2);
+  var betChart = buildBetTypeChart(picks);
+  if (betChart) el.appendChild(betChart);
 }
 
 function renderPicksList() {
@@ -478,7 +600,7 @@ function renderPicksList() {
 
   var thead = document.createElement('thead');
   var hrow  = document.createElement('tr');
-  ['日付', '会場', 'R', '賭式', '組番', '購入額', '結果', '払戻額'].forEach(function(h) {
+  ['日付', '会場', 'R', '賭式', '組番', '購入額', '結果', '払戻額', ''].forEach(function(h) {
     var th = document.createElement('th');
     th.textContent = h;
     hrow.appendChild(th);
@@ -522,6 +644,16 @@ function renderPicksList() {
       else { td.textContent = v; }
       tr.appendChild(td);
     });
+
+    var tdDel = document.createElement('td');
+    var btnDel = document.createElement('button');
+    btnDel.className = 'btn-delete';
+    btnDel.textContent = '削除';
+    btnDel.dataset.pickId = p.id;
+    btnDel.addEventListener('click', function() { deletePick(Number(this.dataset.pickId)); });
+    tdDel.appendChild(btnDel);
+    tr.appendChild(tdDel);
+
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);
@@ -529,6 +661,27 @@ function renderPicksList() {
 
   area.textContent = '';
   area.appendChild(wrap);
+}
+
+async function deletePick(id) {
+  if (!confirm('この買い目を削除しますか？\nこの操作は元に戻せません。')) return;
+  try {
+    var res = await fetch(API_HOST + '/delete_user_pick.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.message || '削除に失敗しました');
+    loadPicks();
+  } catch (e) {
+    var listArea = document.getElementById('picksListArea');
+    var errDiv = document.createElement('div');
+    errDiv.className = 'error-msg';
+    errDiv.style.marginBottom = '8px';
+    errDiv.textContent = '削除エラー: ' + e.message;
+    listArea.insertBefore(errDiv, listArea.firstChild);
+  }
 }
 
 document.getElementById('filterBetType').addEventListener('change', renderPicksList);
