@@ -185,6 +185,7 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
 
   <div class="dashboard-container">
 
+    <script>var ACTIVE_NAV = 'home';</script>
     <?php include 'sidebar.php'; ?>
 
     <main class="main-content">

@@ -330,6 +330,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
 <div class="dashboard-container">
 
+  <script>var ACTIVE_NAV = 'predictions';</script>
   <?php include 'sidebar.php'; ?>
 
   <main class="main-content">
