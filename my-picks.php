@@ -109,7 +109,7 @@ table.picks-table tr:last-child td { border-bottom: none; }
 <div class="premium-lock">
   <span class="premium-lock-icon">&#128274;</span>
   <p>マイ的中トラッカーはPremium会員限定機能です。<br>自分の買い目を記録して的中率・回収率を管理できます。</p>
-  <a href="upgrade.html">プレミアムにアップグレード</a>
+  <a href="upgrade.html">プランをアップグレード</a>
 </div>
 <?php else: ?>
 

@@ -15,7 +15,7 @@
 
 .header-venue-info { display: flex; flex-direction: column; }
 .header-venue-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-.header-page-title { font-size: 18px; font-weight: 800; color: #1a202c; }
+.header-page-title { font-size: 18px; font-weight: 700; color: #1a202c; }
 .gh-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
 .header-main-date { font-size: 14px; color: #4a5568; font-weight: 700; font-variant-numeric: tabular-nums; }
 
@@ -235,7 +235,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
    幅が狭くなるほど後段のルールが優先されるようにする */
 @media (max-width: 900px) {
   .header-left { gap: 12px; }
-  .header-page-title { font-size: 15px; }
+  .header-page-title { font-size: 16px; }
   .header-main-date { font-size: 12px; }
 }
 
@@ -333,6 +333,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   <div class="container">
 
   <div class="header-left">
+    <!-- [戻るボタン] パターンB: レース詳細系ページ → JS起動後に races.php?venue=...&date=... へ上書き。新規ページも同パターンで。 -->
     <a class="back-btn" id="backBtn" href="races.php">&larr;</a>
     <div class="header-venue-info">
       <div class="header-venue-row">
@@ -489,6 +490,7 @@ var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grad
 var WAKU_STYLES = { 1:'background:#fff;color:#222;border:2px solid #ccc', 2:'background:#222;color:#fff', 3:'background:#e53e3e;color:#fff', 4:'background:#2563eb;color:#fff', 5:'background:#eab308;color:#222', 6:'background:#16a34a;color:#fff' };
 var vg = VENUE_GRADES[venue] || '一般';
 
+// [戻るボタン] パターンB: venue+date を付けてレース一覧へ戻す
 var backBtnEl = document.getElementById('backBtn');
 if (backBtnEl) {
   backBtnEl.href = 'races.php?venue=' + encodeURIComponent(venue) + '&date=' + date;
@@ -618,7 +620,7 @@ function renderBreakdownSection(r) {
     lockDiv.appendChild(document.createTextNode('🔒 詳細スコア内訳はPremium限定 '));
     var lockLink = document.createElement('a');
     lockLink.href = 'upgrade.html';
-    lockLink.textContent = 'アップグレード →';
+    lockLink.textContent = 'プランをアップグレード';
     lockDiv.appendChild(lockLink);
     section.appendChild(lockDiv);
     return section;

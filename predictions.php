@@ -15,7 +15,7 @@ $displayDate = date('n月j日', strtotime($today)) . ' (' . $weekDays[date('w', 
 .header-left { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .back-btn { color: #0055a4; text-decoration: none; font-size: 20px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.15s; }
 .back-btn:hover { background: #e8f0fd; }
-.header-info h1 { font-size: 18px; font-weight: 700; color: #222; }
+.header-info h1 { font-size: 18px; font-weight: 700; color: #1a202c; }
 .header-meta { font-size: 12px; color: #888; margin-top: 2px; }
 .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
 .loading { text-align: center; padding: 60px 20px; color: #999; }
@@ -106,6 +106,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   <div class="container">
 
   <div class="header-left">
+    <!-- [戻るボタン] パターンA: トップレベル機能ページ → index.php 固定。venue/date 不要。 -->
     <a class="back-btn" href="index.php">&larr;</a>
     <div class="header-info">
       <h1>予測レース</h1>
