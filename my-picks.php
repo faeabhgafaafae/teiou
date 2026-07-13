@@ -330,7 +330,7 @@ async function findRaces() {
   selectedRaceNo = 0;
 
   try {
-    var res = await fetch(API_HOST + '/races.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue));
+    var res = await fetch(API_HOST + '/api_races.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue));
     var data = await res.json();
     if (!data.races || data.races.length === 0) {
       alert('この会場・日付のレースは見つかりませんでした');

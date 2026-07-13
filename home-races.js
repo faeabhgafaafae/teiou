@@ -50,7 +50,7 @@
 
   async function loadPlayers(venue, raceNo) {
     try {
-      var res = await fetch(API_HOST + '/predict.php?date=' + currentDate + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo);
+      var res = await fetch(API_HOST + '/api_predict.php?date=' + currentDate + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo);
       if (!res.ok) return;
       var data = await res.json();
       if (!data.predictions) return;
@@ -79,7 +79,7 @@
 
     await Promise.all(VENUES.map(async function(v) {
       try {
-        var res = await fetch(API_HOST + '/races.php?date=' + currentDate + '&venue=' + encodeURIComponent(v));
+        var res = await fetch(API_HOST + '/api_races.php?date=' + currentDate + '&venue=' + encodeURIComponent(v));
         if (res.ok) {
           var data = await res.json();
           if (data.races) {

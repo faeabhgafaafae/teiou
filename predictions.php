@@ -261,7 +261,7 @@ function getDeadlineInfo(race) {
 async function loadAllRaces() {
   var results = await Promise.all(ALL_VENUES.map(async function(v) {
     try {
-      var res = await fetch(API_HOST + '/races.php?date=' + TODAY + '&venue=' + encodeURIComponent(v));
+      var res = await fetch(API_HOST + '/api_races.php?date=' + TODAY + '&venue=' + encodeURIComponent(v));
       if (!res.ok) return [];
       var data = await res.json();
       if (!data.races) return [];
@@ -509,7 +509,7 @@ async function fetchPredictions(race) {
   } catch (e) {}
 
   try {
-    var freshRes = await fetch(API_HOST + '/predict.php?' + baseQ);
+    var freshRes = await fetch(API_HOST + '/api_predict.php?' + baseQ);
     if (!freshRes.ok) return null;
     var freshData = await freshRes.json();
     return freshData.predictions || null;
