@@ -55,8 +55,8 @@ $pre_combo    = htmlspecialchars($_GET['combo']    ?? '', ENT_QUOTES);
 /* 共通style.cssの.btn-primaryはwidth:100%が既定のため、.controls内のインライン
    ボタン(#findRaceBtn)はここで幅を自動に戻す */
 #findRaceBtn { width: auto; }
-.btn-record { padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; border: none; font-size: 14px; font-weight: 700; cursor: pointer; }
-.btn-record:hover { background: #b45309; }
+.btn-record { padding: 9px 22px; border-radius: 8px; background: #0055a4; color: #fff; border: none; font-size: 14px; font-weight: 700; cursor: pointer; }
+.btn-record:hover { background: #003d80; }
 .divider { border: none; border-top: 1px solid #e0e3e8; margin: 14px 0; }
 .race-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .race-chip { padding: 6px 12px; border-radius: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 700; color: #0055a4; cursor: pointer; }
@@ -152,6 +152,7 @@ svg.trend-chart { width: 100%; height: auto; }
       <div style="font-size:12px; color:#666; margin-bottom:6px; font-weight:600;">レースを選択</div>
       <div id="raceChips" class="race-chips"></div>
     </div>
+    <div id="findMsg" style="margin-top:6px;"></div>
 
     <div id="selectedRaceDisplay" style="display:none; margin-bottom:12px;"></div>
 
@@ -201,6 +202,18 @@ svg.trend-chart { width: 100%; height: auto; }
         <option value="1">的中のみ</option>
         <option value="0">外れのみ</option>
         <option value="null">未確定</option>
+      </select>
+      <label>期間:</label>
+      <select id="filterDateRange">
+        <option value="">すべて</option>
+        <option value="last_7">直近7日</option>
+        <option value="last_30">直近30日</option>
+        <option value="this_month">今月</option>
+        <option value="this_year">今年</option>
+      </select>
+      <label>会場:</label>
+      <select id="filterVenue">
+        <option value="">すべて</option>
       </select>
     </div>
     <div id="picksListArea"><div class="loading">読み込み中...</div></div>
@@ -298,6 +311,17 @@ var PREFILL = {
 <?php if ($isPremium): ?>
 
 // ===== 共通ユーティリティ =====
+function showInlineMsg(elId, type, text) {
+  var el = document.getElementById(elId);
+  el.className = type === 'error' ? 'error-msg' : 'success-msg';
+  el.textContent = text;
+}
+function clearInlineMsg(elId) {
+  var el = document.getElementById(elId);
+  el.className = '';
+  el.textContent = '';
+}
+
 function todayStr() {
   var d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -323,6 +347,16 @@ document.getElementById('formDate').value = todayStr();
 if (PREFILL.venue) formVenueEl.value = PREFILL.venue;
 if (PREFILL.date)  document.getElementById('formDate').value = PREFILL.date;
 
+// ===== 賭式別プレースホルダー(優先度5) =====
+var COMBO_PLACEHOLDER = {
+  '3連単': '例) 1-3-2', '3連複': '例) 1-2-3',
+  '2連単': '例) 1-3',   '2連複': '例) 1-2',
+  '拡連複': '例) 1-2',  '単勝': '例) 1', '複勝': '例) 1'
+};
+document.getElementById('betType').addEventListener('change', function() {
+  document.getElementById('combo').placeholder = COMBO_PLACEHOLDER[this.value] || '例) 1-3-2';
+});
+
 // ===== レース一覧取得 =====
 var selectedVenue   = PREFILL.venue  || '';
 var selectedDate    = PREFILL.date   || '';
@@ -333,7 +367,8 @@ document.getElementById('findRaceBtn').addEventListener('click', findRaces);
 async function findRaces() {
   var venue = formVenueEl.value;
   var date  = document.getElementById('formDate').value;
-  if (!date) { alert('日付を選択してください'); return; }
+  clearInlineMsg('findMsg');
+  if (!date) { showInlineMsg('findMsg', 'error', '日付を選択してください'); return; }
 
   var chipArea = document.getElementById('raceChipArea');
   var chips    = document.getElementById('raceChips');
@@ -347,7 +382,7 @@ async function findRaces() {
     var res = await fetch(API_HOST + '/api_races.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue));
     var data = await res.json();
     if (!data.races || data.races.length === 0) {
-      alert('この会場・日付のレースは見つかりませんでした');
+      showInlineMsg('findMsg', 'error', 'この会場・日付のレースは見つかりませんでした');
       return;
     }
     selectedVenue = venue;
@@ -367,7 +402,7 @@ async function findRaces() {
     });
     chipArea.style.display = 'block';
   } catch (e) {
-    alert('レース一覧の取得に失敗しました');
+    showInlineMsg('findMsg', 'error', 'レース一覧の取得に失敗しました');
   }
 }
 
@@ -395,17 +430,18 @@ if (PREFILL.venue && PREFILL.date) {
 
 // ===== 買い目保存 =====
 document.getElementById('savePickBtn').addEventListener('click', async function() {
-  if (!selectedRaceNo) { alert('レースを選択してください'); return; }
+  var msgEl = document.getElementById('saveMsg');
+  msgEl.className = '';
+  msgEl.textContent = '';
+  if (!selectedRaceNo) { showInlineMsg('saveMsg', 'error', 'レースを選択してください'); return; }
   var betType = document.getElementById('betType').value;
   var combo   = document.getElementById('combo').value.trim();
   var cost    = parseInt(document.getElementById('cost').value, 10);
-  var msgEl   = document.getElementById('saveMsg');
 
-  if (!combo) { alert('組番を入力してください'); return; }
-  if (!cost || cost <= 0) { alert('購入額を入力してください'); return; }
+  if (!combo) { showInlineMsg('saveMsg', 'error', '組番を入力してください'); return; }
+  if (!cost || cost <= 0) { showInlineMsg('saveMsg', 'error', '購入額を入力してください'); return; }
 
   this.disabled = true;
-  msgEl.textContent = '';
   try {
     var res = await fetch(API_HOST + '/save_user_pick.php', {
       method: 'POST',
@@ -442,6 +478,7 @@ async function loadPicks() {
     allPicks = data.picks || [];
     renderSummary(data.summary);
     renderCharts(allPicks);
+    updateVenueFilter();
     renderPicksList();
   } catch (e) {
     document.getElementById('picksListArea').innerHTML = '<div class="error-msg">' + e.message + '</div>';
@@ -466,6 +503,32 @@ function renderSummary(s) {
     '<div class="summary-box"><div class="summary-label">総払戻額</div><div class="summary-value ' + (s.total_payout > 0 ? 'positive' : '') + '">' + (s.total_payout || 0).toLocaleString() + '<span style="font-size:11px;color:#888;"> 円</span></div></div>' +
     '</div>' +
     '<div style="margin-top:8px;font-size:11px;color:#aaa;">未確定 ' + (s.total - s.decided) + '件を除いた ' + s.decided + '件で集計</div>';
+}
+
+function isInDateRange(dateStr, range) {
+  if (!range) return true;
+  var d = new Date(dateStr + 'T00:00:00');
+  var now = new Date();
+  now.setHours(0, 0, 0, 0);
+  if (range === 'this_month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  if (range === 'last_30') { var t30 = new Date(now); t30.setDate(t30.getDate() - 29); return d >= t30; }
+  if (range === 'last_7')  { var t7  = new Date(now); t7.setDate(t7.getDate() - 6);   return d >= t7; }
+  if (range === 'this_year') return d.getFullYear() === now.getFullYear();
+  return true;
+}
+
+function updateVenueFilter() {
+  var sel = document.getElementById('filterVenue');
+  var current = sel.value;
+  var venues = [];
+  allPicks.forEach(function(p) { if (venues.indexOf(p.venue) === -1) venues.push(p.venue); });
+  venues.sort();
+  sel.textContent = '';
+  var allOpt = document.createElement('option'); allOpt.value = ''; allOpt.textContent = 'すべて'; sel.appendChild(allOpt);
+  venues.forEach(function(v) {
+    var opt = document.createElement('option'); opt.value = v; opt.textContent = venueDisplayName(v); sel.appendChild(opt);
+  });
+  if (current && venues.indexOf(current) !== -1) sel.value = current;
 }
 
 function buildPnlChart(picks) {
@@ -576,15 +639,19 @@ function renderCharts(picks) {
 }
 
 function renderPicksList() {
-  var area        = document.getElementById('picksListArea');
-  var filterBet   = document.getElementById('filterBetType').value;
-  var filterHit   = document.getElementById('filterHit').value;
+  var area          = document.getElementById('picksListArea');
+  var filterBet     = document.getElementById('filterBetType').value;
+  var filterHit     = document.getElementById('filterHit').value;
+  var filterDate    = document.getElementById('filterDateRange').value;
+  var filterVenueV  = document.getElementById('filterVenue').value;
 
   var filtered = allPicks.filter(function(p) {
-    if (filterBet  && p.bet_type !== filterBet) return false;
-    if (filterHit === '1'    && p.is_hit !== 1)    return false;
-    if (filterHit === '0'    && p.is_hit !== 0)    return false;
-    if (filterHit === 'null' && p.is_hit !== null)  return false;
+    if (filterBet       && p.bet_type !== filterBet)          return false;
+    if (filterHit === '1'    && p.is_hit !== 1)               return false;
+    if (filterHit === '0'    && p.is_hit !== 0)               return false;
+    if (filterHit === 'null' && p.is_hit !== null)            return false;
+    if (filterDate      && !isInDateRange(p.date, filterDate)) return false;
+    if (filterVenueV    && p.venue !== filterVenueV)          return false;
     return true;
   });
 
@@ -686,6 +753,8 @@ async function deletePick(id) {
 
 document.getElementById('filterBetType').addEventListener('change', renderPicksList);
 document.getElementById('filterHit').addEventListener('change', renderPicksList);
+document.getElementById('filterDateRange').addEventListener('change', renderPicksList);
+document.getElementById('filterVenue').addEventListener('change', renderPicksList);
 
 // 初期ロード
 loadPicks();
