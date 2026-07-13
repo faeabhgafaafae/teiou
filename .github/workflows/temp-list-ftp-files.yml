@@ -7,15 +7,16 @@ jobs:
   list:
     runs-on: ubuntu-latest
     steps:
-      - name: FTPディレクトリ一覧取得
+      - name: 本番のみに存在するファイルの中身を取得
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
         run: |
           set -e
-          echo "=== ルート直下 ==="
-          curl -sS --user "$FTP_USER:$FTP_PASS" "ftp://$FTP_HOST/" -l
-          echo ""
-          echo "=== migrations/ ==="
-          curl -sS --user "$FTP_USER:$FTP_PASS" "ftp://$FTP_HOST/migrations/" -l || echo "(ディレクトリなし or 空)"
+          for f in aaa.html cron_get_data.py import_fan.php livetest.php livetest_api.php plan.php upload.html venues.php; do
+            echo "##### $f #####"
+            curl -sS --user "$FTP_USER:$FTP_PASS" "ftp://$FTP_HOST/$f" || echo "(取得失敗)"
+            echo ""
+            echo "##### /$f end #####"
+          done
