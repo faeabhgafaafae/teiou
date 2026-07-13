@@ -5,7 +5,6 @@
     <a href="predictions.php" class="nav-item"><i class="fas fa-bullseye icon"></i> 予測レース</a>
     <a href="performance.php" class="nav-item"><i class="fas fa-chart-line icon"></i> 成績・回収率 <span class="nav-standard-badge">STANDARD+</span></a>
     <a href="analysis.php" class="nav-item"><i class="fas fa-database icon"></i> データ分析 <span class="nav-standard-badge">STANDARD+</span></a>
-    <a href="my-picks.php" class="nav-item"><i class="fas fa-trophy icon"></i> マイ的中トラッカー <span class="nav-premium-badge">PREMIUM</span></a>
   </nav>
 
   <div class="premium-box">
