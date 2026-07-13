@@ -51,7 +51,7 @@ def make_session():
     session = requests.Session()
     retry = Retry(
         total=4,
-        backoff_factor=2,
+        backoff_factor=1,
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods=["GET"],
     )
@@ -62,20 +62,10 @@ def make_session():
 
 SESSION = make_session()
 
-def fetch(url, *, timeout=30, retries=3):
-    last_err = None
-    for i in range(retries):
-        try:
-            res = SESSION.get(url, headers=HEADERS, timeout=timeout)
-            res.raise_for_status()
-            return res
-        except (requests.exceptions.Timeout,
-                requests.exceptions.ConnectionError) as e:
-            last_err = e
-            wait = 5 * (i + 1)
-            print(f"  取得失敗({i+1}/{retries}): {e} → {wait}秒後に再試行")
-            time.sleep(wait)
-    raise last_err
+def fetch(url, *, timeout=30):
+    res = SESSION.get(url, headers=HEADERS, timeout=timeout)
+    res.raise_for_status()
+    return res
 
 
 def scrape_schedule_times(jcd: str, hd: str) -> dict[int, str]:
