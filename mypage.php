@@ -42,6 +42,14 @@
     .btn-plan-change.btn-premium:hover { background: #b45309; }
     .btn-plan-change:disabled { background: #e2e8f0; color: #a0aec0; cursor: default; }
     .plan-alert-msg { padding: 10px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; display: none; }
+
+    /* スマホ幅対応 */
+    @media (max-width: 600px) {
+      .mypage-card { padding: 16px; }
+      .profile-section { gap: 12px; margin-bottom: 16px; padding-bottom: 16px; }
+      .profile-avatar { width: 48px; height: 48px; font-size: 18px; }
+      .plan-cards { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
