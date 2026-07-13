@@ -1226,7 +1226,7 @@ function renderStrategySection(strat, def, statRow, ctx) {
   var roiLbl  = document.createElement('span'); roiLbl.className = 'strat-stat-lbl'; roiLbl.textContent = '回収率';
   var roiVal  = document.createElement('span');
   roiVal.className = 'strat-stat-val ' + (roi === null ? 'dim' : roi >= 0 ? 'pos' : 'neg');
-  roiVal.textContent = roi !== null ? (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%' : '---';
+  roiVal.textContent = roi !== null ? (roi + 100).toFixed(1) + '%' : '---';
   roiStat.appendChild(roiLbl); roiStat.appendChild(roiVal);
   statsWrap.appendChild(roiStat);
 
@@ -1512,8 +1512,8 @@ function renderComparisonView(comboData, statsMap) {
     var colSub = document.createElement('span');
     colSub.className = 'comp-col-sub';
     var hrTxt = statRow && statRow.total_races > 0 ? Number(statRow.hit_rate).toFixed(1) + '%' : '---';
-    var roiTxt = statRow && statRow.total_races > 0 ? (Number(statRow.roi) >= 0 ? '+' : '') + Number(statRow.roi).toFixed(1) + '%' : '---';
-    colSub.textContent = '的中 ' + hrTxt + ' ROI ' + roiTxt;
+    var roiTxt = statRow && statRow.total_races > 0 ? (Number(statRow.roi) + 100).toFixed(1) + '%' : '---';
+    colSub.textContent = '的中 ' + hrTxt + ' 回収率 ' + roiTxt;
     colHdr.appendChild(colName);
     colHdr.appendChild(colSub);
     col.appendChild(colHdr);
