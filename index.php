@@ -166,6 +166,17 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
       margin-left: 8px;
       vertical-align: middle;
     }
+
+    /* スマホ幅対応 */
+    @media (max-width: 600px) {
+      .date-nav { padding: 10px 14px; }
+      .date-nav-arrow { width: 32px; height: 32px; font-size: 12px; }
+      .date-nav-date { font-size: 16px; }
+      .date-nav-dow { font-size: 12px; }
+      .date-nav-today-badge { font-size: 9px; padding: 2px 6px; }
+      .urgent-players { gap: 3px; }
+      .urgent-btn { font-size: 10px; padding: 5px 0; }
+    }
   </style>
 </head>
 <body>

@@ -126,3 +126,13 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   .dashboard-container { flex-direction: column; }
   .sidebar { width: 100%; position: relative; top: 0; max-height: none; }
 }
+
+@media (max-width: 600px) {
+  .dashboard-container { padding: 12px; }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .search-box input { width: 100%; }
+  .bottom-row { gap: 12px; }
+  .bottom-card { min-width: 0; padding: 16px; }
+  .venue-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .card-venue-img { width: 60px; height: 42px; }
+}

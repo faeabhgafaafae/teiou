@@ -55,8 +55,9 @@ body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; backgr
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
 .controls select, .controls input { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: #333; }
 .controls label { font-size: 12px; color: #666; font-weight: 600; }
-.btn-primary { padding: 8px 18px; border-radius: 6px; background: #0055a4; color: #fff; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
-.btn-primary:hover { background: #003d7a; }
+/* 共通style.cssの.btn-primaryはwidth:100%が既定のため、.controls内のインライン
+   ボタン(#findRaceBtn)はここで幅を自動に戻す */
+#findRaceBtn { width: auto; }
 .btn-record { padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; border: none; font-size: 14px; font-weight: 700; cursor: pointer; }
 .btn-record:hover { background: #b45309; }
 .divider { border: none; border-top: 1px solid #e0e3e8; margin: 14px 0; }
@@ -108,7 +109,7 @@ table.picks-table tr:last-child td { border-bottom: none; }
 
 <?php if (!$isPremium): ?>
 <div class="premium-lock">
-  <span class="premium-lock-icon">&#128293;</span>
+  <span class="premium-lock-icon">&#128274;</span>
   <p>マイ的中トラッカーはPremium会員限定機能です。<br>自分の買い目を記録して的中率・回収率を管理できます。</p>
   <a href="upgrade.html">プレミアムにアップグレード</a>
 </div>
