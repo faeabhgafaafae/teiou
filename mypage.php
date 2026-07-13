@@ -12,7 +12,6 @@
   <script src="plan-features.js"></script>
   <style>
     /* マイページ固有のスタイル */
-    .mypage-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 20px; }
     .profile-section { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #edf2f7; }
     .profile-avatar { width: 64px; height: 64px; background: #0055a4; color: #fff; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
     .form-group { margin-bottom: 16px; }
@@ -45,7 +44,6 @@
 
     /* スマホ幅対応 */
     @media (max-width: 600px) {
-      .mypage-card { padding: 16px; }
       .profile-section { gap: 12px; margin-bottom: 16px; padding-bottom: 16px; }
       .profile-avatar { width: 48px; height: 48px; font-size: 18px; }
       .plan-cards { grid-template-columns: 1fr; }
@@ -66,7 +64,7 @@
         <h2 class="section-title">マイページ</h2>
       </div>
 
-      <div class="mypage-card">
+      <div class="card">
         <div class="profile-section">
           <div class="profile-avatar" id="userAvatar">-</div>
           <div>
@@ -86,7 +84,7 @@
         </div>
       </div>
 
-      <div class="mypage-card">
+      <div class="card">
         <h3 style="font-size: 15px; font-weight: 800; color: #1a202c; margin-bottom: 16px;"><i class="fas fa-lock" style="margin-right: 8px; color: #718096;"></i>パスワードの変更</h3>
         <div class="alert-msg" id="passwordMessage"></div>
         <div class="form-group">
@@ -100,7 +98,7 @@
         <button class="btn-primary" id="btnUpdatePassword" style="max-width: 200px; margin-top: 8px; padding: 10px;">パスワードを更新</button>
       </div>
 
-      <div class="mypage-card">
+      <div class="card">
         <h3 style="font-size: 15px; font-weight: 800; color: #1a202c; margin-bottom: 4px;"><i class="fas fa-crown" style="margin-right: 8px; color: #d97706;"></i>プランの変更</h3>
         <p style="font-size: 13px; color: #718096; margin-bottom: 16px;">現在のプランを変更できます。</p>
         <div class="plan-alert-msg" id="planMessage"></div>
@@ -130,7 +128,7 @@
         </div>
       </div>
 
-      <div class="mypage-card">
+      <div class="card">
         <h3 style="font-size: 15px; font-weight: 800; color: #1a202c; margin-bottom: 4px;"><i class="fas fa-trophy" style="margin-right: 8px; color: #d97706;"></i>マイ的中トラッカー <span class="nav-premium-badge">PREMIUM</span></h3>
         <p style="font-size: 13px; color: #718096; margin-bottom: 16px;">自分の買い目を登録して、的中実績を記録・管理できます。</p>
         <a href="my-picks.php" class="btn-primary" style="display: inline-block; width: auto; max-width: 220px; padding: 10px 20px; text-align: center; text-decoration: none;">マイ的中トラッカーを開く</a>

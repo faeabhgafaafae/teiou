@@ -19,16 +19,13 @@ body { font-family: -apple-system, 'Hiragino Sans', 'Meiryo', sans-serif; backgr
 .page-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px; }
 
-.card { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-.card h2 { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 12px; }
-
 .note { font-size: 11px; color: #a0724b; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; line-height: 1.6; }
 .loading { text-align: center; padding: 30px; color: #999; font-size: 13px; }
 .error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 14px; color: #dc2626; font-size: 13px; }
 
 /* 戦略カード(サマリー) */
 .strategy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-.strategy-card { border: 1px solid #e0e3e8; border-radius: 10px; padding: 14px; background: #f7f8fa; }
+.strategy-card { margin-bottom: 0; }
 .strategy-card-name { font-size: 13px; font-weight: 800; color: #0055a4; margin-bottom: 8px; }
 .strategy-card-row { display: flex; justify-content: space-between; font-size: 12px; color: #555; padding: 3px 0; }
 .strategy-card-row strong { color: #222; font-variant-numeric: tabular-nums; }
@@ -256,7 +253,7 @@ async function loadSummary() {
     grid.className = 'strategy-grid';
     data.stats.forEach(function(s) {
       var card = document.createElement('div');
-      card.className = 'strategy-card';
+      card.className = 'card strategy-card';
 
       var name = document.createElement('div');
       name.className = 'strategy-card-name';

@@ -54,7 +54,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
 /* --- レースカードグリッド --- */
 .race-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
-.prc-card { background: #fff; border: 1px solid #e0e3e8; border-left: 4px solid #e0e3e8; border-radius: 12px; padding: 14px 16px; text-decoration: none; color: inherit; display: block; transition: transform 0.15s, box-shadow 0.15s; }
+.prc-card { border-left: 4px solid #e0e3e8; text-decoration: none; color: inherit; display: block; transition: transform 0.15s, box-shadow 0.15s; margin-bottom: 0; }
 .prc-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 .prc-card.prc-urgent { border-left-color: #ef4444; background: #fffaf9; }
 .prc-card.prc-finished { border-left-color: #94a3b8; }
@@ -431,7 +431,7 @@ function renderRaceCard(race) {
   var isFinished = !!race.has_result;
 
   var card = document.createElement('a');
-  card.className = 'prc-card' + (deadline.urgent ? ' prc-urgent' : '') + (isFinished ? ' prc-finished' : '');
+  card.className = 'card prc-card' + (deadline.urgent ? ' prc-urgent' : '') + (isFinished ? ' prc-finished' : '');
   var baseQ = 'venue=' + encodeURIComponent(race.venue) + '&date=' + TODAY + '&race_no=' + race.race_no;
   card.href = isFinished ? ('result.php?' + baseQ) : ('ai-predict.php?' + baseQ);
 
