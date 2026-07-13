@@ -33,8 +33,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .race-bar-detail { font-size: 13px; color: #555; }
 .race-bar-detail strong { color: #222; }
 .race-bar-right { display: flex; gap: 6px; }
-.nav-btn { padding: 7px 14px; border: 1px solid #d0d5dd; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 600; color: #555; text-decoration: none; transition: all 0.15s; }
-.nav-btn:hover { border-color: #0055a4; color: #0055a4; }
 
 .mode-switch { display: flex; gap: 4px; margin-bottom: 12px; padding: 4px; background: #e9ecef; border-radius: 10px; }
 .mode-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; background: transparent; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; transition: all 0.15s; }

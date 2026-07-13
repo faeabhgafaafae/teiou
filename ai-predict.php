@@ -76,9 +76,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .race-bar-detail { font-size: 13px; color: #555; }
 .race-bar-detail strong { color: #222; }
 .race-bar-right { display: flex; gap: 6px; }
-.nav-btn { padding: 7px 14px; border: 1px solid #d0d5dd; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 600; color: #555; text-decoration: none; transition: all 0.15s; }
-.nav-btn:hover { border-color: #0055a4; color: #0055a4; }
-
 .stats-tabs { display: flex; gap: 4px; margin-bottom: 8px; padding: 4px; background: #e9ecef; border-radius: 10px; }
 .stats-tab { flex: 1; padding: 8px 4px; border: none; border-radius: 8px; background: transparent; font-size: 12px; font-weight: 600; color: #888; cursor: pointer; text-align: center; transition: all 0.15s; }
 .stats-tab:hover { color: #555; background: #dde0e4; }
@@ -156,8 +153,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
 
 .bottom-actions { display: flex; gap: 6px; margin-top: 16px; }
-.bottom-btn { flex: 1; padding: 10px; border: 1px solid #e0e3e8; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 600; color: #555; text-align: center; text-decoration: none; transition: all 0.15s; }
-.bottom-btn:hover { border-color: #0055a4; color: #0055a4; }
+.bottom-btn { flex: 1; }
 
 .pikaichi-bar { margin-bottom: 10px; }
 .pikaichi-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid #d0d5dd; border-radius: 20px; background: #fff; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; transition: all 0.15s; }
@@ -408,8 +404,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   <div id="comparisonSection" style="display:none;"></div>
 
   <div class="bottom-actions" id="bottomActions" style="display:none">
-    <a class="bottom-btn" id="btnRacelist">出走表</a>
-    <a class="bottom-btn" id="btnPredict">直前情報</a>
+    <a class="nav-btn bottom-btn" id="btnRacelist">出走表</a>
+    <a class="nav-btn bottom-btn" id="btnPredict">直前情報</a>
   </div>
 
   </div>

@@ -38,8 +38,6 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .race-tab { display: inline-block; padding: 7px 10px; border-radius: 6px; background: #e9ecef; font-size: 12px; font-weight: 600; color: #888; text-decoration: none; transition: all 0.15s; text-align: center; min-width: 38px; }
 .race-tab:hover { background: #dde0e4; color: #555; }
 .race-tab.active { background: #222; color: #fff; }
-.predict-btn { display: inline-block; padding: 7px 14px; border-radius: 8px; background: #0055a4; color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; transition: background 0.15s; }
-.predict-btn:hover { background: #003d7a; }
 
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid #e0e3e8; background: #fff; }
 .entry-table { width: 100%; border-collapse: collapse; min-width: 700px; font-size: 13px; }
@@ -108,7 +106,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
       <div class="race-no-lg" id="raceNoLg"></div>
       <div class="race-bar-detail" id="raceBarDetail"></div>
     </div>
-    <a class="predict-btn" id="btnPredict">予想</a>
+    <a class="nav-btn predict-btn" id="btnPredict">予想</a>
   </div>
   <div class="race-tabs-wrap" id="raceTabsWrap" style="display:none">
     <div class="race-tabs" id="raceTabs"></div>

@@ -108,8 +108,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
 /* ─── ボトムナビ ───────────────────────────────────── */
 .bottom-actions { display: flex; gap: 6px; margin-top: 4px; }
-.bottom-btn { flex: 1; padding: 10px; border: 1px solid #e0e3e8; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 600; color: #555; text-align: center; text-decoration: none; transition: all 0.15s; }
-.bottom-btn:hover { border-color: #0055a4; color: #0055a4; }
+.bottom-btn { flex: 1; }
 
 @media (max-width: 480px) {
   .strat-stats-wrap { gap: 10px; }
@@ -158,9 +157,9 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   </div>
 
   <div class="bottom-actions" id="bottomActions" style="display:none">
-    <a class="bottom-btn" id="btnRacelist">出走表</a>
-    <a class="bottom-btn" id="btnPredict">直前情報</a>
-    <a class="bottom-btn" id="btnAiPredict">予想</a>
+    <a class="nav-btn bottom-btn" id="btnRacelist">出走表</a>
+    <a class="nav-btn bottom-btn" id="btnPredict">直前情報</a>
+    <a class="nav-btn bottom-btn" id="btnAiPredict">予想</a>
   </div>
 
   </div>
