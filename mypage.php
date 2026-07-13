@@ -55,7 +55,7 @@
   <?php include 'header.php'; ?>
 
   <div class="dashboard-container">
-    
+    <script>var ACTIVE_NAV = 'mypage';</script>
     <?php include 'sidebar.php'; ?>
 
     <main class="main-content">

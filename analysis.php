@@ -149,6 +149,7 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
 
 <div class="dashboard-container">
 
+  <script>var ACTIVE_NAV = 'analysis';</script>
   <?php include 'sidebar.php'; ?>
 
   <main class="main-content">

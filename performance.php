@@ -65,6 +65,7 @@ svg.trend-chart { width: 100%; height: auto; }
 
 <div class="dashboard-container">
 
+  <script>var ACTIVE_NAV = 'performance';</script>
   <?php include 'sidebar.php'; ?>
 
   <main class="main-content">
