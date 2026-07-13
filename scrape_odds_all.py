@@ -7,6 +7,7 @@ get_pending_races.php?all=1 で当日の全レースを取得し、
 
 import os
 import time
+import signal
 import requests
 
 from scrape_boatrace import VENUES
@@ -14,6 +15,21 @@ from scrape_live import (
     API_PENDING, API_KEY, SLEEP_SEC, ODDS_SLEEP_SEC,
     VENUE_TO_JCD, scrape_odds, scrape_all_odds, send_odds,
 )
+
+# 1レースあたりの処理時間の上限。boatrace.jp側の応答が遅延・エラーを繰り返すと
+# fetch()のリトライが重なって1レースが異常に長引くことがあるため、
+# signal.alarmでブロッキング中の通信呼び出し自体を強制中断し、次のレースへ進める。
+# (GitHub Actionsのubuntu-latestランナー=Unix環境が前提。Windows等では動作しない)
+RACE_TIMEOUT_SEC = 60
+
+
+class RaceTimeoutError(Exception):
+    pass
+
+
+def _alarm_handler(signum, frame):
+    raise RaceTimeoutError()
+
 
 def get_all_races() -> list:
     res = requests.get(API_PENDING, params={
@@ -57,6 +73,9 @@ def main():
 
         hd = date_str.replace('-', '')
 
+        race_start = time.time()
+        signal.signal(signal.SIGALRM, _alarm_handler)
+        signal.alarm(RACE_TIMEOUT_SEC)
         try:
             odds = scrape_odds(jcd, race_no, hd)
             time.sleep(ODDS_SLEEP_SEC)
@@ -67,8 +86,13 @@ def main():
                     odds_ok += 1
             else:
                 print(f' オッズ: データなし')
+        except RaceTimeoutError:
+            elapsed = time.time() - race_start
+            print(f' [TIMEOUT SKIP] {elapsed:.0f}秒経過のため打ち切り')
         except Exception as e:
             print(f' [ERROR] {e}')
+        finally:
+            signal.alarm(0)
 
         time.sleep(SLEEP_SEC)
 
