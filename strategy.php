@@ -110,7 +110,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .bottom-actions { display: flex; gap: 6px; margin-top: 4px; }
 .bottom-btn { flex: 1; }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .strat-stats-wrap { gap: 10px; }
   .strat-stat-val { font-size: 13px; }
   .header-info h1 { font-size: 15px; }
