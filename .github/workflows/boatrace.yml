@@ -7,11 +7,17 @@ on:
   workflow_dispatch:        # 手動実行も可能
 
 jobs:
-  # ─── 毎朝7時: 直前情報取得 ───────────────────────────
+  # ─── 毎朝7時: 出走表・直前情報取得 ───────────────────
+  # 当日全オッズ取得は別ジョブに分離(scrape_odds)。
+  # 同一ジョブ内で直列実行すると、出走表・直前情報だけで70分前後を
+  # 使い切ってしまい、オッズ取得がtimeout-minutesの残り時間しか
+  # もらえず毎回打ち切られていたため(2026-07-13〜14に連日発生)。
   scrape_beforeinfo:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 22 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: '1'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,6 +42,28 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: python scrape_boatrace.py
 
+  # ─── scrape_beforeinfoの直後: 当日全オッズ取得 ────────
+  # 出走表さえ登録されていれば動くため、直前情報の完了を待つ必要はないが、
+  # ジョブを分けてtimeout-minutesを独立させることが目的なのでneedsで直列化する。
+  scrape_odds:
+    needs: scrape_beforeinfo
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 22 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
       - name: 当日全オッズ取得
         env:
           API_PENDING: ${{ secrets.API_PENDING }}
@@ -47,6 +75,7 @@ jobs:
   fetch_results:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 11 * * *'
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
