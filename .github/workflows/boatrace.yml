@@ -90,6 +90,15 @@ jobs:
           sudo apt-get install -y p7zip-full
           pip install requests
 
+      # 結果取込み(import_results.php)は、この時点で既に存在する strategies
+      # としか照合しないため、閲覧されなかったレースが的中速報に永久に
+      # 反映されない問題があった。結果取込みの前に全レース分の戦略買い目を
+      # 機械的に生成しておくことで、閲覧有無に関係なく網羅する。
+      - name: 前日分の戦略買い目を事前生成
+        run: |
+          YESTERDAY=$(date -d 'yesterday' +%Y-%m-%d)
+          python generate_strategies_for_date.py --date $YESTERDAY
+
       - name: 競走成績取得
         env:
           API_URL: ${{ secrets.API_URL_RESULTS }}
