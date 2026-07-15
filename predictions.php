@@ -245,6 +245,13 @@ function getDiffMs(scheduledTime) {
   return target - now;
 }
 
+function isRaceClosed(race) {
+  if (race.has_result) return true;
+  var diffMs = getDiffMs(race.scheduled_time);
+  if (diffMs === null) return true;
+  return diffMs <= 0;
+}
+
 function getDeadlineInfo(race) {
   if (race.has_result) {
     return { text: '確定', cls: 'finished', urgent: false, mins: null };
@@ -279,6 +286,9 @@ async function loadAllRaces() {
   var merged = [];
   results.forEach(function(list) { merged = merged.concat(list); });
   merged.sort(function(a, b) {
+    var aClosed = isRaceClosed(a);
+    var bClosed = isRaceClosed(b);
+    if (aClosed !== bClosed) return aClosed ? 1 : -1;
     var ta = a.scheduled_time || '99:99';
     var tb = b.scheduled_time || '99:99';
     if (ta !== tb) return ta < tb ? -1 : 1;
