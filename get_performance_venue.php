@@ -45,6 +45,8 @@ foreach ($rows as $row) {
         'strategy_type' => $row['strategy_type'],
         'total_races'   => $total,
         'hit_rate'      => $total > 0 ? round($hits / $total * 100, 1) : 0,
+        'total_cost'    => $cost,
+        'total_payout'  => $payout,
         'roi'           => $cost > 0 ? round($profit / $cost * 100, 1) : 0,
     ];
 }
