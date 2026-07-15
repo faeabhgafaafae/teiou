@@ -118,6 +118,8 @@ table.data-table tr.rank-1 { background: #fffbeb; }
 .adv-field select, .adv-field input[type=number], .adv-field input[type=date], .adv-field input[type=text] { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: #333; }
 .adv-btn { padding: 8px 22px; border-radius: 6px; background: #d97706; color: #fff; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
 .adv-btn:hover { background: #b45309; }
+.adv-btn-export { background: #16a34a; margin-left: 8px; }
+.adv-btn-export:hover { background: #15803d; }
 .adv-result-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid #e0e3e8; margin-top: 12px; }
 table.adv-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
 table.adv-table th { background: #f7f8fa; font-size: 10px; font-weight: 700; color: #999; padding: 7px 5px; border-bottom: 2px solid #e0e3e8; white-space: nowrap; text-align: center; }
@@ -286,6 +288,7 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
         </div>
 
         <button class="adv-btn" id="advSearchBtn">高度検索を実行</button>
+        <button class="adv-btn adv-btn-export" id="advExportBtn" style="display:none;">&#11015; 検索結果をCSVダウンロード</button>
       </div>
       <div id="advSearchResult"></div>
 <?php endif; ?>
@@ -1042,11 +1045,7 @@ if (IS_PREMIUM) {
     });
   }
 
-  async function searchRacesAdvanced() {
-    var resultEl = document.getElementById('advSearchResult');
-    resultEl.textContent = '';
-    resultEl.appendChild(makeLoading('検索中...'));
-
+  function buildAdvSearchParams() {
     var playerName = document.getElementById('advPlayerName').value.trim();
     var weather    = document.getElementById('advWeather').value;
     var windMin    = document.getElementById('advWindMin').value.trim();
@@ -1068,6 +1067,16 @@ if (IS_PREMIUM) {
     if (course)   params.push('course='    + encodeURIComponent(course));
     if (dateFrom) params.push('date_from=' + encodeURIComponent(dateFrom));
     if (dateTo)   params.push('date_to='   + encodeURIComponent(dateTo));
+    return params;
+  }
+
+  async function searchRacesAdvanced() {
+    var resultEl = document.getElementById('advSearchResult');
+    resultEl.textContent = '';
+    resultEl.appendChild(makeLoading('検索中...'));
+    document.getElementById('advExportBtn').style.display = 'none';
+
+    var params = buildAdvSearchParams();
 
     try {
       var res  = await fetch(API_HOST + '/search_races_advanced.php?' + params.join('&'));
@@ -1153,6 +1162,7 @@ if (IS_PREMIUM) {
       table.appendChild(tbody);
       wrap.appendChild(table);
       resultEl.appendChild(wrap);
+      document.getElementById('advExportBtn').style.display = 'inline-block';
 
     } catch (e) {
       resultEl.textContent = '';
@@ -1162,6 +1172,14 @@ if (IS_PREMIUM) {
 
   var advSearchBtnEl = document.getElementById('advSearchBtn');
   if (advSearchBtnEl) advSearchBtnEl.addEventListener('click', searchRacesAdvanced);
+
+  var advExportBtnEl = document.getElementById('advExportBtn');
+  if (advExportBtnEl) {
+    advExportBtnEl.addEventListener('click', function() {
+      var params = buildAdvSearchParams();
+      window.open(API_HOST + '/export_race_search.php?' + params.join('&'), '_blank');
+    });
+  }
 }
 
 // ============================================================
