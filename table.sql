@@ -1,5 +1,5 @@
 -- 艇王 DBスキーマダンプ
--- 生成日時: 2026-07-15 12:07:03
+-- 生成日時: 2026-07-15 12:17:43
 -- テーブル数: 14
 
 -- ----------------------------
@@ -43,7 +43,7 @@ CREATE TABLE `odds_3t` (
   UNIQUE KEY `uq_odds` (`race_id`,`combo`),
   KEY `idx_race_id` (`race_id`),
   CONSTRAINT `fk_odds_race` FOREIGN KEY (`race_id`) REFERENCES `races` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=418561 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='3連単オッズ';
+) ENGINE=InnoDB AUTO_INCREMENT=422881 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='3連単オッズ';
 
 -- ----------------------------
 -- Table: odds_multi
@@ -57,8 +57,9 @@ CREATE TABLE `odds_multi` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_race_bettype_combo` (`race_id`,`bet_type`,`combo`),
-  KEY `idx_race_bettype` (`race_id`,`bet_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=221131 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `idx_race_bettype` (`race_id`,`bet_type`),
+  CONSTRAINT `fk_odds_multi_race` FOREIGN KEY (`race_id`) REFERENCES `races` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=224443 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Table: player_periods
@@ -132,7 +133,7 @@ CREATE TABLE `predictions` (
   `predicted_rank` tinyint DEFAULT NULL COMMENT '予測順位',
   `score_total` float DEFAULT NULL COMMENT '合計スコア(100点満点)',
   `score_ability` float DEFAULT NULL COMMENT '①選手能力(40点)',
-  `score_course` float DEFAULT NULL COMMENT '②コース別補正(20点)',
+  `score_course` float DEFAULT NULL COMMENT '②コース別補正(35点)',
   `score_today` float DEFAULT NULL COMMENT '③当日情報(35点)',
   `score_weather` float DEFAULT NULL COMMENT '④気象補正(5点)',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -144,7 +145,7 @@ CREATE TABLE `predictions` (
   KEY `fk_pred_player` (`player_id`),
   CONSTRAINT `fk_pred_player` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`),
   CONSTRAINT `fk_pred_race` FOREIGN KEY (`race_id`) REFERENCES `races` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=116018 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='予測結果';
+) ENGINE=InnoDB AUTO_INCREMENT=116414 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='予測結果';
 
 -- ----------------------------
 -- Table: race_payouts
@@ -223,7 +224,7 @@ CREATE TABLE `strategies` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_race_strategy` (`race_id`,`strategy_type`),
   KEY `idx_race_id` (`race_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=49573 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=49837 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Table: strategy_results
@@ -247,11 +248,12 @@ CREATE TABLE `strategy_results` (
 CREATE TABLE `user_favorites` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
-  `venue_name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `venue_name` varchar(50) NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_venue` (`user_id`,`venue_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  UNIQUE KEY `unique_user_venue` (`user_id`,`venue_name`),
+  CONSTRAINT `fk_user_favorites_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Table: user_picks
@@ -267,7 +269,8 @@ CREATE TABLE `user_picks` (
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_race_id` (`race_id`),
-  KEY `idx_user_created` (`user_id`,`created_at`)
+  KEY `idx_user_created` (`user_id`,`created_at`),
+  CONSTRAINT `fk_user_picks_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
