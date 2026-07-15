@@ -89,6 +89,10 @@ svg.trend-chart { width: 100%; height: auto; }
 .btn-delete { padding: 3px 8px; border-radius: 5px; background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .btn-delete:hover { background: #dc2626; color: #fff; }
 
+/* CSVエクスポートボタン */
+.btn-export { display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; border-radius: 6px; background: #16a34a; color: #fff; border: none; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; white-space: nowrap; }
+.btn-export:hover { background: #15803d; }
+
 @media (max-width: 600px) {
   .controls { flex-direction: column; align-items: stretch; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
@@ -183,7 +187,10 @@ svg.trend-chart { width: 100%; height: auto; }
 
   <!-- 一覧 -->
   <div class="card">
-    <h2>記録済み買い目</h2>
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+      <h2 style="margin-bottom:0;">記録済み買い目</h2>
+      <a class="btn-export" href="https://2410049.moo.jp/export_user_picks.php" target="_blank" rel="noopener">&#11015; CSVダウンロード</a>
+    </div>
     <div class="filter-row">
       <label>賭式:</label>
       <select id="filterBetType">

@@ -3,6 +3,7 @@ require_once __DIR__ . '/auth.php';
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
 $isPremium = ($plan === 'standard' || $plan === 'premium');
+$isPremiumOnly = ($plan === 'premium');
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -45,6 +46,29 @@ table.data-table tr:last-child td { border-bottom: none; }
 .premium-lock p { font-size: 13px; color: #666; margin-bottom: 14px; }
 .premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
 .premium-lock a:hover { background: #b45309; }
+
+/* 個別レース詳細(スコア内訳) */
+.race-detail-row { border: 1px solid #e0e3e8; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.race-detail-hdr { display: flex; align-items: center; gap: 8px; padding: 9px 12px; cursor: pointer; background: #fff; flex-wrap: wrap; }
+.race-detail-hdr:hover { background: #fafbfc; }
+.race-detail-venue { font-size: 12px; font-weight: 700; color: #222; }
+.race-detail-strat { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; background: #e2e8f0; color: #4a5568; }
+.race-detail-hit { font-size: 11px; font-weight: 700; }
+.race-detail-hit.hit { color: #16a34a; }
+.race-detail-hit.miss { color: #999; }
+.race-detail-toggle { margin-left: auto; font-size: 11px; color: #777; border: 1px solid #e0e3e8; border-radius: 6px; padding: 4px 8px; background: #fff; cursor: pointer; }
+.race-detail-body { display: none; border-top: 1px solid #f0f0f0; padding: 10px 14px; }
+.race-detail-body.open { display: block; }
+
+.bk-section { margin-top: 0; }
+.bk-lock { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; text-align: center; font-size: 11px; color: #92400e; }
+.bk-lock a { color: #d97706; font-weight: 700; text-decoration: none; }
+.bk-group-title { font-size: 10px; font-weight: 700; color: #888; letter-spacing: 0.04em; margin: 7px 0 3px; border-left: 2px solid #cbd5e1; padding-left: 5px; }
+.bk-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 11px; color: #333; }
+.bk-label { width: 116px; flex-shrink: 0; color: #666; }
+.bk-value { font-weight: 700; color: #222; font-variant-numeric: tabular-nums; }
+.bk-sub { color: #999; font-size: 10px; }
+.bk-chip { background: #eef2ff; color: #3b4fd8; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* 折れ線グラフ */
 .chart-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; font-size: 11px; }
@@ -123,6 +147,20 @@ svg.trend-chart { width: 100%; height: auto; }
     <?php endif; ?>
   </div>
 
+  <!-- 5. 個別レース詳細(スコア内訳、premium限定) -->
+  <div class="card">
+    <h2>個別レース詳細(スコア内訳)</h2>
+    <?php if ($isPremiumOnly): ?>
+      <div id="raceDetailResult"><div class="loading">読み込み中...</div></div>
+    <?php else: ?>
+      <div class="premium-lock">
+        <span class="premium-lock-icon">&#128274;</span>
+        <p>個別レースの詳細スコア内訳は Premium プラン限定機能です。</p>
+        <a href="upgrade.html">プランをアップグレード</a>
+      </div>
+    <?php endif; ?>
+  </div>
+
   </div>
   </main>
 
@@ -195,6 +233,7 @@ svg.trend-chart { width: 100%; height: auto; }
 
 var API_HOST = 'https://' + '2410049.moo.jp';
 var IS_PREMIUM = <?php echo $isPremium ? 'true' : 'false'; ?>;
+var IS_PREMIUM_ONLY = <?php echo $isPremiumOnly ? 'true' : 'false'; ?>;
 var STRATEGY_COLORS = { '的中特化': '#0055a4', 'バランス': '#16a34a', '一撃重視': '#dc2626', '絞り込み': '#d97706' };
 
 function formatDateJP(iso) {
@@ -545,6 +584,215 @@ async function loadCompare() {
   }
 }
 loadCompare();
+
+// ============================================================
+// 5. 個別レース詳細(スコア内訳、premium限定)
+// predict.php/ai-predict.php の詳細スコア内訳(get_prediction.phpの
+// breakdown)と同じデータ・表示ロジックを流用する。
+// ============================================================
+function makeBkRow(label, value, sub) {
+  var row = document.createElement('div');
+  row.className = 'bk-row';
+  var lbl = document.createElement('span');
+  lbl.className = 'bk-label';
+  lbl.textContent = label;
+  var val = document.createElement('span');
+  val.className = 'bk-value';
+  val.textContent = value;
+  row.appendChild(lbl);
+  row.appendChild(val);
+  if (sub) {
+    var subEl = document.createElement('span');
+    subEl.className = 'bk-sub';
+    subEl.textContent = sub;
+    row.appendChild(subEl);
+  }
+  return row;
+}
+function makeBkChipRow(label, val, max) {
+  var row = document.createElement('div');
+  row.className = 'bk-row';
+  var lbl = document.createElement('span');
+  lbl.className = 'bk-label';
+  lbl.textContent = label;
+  var chip = document.createElement('span');
+  chip.className = 'bk-chip';
+  chip.textContent = Number(val).toFixed(1) + ' / ' + max + 'pt';
+  row.appendChild(lbl);
+  row.appendChild(chip);
+  return row;
+}
+function makeBkGroupTitle(text) {
+  var el = document.createElement('div');
+  el.className = 'bk-group-title';
+  el.textContent = text;
+  return el;
+}
+
+function renderRaceBreakdown(container, pred) {
+  var bk = pred.breakdown;
+  container.textContent = '';
+  if (!bk) {
+    var noData = document.createElement('div');
+    noData.style.cssText = 'font-size:11px;color:#999;padding:4px 0;';
+    noData.textContent = '内訳データを取得できませんでした。';
+    container.appendChild(noData);
+    return;
+  }
+
+  var head = document.createElement('div');
+  head.style.cssText = 'font-size:12px;font-weight:700;color:#222;margin-bottom:4px;';
+  head.textContent = pred.name + '(' + pred.lane + '号艇・予測' + pred.predicted_rank + '位・スコア' + Number(pred.score_total).toFixed(1) + ')';
+  container.appendChild(head);
+
+  container.appendChild(makeBkGroupTitle('選手能力 (max 40pt)'));
+  container.appendChild(makeBkRow('全国勝率', bk.win_rate_national != null ? Number(bk.win_rate_national).toFixed(2) + '%' : '-'));
+  container.appendChild(makeBkRow('当地勝率', bk.win_rate_local != null ? Number(bk.win_rate_local).toFixed(2) + '%' : '-',
+    bk.local_total > 0 ? '(直近2年 ' + bk.local_total + '走)' : '(データなし→全国値を使用)'));
+  container.appendChild(makeBkChipRow('素点', bk.score_ability_raw || 0, 40));
+
+  container.appendChild(makeBkGroupTitle('コース補正 (max 35pt)'));
+  if (bk.course_total > 0) {
+    container.appendChild(makeBkRow(pred.lane + '号艇 (直近2年)', bk.course_total + '走'));
+    container.appendChild(makeBkRow('1着率', bk.course_win_rate != null ? Number(bk.course_win_rate).toFixed(1) + '%' : '-'));
+  } else {
+    container.appendChild(makeBkRow('データ', 'なし', '(レーン平均値を適用)'));
+  }
+  container.appendChild(makeBkChipRow('素点', bk.score_course_raw || 0, 35));
+
+  container.appendChild(makeBkGroupTitle('当日情報 (max 35pt)'));
+  container.appendChild(makeBkRow('展示タイム', pred.exhibit_time != null ? Number(pred.exhibit_time).toFixed(2) + '秒' : 'なし', '→ ' + (bk.score_exhibit_raw || 0).toFixed(1) + 'pt / 15pt'));
+  if (bk.is_flying) {
+    container.appendChild(makeBkRow('スタートタイミング', 'F (フライング)', '→ -10pt 適用'));
+  } else {
+    container.appendChild(makeBkRow('スタートタイミング', pred.start_timing != null ? Number(pred.start_timing).toFixed(2) + '秒' : 'なし', '→ ' + (bk.score_st_raw || 0).toFixed(1) + 'pt / 10pt'));
+  }
+  container.appendChild(makeBkRow('モーター2連率', pred.motor_2rate != null ? Number(pred.motor_2rate).toFixed(1) + '%' : 'なし', '→ ' + (bk.score_motor_raw || 0).toFixed(1) + 'pt / 10pt'));
+  container.appendChild(makeBkChipRow('小計', bk.score_today_raw || 0, 35));
+
+  container.appendChild(makeBkGroupTitle('気象 (max 5pt)'));
+  container.appendChild(makeBkRow('風速', bk.wind_speed != null ? Number(bk.wind_speed).toFixed(1) + 'm/s' : '-', bk.wind_dir || ''));
+  container.appendChild(makeBkRow('波高', bk.wave_height != null ? Number(bk.wave_height).toFixed(0) + 'cm' : '-'));
+  container.appendChild(makeBkChipRow('素点', bk.score_weather_raw || 0, 5));
+}
+
+async function toggleRaceDetail(row, body, race) {
+  var isOpen = body.classList.contains('open');
+  if (isOpen) {
+    body.classList.remove('open');
+    return;
+  }
+  body.classList.add('open');
+  if (body.dataset.loaded === '1') return;
+  body.textContent = '';
+  body.appendChild(makeLoading('読み込み中...'));
+
+  try {
+    var qs = 'date=' + encodeURIComponent(race.date) + '&venue=' + encodeURIComponent(race.venue) + '&race_no=' + race.race_no;
+    var res = await fetch(API_HOST + '/get_prediction.php?' + qs);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    body.textContent = '';
+    if (!data.predictions || data.predictions.length === 0) {
+      body.appendChild(makeError('予測データがありません'));
+      return;
+    }
+    data.predictions.forEach(function(p, idx) {
+      var box = document.createElement('div');
+      box.className = 'bk-section';
+      if (idx > 0) {
+        box.style.borderTop = '1px dashed #e0e3e8';
+        box.style.paddingTop = '8px';
+        box.style.marginTop = '8px';
+      }
+      renderRaceBreakdown(box, p);
+      body.appendChild(box);
+    });
+    body.dataset.loaded = '1';
+  } catch (e) {
+    body.textContent = '';
+    body.appendChild(makeError('内訳の取得に失敗しました'));
+  }
+}
+
+function renderRaceDetailRow(race) {
+  var wrap = document.createElement('div');
+  wrap.className = 'race-detail-row';
+
+  var hdr = document.createElement('div');
+  hdr.className = 'race-detail-hdr';
+
+  var venueEl = document.createElement('span');
+  venueEl.className = 'race-detail-venue';
+  venueEl.textContent = venueDisplayName(race.venue) + ' ' + formatDateJP(race.date) + ' ' + race.race_no + 'R';
+  hdr.appendChild(venueEl);
+
+  var stratEl = document.createElement('span');
+  stratEl.className = 'race-detail-strat';
+  stratEl.textContent = race.strategy_type;
+  hdr.appendChild(stratEl);
+
+  var hitEl = document.createElement('span');
+  hitEl.className = 'race-detail-hit ' + (race.is_hit ? 'hit' : 'miss');
+  hitEl.textContent = race.is_hit ? ('的中 +' + race.payout.toLocaleString() + '円') : '不的中';
+  hdr.appendChild(hitEl);
+
+  if (race.combination) {
+    var comboEl = document.createElement('span');
+    comboEl.style.cssText = 'font-size:11px;color:#888;';
+    comboEl.textContent = '結果 ' + race.combination;
+    hdr.appendChild(comboEl);
+  }
+
+  var toggleBtn = document.createElement('button');
+  toggleBtn.className = 'race-detail-toggle';
+  toggleBtn.type = 'button';
+  toggleBtn.textContent = 'スコア内訳を見る';
+  hdr.appendChild(toggleBtn);
+
+  var body = document.createElement('div');
+  body.className = 'race-detail-body';
+
+  hdr.addEventListener('click', function() {
+    toggleRaceDetail(hdr, body, race);
+  });
+
+  wrap.appendChild(hdr);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+async function loadRaceDetails() {
+  if (!IS_PREMIUM_ONLY) return;
+  var el = document.getElementById('raceDetailResult');
+  el.textContent = '';
+  el.appendChild(makeLoading('読み込み中...'));
+
+  try {
+    var res = await fetch(API_HOST + '/get_performance_races.php');
+    var data = await res.json();
+    if (data.error) throw new Error(data.message || data.error);
+
+    el.textContent = '';
+    if (!data.races || data.races.length === 0) {
+      el.appendChild(makeError('データがありません'));
+      return;
+    }
+    var note = document.createElement('div');
+    note.className = 'note';
+    note.textContent = '直近30件の戦略買い目を表示しています。「スコア内訳を見る」でAIがその予測に至った根拠(選手能力・コース補正・当日情報・気象)を確認できます。';
+    el.appendChild(note);
+
+    data.races.forEach(function(race) {
+      el.appendChild(renderRaceDetailRow(race));
+    });
+  } catch (e) {
+    el.textContent = '';
+    el.appendChild(makeError('データの取得に失敗しました'));
+  }
+}
+loadRaceDetails();
 </script>
 </body>
 </html>
