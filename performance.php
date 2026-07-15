@@ -47,14 +47,10 @@ table.data-table tr:last-child td { border-bottom: none; }
 .premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
 .premium-lock a:hover { background: #b45309; }
 
-/* 会場横断比較 */
+/* 会場別内訳・会場横断比較のフィルタ */
 .filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
 .filter-row select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: #333; }
 .filter-row label { font-size: 12px; color: #666; font-weight: 600; }
-table.venue-cmp-table th { cursor: pointer; user-select: none; }
-table.venue-cmp-table th:hover { color: #0055a4; }
-table.venue-cmp-table th.sorted { color: #0055a4; }
-.sort-arrow { font-size: 9px; margin-left: 2px; }
 svg.bar-chart { width: 100%; height: auto; }
 
 /* 個別レース詳細(スコア内訳) */
@@ -133,6 +129,20 @@ svg.trend-chart { width: 100%; height: auto; }
   <div class="card">
     <h2>会場別 内訳</h2>
     <?php if ($isPremium): ?>
+      <div class="filter-row" id="venueBreakdownFilterRow" style="display:none;">
+        <label>会場:</label>
+        <select id="venueBreakdownFilterVenue">
+          <option value="">全会場</option>
+        </select>
+        <label>戦略:</label>
+        <select id="venueBreakdownFilterStrategy">
+          <option value="">すべて</option>
+          <option value="的中特化">的中特化</option>
+          <option value="バランス">バランス</option>
+          <option value="一撃重視">一撃重視</option>
+          <option value="絞り込み">絞り込み</option>
+        </select>
+      </div>
       <div id="venueResult"><div class="loading">読み込み中...</div></div>
     <?php else: ?>
       <div class="premium-lock">
@@ -161,23 +171,18 @@ svg.trend-chart { width: 100%; height: auto; }
   <div class="card" id="venueCmpCard">
     <h2>会場横断比較</h2>
     <?php if ($isPremiumOnly): ?>
-      <div class="note">全会場・全期間の戦略別成績を横断比較できます。</div>
-      <div id="venueCmpChartResult"><div class="loading">読み込み中...</div></div>
-      <div class="filter-row" style="margin-top:16px;">
-        <label>会場:</label>
-        <select id="venueCmpFilterVenue">
-          <option value="">全会場</option>
-        </select>
+      <div class="note">全会場・全期間の的中率をランキング形式で比較できます。会場ごとの詳しい数値(投資額・払戻額・回収率)は上の「会場別 内訳」で確認できます。</div>
+      <div class="filter-row">
         <label>戦略:</label>
         <select id="venueCmpFilterStrategy">
-          <option value="">すべて</option>
+          <option value="">すべて(合算)</option>
           <option value="的中特化">的中特化</option>
           <option value="バランス">バランス</option>
           <option value="一撃重視">一撃重視</option>
           <option value="絞り込み">絞り込み</option>
         </select>
       </div>
-      <div id="venueCmpTableResult"><div class="loading">読み込み中...</div></div>
+      <div id="venueCmpChartResult"><div class="loading">読み込み中...</div></div>
     <?php else: ?>
       <div class="premium-lock">
         <span class="premium-lock-icon">&#128274;</span>
@@ -275,6 +280,12 @@ var API_HOST = 'https://' + '2410049.moo.jp';
 var IS_PREMIUM = <?php echo $isPremium ? 'true' : 'false'; ?>;
 var IS_PREMIUM_ONLY = <?php echo $isPremiumOnly ? 'true' : 'false'; ?>;
 var STRATEGY_COLORS = { '的中特化': '#0055a4', 'バランス': '#16a34a', '一撃重視': '#dc2626', '絞り込み': '#d97706' };
+var ALL_VENUES = [
+  '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
+  '蒲郡','常滑','津','三国','琵琶湖','住之江',
+  '尼崎','鳴門','高松','丸亀','児島','宮島','徳山',
+  '下関','若松','芦屋','福岡','唐津','大村'
+];
 
 function formatDateJP(iso) {
   if (!iso) return '';
@@ -495,7 +506,64 @@ loadDaily();
 
 // ============================================================
 // 3. 会場別内訳(premium)
+// 会場・戦略のプルダウンフィルタは旧premium_dashboard.phpの
+// フィルタロジックを移植したもの。
 // ============================================================
+var venueBreakdownAllRows = [];
+
+function renderVenueBreakdownTable() {
+  var el = document.getElementById('venueResult');
+  el.textContent = '';
+
+  var venueFilter    = document.getElementById('venueBreakdownFilterVenue').value;
+  var strategyFilter = document.getElementById('venueBreakdownFilterStrategy').value;
+
+  var filtered = venueBreakdownAllRows.filter(function(r) {
+    if (venueFilter    && r.venue         !== venueFilter)    return false;
+    if (strategyFilter && r.strategy_type !== strategyFilter) return false;
+    return true;
+  });
+
+  var note = document.createElement('div');
+  note.className = 'note';
+  note.textContent = '賭式別(3連単/2連単等)の内訳は、現在すべての戦略が3連単のみを対象としているため区別できるデータがなく、非表示にしています。';
+  el.appendChild(note);
+
+  if (filtered.length === 0) {
+    el.appendChild(makeError('該当するデータがありません'));
+    return;
+  }
+
+  var wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  var table = document.createElement('table');
+  table.className = 'data-table';
+  var thead = document.createElement('thead');
+  var hrow = document.createElement('tr');
+  ['会場', '戦略', '対象数', '的中率', '投資額', '払戻額', '回収率'].forEach(function(h) {
+    var th = document.createElement('th');
+    th.textContent = h;
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);
+  table.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  filtered.forEach(function(r) {
+    var tr = document.createElement('tr');
+    var tdVenue = document.createElement('td'); tdVenue.textContent = venueDisplayName(r.venue); tr.appendChild(tdVenue);
+    var tdType = document.createElement('td'); tdType.textContent = r.strategy_type; tr.appendChild(tdType);
+    var tdCount = document.createElement('td'); tdCount.textContent = r.total_races; tr.appendChild(tdCount);
+    var tdHit = document.createElement('td'); tdHit.textContent = r.hit_rate.toFixed(1) + '%'; tr.appendChild(tdHit);
+    var tdCost = document.createElement('td'); tdCost.textContent = r.total_cost.toLocaleString() + '円'; tr.appendChild(tdCost);
+    var tdPayout = document.createElement('td'); tdPayout.textContent = r.total_payout.toLocaleString() + '円'; tr.appendChild(tdPayout);
+    var tdRoi = document.createElement('td'); tdRoi.appendChild(roiSpan(r.roi)); tr.appendChild(tdRoi);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  el.appendChild(wrap);
+}
+
 async function loadVenue() {
   if (!IS_PREMIUM) return;
   var el = document.getElementById('venueResult');
@@ -512,38 +580,20 @@ async function loadVenue() {
       el.appendChild(makeError('データがありません'));
       return;
     }
+    venueBreakdownAllRows = data.by_venue;
 
-    var note = document.createElement('div');
-    note.className = 'note';
-    note.textContent = '賭式別(3連単/2連単等)の内訳は、現在すべての戦略が3連単のみを対象としているため区別できるデータがなく、非表示にしています。';
-    el.appendChild(note);
+    var venueSelEl = document.getElementById('venueBreakdownFilterVenue');
+    ALL_VENUES.forEach(function(v) {
+      var opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = venueDisplayName(v);
+      venueSelEl.appendChild(opt);
+    });
+    venueSelEl.addEventListener('change', renderVenueBreakdownTable);
+    document.getElementById('venueBreakdownFilterStrategy').addEventListener('change', renderVenueBreakdownTable);
+    document.getElementById('venueBreakdownFilterRow').style.display = 'flex';
 
-    var wrap = document.createElement('div');
-    wrap.className = 'table-wrap';
-    var table = document.createElement('table');
-    table.className = 'data-table';
-    var thead = document.createElement('thead');
-    var hrow = document.createElement('tr');
-    ['会場', '戦略', '対象数', '的中率', '回収率'].forEach(function(h) {
-      var th = document.createElement('th');
-      th.textContent = h;
-      hrow.appendChild(th);
-    });
-    thead.appendChild(hrow);
-    table.appendChild(thead);
-    var tbody = document.createElement('tbody');
-    data.by_venue.forEach(function(r) {
-      var tr = document.createElement('tr');
-      var tdVenue = document.createElement('td'); tdVenue.textContent = venueDisplayName(r.venue); tr.appendChild(tdVenue);
-      var tdType = document.createElement('td'); tdType.textContent = r.strategy_type; tr.appendChild(tdType);
-      var tdCount = document.createElement('td'); tdCount.textContent = r.total_races; tr.appendChild(tdCount);
-      var tdHit = document.createElement('td'); tdHit.textContent = r.hit_rate.toFixed(1) + '%'; tr.appendChild(tdHit);
-      var tdRoi = document.createElement('td'); tdRoi.appendChild(roiSpan(r.roi)); tr.appendChild(tdRoi);
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    wrap.appendChild(table);
-    el.appendChild(wrap);
+    renderVenueBreakdownTable();
   } catch (e) {
     el.textContent = '';
     el.appendChild(makeError('データの取得に失敗しました'));
@@ -629,16 +679,7 @@ loadCompare();
 // 5. 会場横断比較(premium限定、旧premium_dashboard.phpから統合)
 // get_dashboard_comparison.php のデータ取得ロジックはそのまま流用。
 // ============================================================
-var ALL_VENUES = [
-  '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
-  '蒲郡','常滑','津','三国','琵琶湖','住之江',
-  '尼崎','鳴門','高松','丸亀','児島','宮島','徳山',
-  '下関','若松','芦屋','福岡','唐津','大村'
-];
-
 var venueCmpAllRows = [];
-var venueCmpSortKey = 'hit_rate';
-var venueCmpSortDir = 'desc';
 
 function buildVenueCmpBarChart(rows) {
   var sorted = rows.slice().sort(function(a, b) { return b.hit_rate - a.hit_rate; });
@@ -690,113 +731,16 @@ function renderVenueCmpChart() {
   var note = document.createElement('div');
   note.className = 'note';
   note.textContent = strategyFilter
-    ? ('戦略「' + strategyFilter + '」の会場別的中率です。')
-    : '全戦略を合算した会場別的中率です。下の比較表で戦略ごとに絞り込めます。';
+    ? ('戦略「' + strategyFilter + '」の会場別的中率ランキングです。')
+    : '全戦略を合算した会場別的中率ランキングです。';
   el.appendChild(note);
   el.appendChild(buildVenueCmpBarChart(venueRows));
-}
-
-function renderVenueCmpTable() {
-  var el = document.getElementById('venueCmpTableResult');
-  el.textContent = '';
-
-  var venueFilter    = document.getElementById('venueCmpFilterVenue').value;
-  var strategyFilter = document.getElementById('venueCmpFilterStrategy').value;
-
-  var filtered = venueCmpAllRows.filter(function(r) {
-    if (venueFilter    && r.venue         !== venueFilter)    return false;
-    if (strategyFilter && r.strategy_type !== strategyFilter) return false;
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    el.appendChild(makeError('該当するデータがありません'));
-    return;
-  }
-
-  var sorted = filtered.slice().sort(function(a, b) {
-    var av = a[venueCmpSortKey], bv = b[venueCmpSortKey];
-    if (typeof av === 'string') {
-      return venueCmpSortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-    }
-    return venueCmpSortDir === 'asc' ? (av - bv) : (bv - av);
-  });
-
-  var wrap = document.createElement('div');
-  wrap.className = 'table-wrap';
-  var table = document.createElement('table');
-  table.className = 'data-table venue-cmp-table';
-
-  var columns = [
-    ['venue',       '会場'],
-    ['strategy_type', '戦略'],
-    ['total_races', '対象数'],
-    ['hit_rate',    '的中率'],
-    ['total_cost',  '投資額'],
-    ['total_payout','払戻額'],
-    ['roi',         '回収率']
-  ];
-
-  var thead = document.createElement('thead');
-  var hrow = document.createElement('tr');
-  columns.forEach(function(col) {
-    var th = document.createElement('th');
-    th.textContent = col[1];
-    if (col[0] === venueCmpSortKey) {
-      th.className = 'sorted';
-      var arrow = document.createElement('span');
-      arrow.className = 'sort-arrow';
-      arrow.textContent = venueCmpSortDir === 'asc' ? '▲' : '▼';
-      th.appendChild(arrow);
-    }
-    th.addEventListener('click', function() {
-      if (venueCmpSortKey === col[0]) {
-        venueCmpSortDir = venueCmpSortDir === 'asc' ? 'desc' : 'asc';
-      } else {
-        venueCmpSortKey = col[0];
-        venueCmpSortDir = 'desc';
-      }
-      renderVenueCmpTable();
-    });
-    hrow.appendChild(th);
-  });
-  thead.appendChild(hrow);
-  table.appendChild(thead);
-
-  var tbody = document.createElement('tbody');
-  sorted.forEach(function(row) {
-    var tr = document.createElement('tr');
-
-    var tdVenue = document.createElement('td'); tdVenue.textContent = venueDisplayName(row.venue); tr.appendChild(tdVenue);
-    var tdType = document.createElement('td'); tdType.textContent = row.strategy_type; tr.appendChild(tdType);
-    var tdCount = document.createElement('td'); tdCount.textContent = row.total_races; tr.appendChild(tdCount);
-    var tdHit = document.createElement('td'); tdHit.textContent = row.hit_rate.toFixed(1) + '%'; tr.appendChild(tdHit);
-    var tdCost = document.createElement('td'); tdCost.textContent = row.total_cost.toLocaleString() + '円'; tr.appendChild(tdCost);
-    var tdPayout = document.createElement('td'); tdPayout.textContent = row.total_payout.toLocaleString() + '円'; tr.appendChild(tdPayout);
-    var tdRoi = document.createElement('td'); tdRoi.appendChild(roiSpan(row.roi)); tr.appendChild(tdRoi);
-
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  wrap.appendChild(table);
-  el.appendChild(wrap);
 }
 
 async function loadVenueComparison() {
   if (!IS_PREMIUM_ONLY) return;
 
-  var venueSelEl = document.getElementById('venueCmpFilterVenue');
-  ALL_VENUES.forEach(function(v) {
-    var opt = document.createElement('option');
-    opt.value = v;
-    opt.textContent = venueDisplayName(v);
-    venueSelEl.appendChild(opt);
-  });
-  venueSelEl.addEventListener('change', renderVenueCmpTable);
-  document.getElementById('venueCmpFilterStrategy').addEventListener('change', function() {
-    renderVenueCmpChart();
-    renderVenueCmpTable();
-  });
+  document.getElementById('venueCmpFilterStrategy').addEventListener('change', renderVenueCmpChart);
 
   try {
     var res = await fetch(API_HOST + '/get_dashboard_comparison.php');
@@ -805,16 +749,12 @@ async function loadVenueComparison() {
     venueCmpAllRows = data.by_venue || [];
     if (venueCmpAllRows.length === 0) {
       document.getElementById('venueCmpChartResult').appendChild(makeError('データがありません'));
-      document.getElementById('venueCmpTableResult').appendChild(makeError('データがありません'));
       return;
     }
     renderVenueCmpChart();
-    renderVenueCmpTable();
   } catch (e) {
     document.getElementById('venueCmpChartResult').textContent = '';
     document.getElementById('venueCmpChartResult').appendChild(makeError('データの取得に失敗しました'));
-    document.getElementById('venueCmpTableResult').textContent = '';
-    document.getElementById('venueCmpTableResult').appendChild(makeError('データの取得に失敗しました'));
   }
 }
 loadVenueComparison();
