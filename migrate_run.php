@@ -118,5 +118,26 @@ if ($action === 'apply') {
     exit;
 }
 
+if ($action === 'dump') {
+    header('Content-Type: text/plain; charset=utf-8');
+
+    $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
+    sort($tables);
+
+    echo "-- 艇王 DBスキーマダンプ\n";
+    echo "-- 生成日時: " . date('Y-m-d H:i:s') . "\n";
+    echo "-- テーブル数: " . count($tables) . "\n\n";
+
+    foreach ($tables as $table) {
+        $row = $pdo->query("SHOW CREATE TABLE `$table`")->fetch();
+        $createStmt = $row['Create Table'] ?? '';
+        echo "-- ----------------------------\n";
+        echo "-- Table: $table\n";
+        echo "-- ----------------------------\n";
+        echo $createStmt . ";\n\n";
+    }
+    exit;
+}
+
 http_response_code(400);
 echo json_encode(['error' => 'invalid action']);
