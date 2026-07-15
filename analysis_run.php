@@ -106,5 +106,24 @@ if ($action === 'daily') {
     exit;
 }
 
+if ($action === 'zero_payout_check') {
+    // is_hit=1 かつ payout=0 (オッズ欠損によるROI下振れの疑い)の件数を期間・戦略別に集計
+    $stmt = $pdo->prepare('
+        SELECT
+            s.strategy_type,
+            COUNT(*) AS total_hits,
+            SUM(CASE WHEN sr.payout = 0 THEN 1 ELSE 0 END) AS zero_payout_hits
+        FROM strategy_results sr
+        JOIN strategies s ON s.id = sr.strategy_id
+        JOIN races r       ON r.id = sr.race_id
+        WHERE r.date >= ? AND r.date <= ? AND sr.is_hit = 1
+        GROUP BY s.strategy_type
+        ORDER BY FIELD(s.strategy_type, \'的中特化\', \'バランス\', \'一撃重視\', \'絞り込み\')
+    ');
+    $stmt->execute([$start, $end]);
+    echo json_encode(['zero_payout' => $stmt->fetchAll()], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 http_response_code(400);
 echo json_encode(['error' => 'invalid action']);
