@@ -47,6 +47,16 @@ table.data-table tr:last-child td { border-bottom: none; }
 .premium-lock a { display: inline-block; padding: 9px 22px; border-radius: 8px; background: #d97706; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
 .premium-lock a:hover { background: #b45309; }
 
+/* 会場横断比較 */
+.filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.filter-row select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: #333; }
+.filter-row label { font-size: 12px; color: #666; font-weight: 600; }
+table.venue-cmp-table th { cursor: pointer; user-select: none; }
+table.venue-cmp-table th:hover { color: #0055a4; }
+table.venue-cmp-table th.sorted { color: #0055a4; }
+.sort-arrow { font-size: 9px; margin-left: 2px; }
+svg.bar-chart { width: 100%; height: auto; }
+
 /* 個別レース詳細(スコア内訳) */
 .race-detail-row { border: 1px solid #e0e3e8; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
 .race-detail-hdr { display: flex; align-items: center; gap: 8px; padding: 9px 12px; cursor: pointer; background: #fff; flex-wrap: wrap; }
@@ -147,7 +157,37 @@ svg.trend-chart { width: 100%; height: auto; }
     <?php endif; ?>
   </div>
 
-  <!-- 5. 個別レース詳細(スコア内訳、premium限定) -->
+  <!-- 5. 会場横断比較(premium限定) -->
+  <div class="card" id="venueCmpCard">
+    <h2>会場横断比較</h2>
+    <?php if ($isPremiumOnly): ?>
+      <div class="note">全会場・全期間の戦略別成績を横断比較できます。</div>
+      <div id="venueCmpChartResult"><div class="loading">読み込み中...</div></div>
+      <div class="filter-row" style="margin-top:16px;">
+        <label>会場:</label>
+        <select id="venueCmpFilterVenue">
+          <option value="">全会場</option>
+        </select>
+        <label>戦略:</label>
+        <select id="venueCmpFilterStrategy">
+          <option value="">すべて</option>
+          <option value="的中特化">的中特化</option>
+          <option value="バランス">バランス</option>
+          <option value="一撃重視">一撃重視</option>
+          <option value="絞り込み">絞り込み</option>
+        </select>
+      </div>
+      <div id="venueCmpTableResult"><div class="loading">読み込み中...</div></div>
+    <?php else: ?>
+      <div class="premium-lock">
+        <span class="premium-lock-icon">&#128274;</span>
+        <p>会場横断の的中率比較は Premium プラン限定機能です。</p>
+        <a href="upgrade.html">プランをアップグレード</a>
+      </div>
+    <?php endif; ?>
+  </div>
+
+  <!-- 6. 個別レース詳細(スコア内訳、premium限定) -->
   <div class="card">
     <h2>個別レース詳細(スコア内訳)</h2>
     <?php if ($isPremiumOnly): ?>
@@ -586,7 +626,201 @@ async function loadCompare() {
 loadCompare();
 
 // ============================================================
-// 5. 個別レース詳細(スコア内訳、premium限定)
+// 5. 会場横断比較(premium限定、旧premium_dashboard.phpから統合)
+// get_dashboard_comparison.php のデータ取得ロジックはそのまま流用。
+// ============================================================
+var ALL_VENUES = [
+  '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
+  '蒲郡','常滑','津','三国','琵琶湖','住之江',
+  '尼崎','鳴門','高松','丸亀','児島','宮島','徳山',
+  '下関','若松','芦屋','福岡','唐津','大村'
+];
+
+var venueCmpAllRows = [];
+var venueCmpSortKey = 'hit_rate';
+var venueCmpSortDir = 'desc';
+
+function buildVenueCmpBarChart(rows) {
+  var sorted = rows.slice().sort(function(a, b) { return b.hit_rate - a.hit_rate; });
+  var BAR_H = 18, GAP = 6, padL = 60, padR = 100, W = 640;
+  var H = GAP + sorted.length * (BAR_H + GAP);
+  var plotW = W - padL - padR;
+
+  var svgParts = [];
+  svgParts.push('<svg class="bar-chart" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">');
+  sorted.forEach(function(row, i) {
+    var y = GAP + i * (BAR_H + GAP);
+    var rate = Math.max(0, Math.min(100, row.hit_rate)) / 100;
+    var barW = Math.max(2, rate * plotW);
+    var color = row.hit_rate >= 30 ? '#16a34a' : row.hit_rate >= 15 ? '#d97706' : '#dc2626';
+    svgParts.push('<rect x="' + padL + '" y="' + y + '" width="' + plotW + '" height="' + BAR_H + '" rx="4" fill="#f0f4f8" />');
+    svgParts.push('<rect x="' + padL + '" y="' + y + '" width="' + barW + '" height="' + BAR_H + '" rx="4" fill="' + color + '" />');
+    svgParts.push('<text x="' + (padL - 6) + '" y="' + (y + BAR_H / 2 + 4) + '" font-size="11" fill="#555" text-anchor="end">' + venueDisplayName(row.venue) + '</text>');
+    svgParts.push('<text x="' + (padL + barW + 6) + '" y="' + (y + BAR_H / 2 + 4) + '" font-size="10" fill="#555">' + row.hit_rate.toFixed(1) + '% (' + row.total_races + '件)</text>');
+  });
+  svgParts.push('</svg>');
+  var wrap = document.createElement('div');
+  wrap.innerHTML = svgParts.join('');
+  return wrap.firstChild;
+}
+
+function renderVenueCmpChart() {
+  var el = document.getElementById('venueCmpChartResult');
+  el.textContent = '';
+
+  var strategyFilter = document.getElementById('venueCmpFilterStrategy').value;
+  var byVenue = {};
+  venueCmpAllRows.forEach(function(r) {
+    if (strategyFilter && r.strategy_type !== strategyFilter) return;
+    if (!byVenue[r.venue]) byVenue[r.venue] = { venue: r.venue, total_races: 0, hits: 0 };
+    byVenue[r.venue].total_races += r.total_races;
+    byVenue[r.venue].hits += r.hits;
+  });
+  var venueRows = Object.keys(byVenue).map(function(v) {
+    var b = byVenue[v];
+    b.hit_rate = b.total_races > 0 ? (b.hits / b.total_races * 100) : 0;
+    return b;
+  }).filter(function(b) { return b.total_races > 0; });
+
+  if (venueRows.length === 0) {
+    el.appendChild(makeError('データがありません'));
+    return;
+  }
+
+  var note = document.createElement('div');
+  note.className = 'note';
+  note.textContent = strategyFilter
+    ? ('戦略「' + strategyFilter + '」の会場別的中率です。')
+    : '全戦略を合算した会場別的中率です。下の比較表で戦略ごとに絞り込めます。';
+  el.appendChild(note);
+  el.appendChild(buildVenueCmpBarChart(venueRows));
+}
+
+function renderVenueCmpTable() {
+  var el = document.getElementById('venueCmpTableResult');
+  el.textContent = '';
+
+  var venueFilter    = document.getElementById('venueCmpFilterVenue').value;
+  var strategyFilter = document.getElementById('venueCmpFilterStrategy').value;
+
+  var filtered = venueCmpAllRows.filter(function(r) {
+    if (venueFilter    && r.venue         !== venueFilter)    return false;
+    if (strategyFilter && r.strategy_type !== strategyFilter) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    el.appendChild(makeError('該当するデータがありません'));
+    return;
+  }
+
+  var sorted = filtered.slice().sort(function(a, b) {
+    var av = a[venueCmpSortKey], bv = b[venueCmpSortKey];
+    if (typeof av === 'string') {
+      return venueCmpSortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return venueCmpSortDir === 'asc' ? (av - bv) : (bv - av);
+  });
+
+  var wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  var table = document.createElement('table');
+  table.className = 'data-table venue-cmp-table';
+
+  var columns = [
+    ['venue',       '会場'],
+    ['strategy_type', '戦略'],
+    ['total_races', '対象数'],
+    ['hit_rate',    '的中率'],
+    ['total_cost',  '投資額'],
+    ['total_payout','払戻額'],
+    ['roi',         '回収率']
+  ];
+
+  var thead = document.createElement('thead');
+  var hrow = document.createElement('tr');
+  columns.forEach(function(col) {
+    var th = document.createElement('th');
+    th.textContent = col[1];
+    if (col[0] === venueCmpSortKey) {
+      th.className = 'sorted';
+      var arrow = document.createElement('span');
+      arrow.className = 'sort-arrow';
+      arrow.textContent = venueCmpSortDir === 'asc' ? '▲' : '▼';
+      th.appendChild(arrow);
+    }
+    th.addEventListener('click', function() {
+      if (venueCmpSortKey === col[0]) {
+        venueCmpSortDir = venueCmpSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        venueCmpSortKey = col[0];
+        venueCmpSortDir = 'desc';
+      }
+      renderVenueCmpTable();
+    });
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  sorted.forEach(function(row) {
+    var tr = document.createElement('tr');
+
+    var tdVenue = document.createElement('td'); tdVenue.textContent = venueDisplayName(row.venue); tr.appendChild(tdVenue);
+    var tdType = document.createElement('td'); tdType.textContent = row.strategy_type; tr.appendChild(tdType);
+    var tdCount = document.createElement('td'); tdCount.textContent = row.total_races; tr.appendChild(tdCount);
+    var tdHit = document.createElement('td'); tdHit.textContent = row.hit_rate.toFixed(1) + '%'; tr.appendChild(tdHit);
+    var tdCost = document.createElement('td'); tdCost.textContent = row.total_cost.toLocaleString() + '円'; tr.appendChild(tdCost);
+    var tdPayout = document.createElement('td'); tdPayout.textContent = row.total_payout.toLocaleString() + '円'; tr.appendChild(tdPayout);
+    var tdRoi = document.createElement('td'); tdRoi.appendChild(roiSpan(row.roi)); tr.appendChild(tdRoi);
+
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  el.appendChild(wrap);
+}
+
+async function loadVenueComparison() {
+  if (!IS_PREMIUM_ONLY) return;
+
+  var venueSelEl = document.getElementById('venueCmpFilterVenue');
+  ALL_VENUES.forEach(function(v) {
+    var opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = venueDisplayName(v);
+    venueSelEl.appendChild(opt);
+  });
+  venueSelEl.addEventListener('change', renderVenueCmpTable);
+  document.getElementById('venueCmpFilterStrategy').addEventListener('change', function() {
+    renderVenueCmpChart();
+    renderVenueCmpTable();
+  });
+
+  try {
+    var res = await fetch(API_HOST + '/get_dashboard_comparison.php');
+    var data = await res.json();
+    if (data.error) throw new Error(data.message || data.error);
+    venueCmpAllRows = data.by_venue || [];
+    if (venueCmpAllRows.length === 0) {
+      document.getElementById('venueCmpChartResult').appendChild(makeError('データがありません'));
+      document.getElementById('venueCmpTableResult').appendChild(makeError('データがありません'));
+      return;
+    }
+    renderVenueCmpChart();
+    renderVenueCmpTable();
+  } catch (e) {
+    document.getElementById('venueCmpChartResult').textContent = '';
+    document.getElementById('venueCmpChartResult').appendChild(makeError('データの取得に失敗しました'));
+    document.getElementById('venueCmpTableResult').textContent = '';
+    document.getElementById('venueCmpTableResult').appendChild(makeError('データの取得に失敗しました'));
+  }
+}
+loadVenueComparison();
+
+// ============================================================
+// 6. 個別レース詳細(スコア内訳、premium限定)
 // predict.php/ai-predict.php の詳細スコア内訳(get_prediction.phpの
 // breakdown)と同じデータ・表示ロジックを流用する。
 // ============================================================
