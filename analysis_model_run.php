@@ -37,14 +37,14 @@ if ($section === 'predictions') {
         $stmt = $pdo->query('
             SELECT
                 r.id AS race_id, r.date, r.venue, r.race_no,
-                p.lane, p.predicted_rank, p.score_total,
+                res.lane, p.predicted_rank, p.score_total,
                 p.score_ability, p.score_course, p.score_today, p.score_weather,
                 res.actual_rank
             FROM predictions p
             JOIN races r   ON r.id = p.race_id
             JOIN results res ON res.race_id = p.race_id AND res.player_id = p.player_id
             WHERE res.actual_rank IS NOT NULL
-            ORDER BY r.id, p.lane
+            ORDER BY r.id, res.lane
         ');
         echo json_encode(['rows' => $stmt->fetchAll()], JSON_UNESCAPED_UNICODE);
     } catch (PDOException $e) {
@@ -63,7 +63,7 @@ if ($section === 'combo_odds') {
             JOIN races r ON r.id = s.race_id
             JOIN strategy_results sr ON sr.strategy_id = s.id
             JOIN JSON_TABLE(s.combinations, "$[*]" COLUMNS (combo VARCHAR(10) PATH "$")) AS jt
-            LEFT JOIN odds_3t o ON o.race_id = s.race_id AND o.combo = jt.combo
+            LEFT JOIN odds_3t o ON o.race_id = s.race_id AND o.combo = jt.combo COLLATE utf8mb4_0900_ai_ci
             WHERE NOT (sr.is_hit = 1 AND sr.payout = 0)
         ');
         echo json_encode(['rows' => $stmt->fetchAll()], JSON_UNESCAPED_UNICODE);
