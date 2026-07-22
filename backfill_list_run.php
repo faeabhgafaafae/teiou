@@ -45,10 +45,22 @@ try {
     ');
     $summary = $stmt2->fetch();
 
+    $stmt3 = $pdo->query('
+        SELECT
+            COUNT(*) AS total_entries,
+            SUM(CASE WHEN e.exhibit_time IS NULL THEN 1 ELSE 0 END) AS exhibit_null,
+            SUM(CASE WHEN e.start_timing IS NULL THEN 1 ELSE 0 END) AS st_null
+        FROM entries e
+        JOIN races r ON r.id = e.race_id
+        WHERE r.date >= "2026-07-15" AND r.date <= "2026-07-22"
+    ');
+    $summary_week = $stmt3->fetch();
+
     echo json_encode([
         'race_count' => count($races),
         'races'      => $races,
         'entries_summary' => $summary,
+        'entries_summary_week_0715_0722' => $summary_week,
     ], JSON_UNESCAPED_UNICODE);
 } catch (PDOException $e) {
     http_response_code(500);
