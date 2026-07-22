@@ -36,6 +36,14 @@ API_URL_PAYOUTS  = os.environ.get('API_URL_PAYOUTS', 'https://2410049.moo.jp/sav
 API_KEY          = os.environ.get('API_KEY', 'teio2025')
 SLEEP_SEC = 3
 
+
+def write_summary(text: str) -> None:
+    path = os.environ.get('GITHUB_STEP_SUMMARY')
+    if not path:
+        return
+    with open(path, 'a', encoding='utf-8') as f:
+        f.write(text)
+
 def get_7zip():
     if platform.system() != 'Windows':
         return shutil.which('7z') or '7z'
@@ -395,6 +403,7 @@ def main():
 
     current = start
     ok_days = skip_days = 0
+    failed_days = []
 
     while current <= end:
         print(f'[{current}] ', end='', flush=True)
@@ -414,8 +423,10 @@ def main():
         if args.download_only:
             print('(送信スキップ)')
         else:
-            send_records(records, current)
-            send_payouts(payouts, current)
+            ok_records = send_records(records, current)
+            ok_payouts = send_payouts(payouts, current)
+            if not (ok_records and ok_payouts):
+                failed_days.append(current.isoformat())
 
         ok_days += 1
         current += timedelta(days=1)
@@ -423,6 +434,15 @@ def main():
 
     print()
     print(f'完了: 処理 {ok_days}日 / スキップ {skip_days}日')
+
+    if failed_days:
+        print(f'[FAILED] 送信失敗: {len(failed_days)}日 → {", ".join(failed_days)}')
+        write_summary(
+            f'## ⚠️ 競走成績取込 一部失敗\n\n'
+            f'- 失敗日数: {len(failed_days)}日\n'
+            f'- 失敗日: {", ".join(failed_days)}\n'
+        )
+        sys.exit(1)
 
 
 if __name__ == '__main__':

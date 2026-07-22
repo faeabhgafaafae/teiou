@@ -18,6 +18,7 @@ strategies を生成しておく(閲覧有無に依存させない)。
 
 import argparse
 import os
+import sys
 import time
 
 import requests
@@ -25,6 +26,14 @@ import requests
 API_VENUES  = os.environ.get('API_VENUES',  'https://2410049.moo.jp/venues.php')
 API_PREDICT = os.environ.get('API_PREDICT', 'https://2410049.moo.jp/api_predict.php')
 SLEEP_SEC   = 0.3
+
+
+def write_summary(text: str) -> None:
+    path = os.environ.get('GITHUB_STEP_SUMMARY')
+    if not path:
+        return
+    with open(path, 'a', encoding='utf-8') as f:
+        f.write(text)
 
 
 def get_venues(date_str: str) -> list:
@@ -64,7 +73,12 @@ def main():
         venues = get_venues(args.date)
     except Exception as e:
         print(f'[ERROR] 開催場一覧取得失敗: {e}')
-        return
+        write_summary(
+            f'## ⚠️ 戦略事前生成 失敗\n\n'
+            f'- 対象日: {args.date}\n'
+            f'- 開催場一覧取得(venues.php)に失敗: {e}\n'
+        )
+        sys.exit(1)
 
     if not venues:
         print('  対象レースなし')
@@ -74,15 +88,28 @@ def main():
     print(f'  対象: {len(venues)}会場 / {total_races}レース')
 
     ok = 0
+    failed = []
     for v in venues:
         venue      = v['venue']
         race_count = int(v['race_count'])
         for race_no in range(1, race_count + 1):
             if generate_for_race(args.date, venue, race_no):
                 ok += 1
+            else:
+                failed.append(f'{venue}{race_no}R')
             time.sleep(SLEEP_SEC)
 
     print(f'完了: {ok}/{total_races}レース分の戦略を生成')
+
+    if failed:
+        print(f'[FAILED] {len(failed)}/{total_races}件失敗: {", ".join(failed)}')
+        write_summary(
+            f'## ⚠️ 戦略事前生成 一部失敗\n\n'
+            f'- 対象日: {args.date}\n'
+            f'- 失敗: {len(failed)}/{total_races}件\n'
+            f'- 失敗レース: {", ".join(failed)}\n'
+        )
+        sys.exit(1)
 
 
 if __name__ == '__main__':
