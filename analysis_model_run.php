@@ -58,7 +58,7 @@ if ($section === 'combo_odds') {
     try {
         $stmt = $pdo->query('
             SELECT
-                r.date, s.strategy_type, jt.combo, o.odds
+                s.race_id, r.date, s.strategy_type, jt.combo, o.odds
             FROM strategies s
             JOIN races r ON r.id = s.race_id
             JOIN strategy_results sr ON sr.strategy_id = s.id
@@ -77,7 +77,7 @@ if ($section === 'combo_odds') {
 if ($section === 'hits') {
     $stmt = $pdo->query('
         SELECT
-            r.date, s.strategy_type, sr.is_hit, sr.payout, sr.cost
+            s.race_id, r.date, s.strategy_type, sr.is_hit, sr.payout, sr.cost
         FROM strategies s
         JOIN races r ON r.id = s.race_id
         JOIN strategy_results sr ON sr.strategy_id = s.id
