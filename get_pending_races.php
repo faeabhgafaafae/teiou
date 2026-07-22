@@ -37,6 +37,11 @@ if ($all) {
     $stmt->execute([':date' => $date]);
 } else {
     // 締切60分前〜締切5分後のレースを対象にする（締切直後の取り漏らしも拾う）
+    // 加えて、締切5分後を過ぎていても当日中でexhibit_time/start_timingがまだNULL
+    // (needs_scrape)なレースは無期限に対象へ含める。live.ymlの10分毎cronが
+    // GitHub Actions側の遅延で実際には平均2時間強に1回しか発火せず、従来の
+    // 65分の窓だけでは取りこぼしが72%に達していたため(2026-07調査)。
+    // 締切60分より先のレース(まだ展示情報が未公開)は無駄打ちを避けるため対象外のまま。
     // exhibit_time/start_timingがまだNULLのレースを優先して返す（needs_scrape）
     // minutes_since_odds_update: オッズの最終更新からの経過分数(scrape_live.pyのフェーズ2で
     // 直近更新済みレースをスキップする判定に使う。未取得ならNULL)
@@ -52,8 +57,20 @@ if ($all) {
         FROM races r
         WHERE r.date = :date
           AND r.scheduled_time IS NOT NULL
-          AND CONCAT(r.date, " ", r.scheduled_time) >= NOW() - INTERVAL 5 MINUTE
-          AND CONCAT(r.date, " ", r.scheduled_time) <= NOW() + INTERVAL 60 MINUTE
+          AND (
+                (
+                    CONCAT(r.date, " ", r.scheduled_time) >= NOW() - INTERVAL 5 MINUTE
+                    AND CONCAT(r.date, " ", r.scheduled_time) <= NOW() + INTERVAL 60 MINUTE
+                )
+                OR (
+                    CONCAT(r.date, " ", r.scheduled_time) < NOW() - INTERVAL 5 MINUTE
+                    AND EXISTS (
+                        SELECT 1 FROM entries e
+                        WHERE e.race_id = r.id
+                          AND (e.exhibit_time IS NULL OR e.start_timing IS NULL)
+                    )
+                )
+              )
         ORDER BY needs_scrape DESC, CONCAT(r.date, " ", r.scheduled_time) ASC
     ');
     $stmt->execute([':date' => $date]);
