@@ -23,11 +23,21 @@ if (!$race) {
 }
 
 try {
+    $two_years_ago = date('Y-m-d', strtotime($date . ' -2 years'));
     $stmt = $pdo->prepare('
         SELECT e.lane AS waku, e.player_id, e.motor_2rate,
                pl.name, pl.grade,
                pp.win_rate AS pp_win_rate,
-               pp.fukusho_rate AS pp_fukusho_rate
+               pp.fukusho_rate AS pp_fukusho_rate,
+               pp.avg_st AS avg_st,
+               (SELECT ROUND(SUM(r2.actual_rank = 1) / NULLIF(COUNT(*), 0) * 100, 2)
+                FROM results r2 JOIN races rc2 ON r2.race_id = rc2.id
+                WHERE r2.player_id = e.player_id AND rc2.venue = ?
+                  AND rc2.date >= ?) AS win_rate_local,
+               (SELECT ROUND(SUM(r2.actual_rank <= 2) / NULLIF(COUNT(*), 0) * 100, 2)
+                FROM results r2 JOIN races rc2 ON r2.race_id = rc2.id
+                WHERE r2.player_id = e.player_id AND rc2.venue = ?
+                  AND rc2.date >= ?) AS fukusho_local
         FROM entries e
         LEFT JOIN players pl ON pl.id = e.player_id
         LEFT JOIN player_periods pp
@@ -41,7 +51,7 @@ try {
         WHERE e.race_id = ?
         ORDER BY e.lane ASC
     ');
-    $stmt->execute([$race['id']]);
+    $stmt->execute([$venue, $two_years_ago, $venue, $two_years_ago, $race['id']]);
     $entries = $stmt->fetchAll();
 
     $stmt2 = $pdo->prepare('SELECT scheduled_time, wind_speed, wind_dir, wave_height FROM races WHERE id = ?');
