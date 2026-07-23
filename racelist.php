@@ -329,12 +329,14 @@ function renderTable(entries) {
 
     var tdMotor = document.createElement('td');
     tdMotor.className = 'td-rate' + (topMotor[i] ? ' hl-motor' : '');
-    tdMotor.textContent = (e.motor_no || '-') + ' ' + fmt(e.motor_2rate, 1) + '%';
+    var mRate = fmt(e.motor_2rate, 1);
+    tdMotor.textContent = e.motor_no != null ? (e.motor_no + ' ' + (mRate !== '-' ? mRate + '%' : '-')) : (mRate !== '-' ? mRate + '%' : '-');
     tr.appendChild(tdMotor);
 
     var tdBoat = document.createElement('td');
     tdBoat.className = 'td-rate';
-    tdBoat.textContent = (e.boat_no || '-') + ' ' + fmt(e.boat_2rate, 1) + '%';
+    var bRate = fmt(e.boat_2rate, 1);
+    tdBoat.textContent = e.boat_no != null ? (e.boat_no + ' ' + (bRate !== '-' ? bRate + '%' : '-')) : (bRate !== '-' ? bRate + '%' : '-');
     tr.appendChild(tdBoat);
 
     var tdST = document.createElement('td');
