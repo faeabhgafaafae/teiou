@@ -9,7 +9,7 @@ import_beforeinfo.php の COALESCE UPDATE で NULL のみを安全に埋める
   python backfill_beforeinfo.py --start 2026-07-10 --end 2026-07-11
 """
 
-import os, sys, re, time, argparse, requests
+import os, sys, re, time, random, argparse, requests
 from datetime import date, timedelta
 from urllib.parse import quote
 from bs4 import BeautifulSoup
@@ -24,7 +24,10 @@ BOATRACE_BASE     = 'https://www.boatrace.jp'
 LOG_FILE          = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                   'backfill_beforeinfo.log')
 
-SLEEP_SEC         = 8     # Akamai bot検知回避（レース間）
+SLEEP_MIN         = 7     # レース間スリープ: 最短(秒)
+SLEEP_MAX         = 14    # レース間スリープ: 最長(秒)
+DAY_BREAK_MIN     = 90    # 1日分完了後の追加休憩: 最短(秒)
+DAY_BREAK_MAX     = 180   # 1日分完了後の追加休憩: 最長(秒)
 VENUE_CHECK_SLEEP = 0.15  # api_races.php呼び出し間隔
 CONSEC_ERR_LIMIT  = 3     # 連続接続エラーでIPブロック判定し中断
 
@@ -289,7 +292,7 @@ def main():
     log(f'\n{"="*60}')
     log(f'beforeinfo バックフィル 開始: {now_str}')
     log(f'対象期間: {args.start} 〜 {args.end}')
-    log(f'設定: SLEEP={SLEEP_SEC}s / IPブロック検知閾値={CONSEC_ERR_LIMIT}連続エラー')
+    log(f'設定: SLEEP={SLEEP_MIN}〜{SLEEP_MAX}s(ランダム) / 日次休憩{DAY_BREAK_MIN}〜{DAY_BREAK_MAX}s / IPブロック検知閾値={CONSEC_ERR_LIMIT}連続エラー')
     log(f'{"="*60}\n')
 
     start_date = date.fromisoformat(args.start)
@@ -339,7 +342,7 @@ def main():
                             log(f'{"!"*60}\n')
                             ip_blocked = True
                             break
-                        time.sleep(SLEEP_SEC * 2)
+                        time.sleep(random.uniform(SLEEP_MAX * 2, SLEEP_MAX * 3))
                         continue
                     else:
                         log(f'[ERROR] {e}')
@@ -352,7 +355,7 @@ def main():
                     log('データなし')
                     day_nodata += 1
                     total_nodata += 1
-                    time.sleep(1)
+                    time.sleep(random.uniform(1.5, 3.0))
                     continue
 
                 n_players = len(data.get('players', []))
@@ -365,7 +368,7 @@ def main():
                 else:
                     log('→ 送信失敗')
 
-                time.sleep(SLEEP_SEC)
+                time.sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))
 
             if ip_blocked:
                 break
@@ -378,6 +381,12 @@ def main():
 
         if ip_blocked:
             break
+
+        # 1日完了後に長めの休憩（Akamai セッションリセット狙い）
+        if cur < end_date:
+            day_break = random.uniform(DAY_BREAK_MIN, DAY_BREAK_MAX)
+            log(f'  [休憩] {day_break:.0f}秒 待機中...\n')
+            time.sleep(day_break)
 
         cur += timedelta(days=1)
 
