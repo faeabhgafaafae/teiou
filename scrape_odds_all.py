@@ -5,6 +5,7 @@ get_pending_races.php?all=1 で当日の全レースを取得し、
 各レースのオッズ(odds3t)をスクレイピングしてAPIに送信する
 """
 
+import argparse
 import os
 import time
 import signal
@@ -44,12 +45,29 @@ def get_all_races() -> list:
 
 
 def main():
-    print('[scrape_odds_all] 当日全レースのオッズ取得開始...')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--jcd-min', default=None,
+                        help='処理するJCDの下限 (例: "01"). 省略時は全会場')
+    parser.add_argument('--jcd-max', default=None,
+                        help='処理するJCDの上限 (例: "12"). 省略時は全会場')
+    args = parser.parse_args()
+
+    label = ''
+    if args.jcd_min or args.jcd_max:
+        label = f' (JCD {args.jcd_min or "01"}〜{args.jcd_max or "24"})'
+    print(f'[scrape_odds_all] 当日全レースのオッズ取得開始{label}...')
     try:
         races = get_all_races()
     except Exception as e:
         print(f'[ERROR] レース一覧取得失敗: {e}')
         return
+
+    if args.jcd_min or args.jcd_max:
+        races = [
+            r for r in races
+            if (args.jcd_min is None or VENUE_TO_JCD.get(r['venue'], '99') >= args.jcd_min)
+            and (args.jcd_max is None or VENUE_TO_JCD.get(r['venue'], '99') <= args.jcd_max)
+        ]
 
     print(f'  対象: {len(races)}レース')
     if not races:

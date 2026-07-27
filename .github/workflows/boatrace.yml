@@ -5,15 +5,22 @@ on:
     - cron: '0 22 * * *'   # JST 7:00 出走表・直前情報取得
     - cron: '0 11 * * *'   # JST 20:00 競走成績取得
   workflow_dispatch:        # 手動実行も可能
+    inputs:
+      target_date:
+        description: '対象日 (YYYY-MM-DD). 指定時は fetch_results のみ実行。省略時は全ジョブ実行。'
+        required: false
+        default: ''
 
 jobs:
   # ─── 毎朝7時: 出走表・直前情報取得 ───────────────────
-  # 当日全オッズ取得は別ジョブに分離(scrape_odds)。
+  # 当日全オッズ取得は別ジョブに分離(scrape_odds_a / scrape_odds_b)。
   # 同一ジョブ内で直列実行すると、出走表・直前情報だけで70分前後を
   # 使い切ってしまい、オッズ取得がtimeout-minutesの残り時間しか
   # もらえず毎回打ち切られていたため(2026-07-13〜14に連日発生)。
   scrape_beforeinfo:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 22 * * *'
+    if: >-
+      github.event.schedule == '0 22 * * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_date == '')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -42,12 +49,14 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: python scrape_boatrace.py
 
-  # ─── scrape_beforeinfoの直後: 当日全オッズ取得 ────────
-  # 出走表さえ登録されていれば動くため、直前情報の完了を待つ必要はないが、
-  # ジョブを分けてtimeout-minutesを独立させることが目的なのでneedsで直列化する。
-  scrape_odds:
+  # ─── scrape_beforeinfoの直後: 当日全オッズ取得 (前半: JCD 01〜12) ────────
+  # 156レース×約53秒=138分が1ジョブに収まらないため2並列に分割。
+  # 各ジョブ約78レース×53秒=69分でtimeout-minutes: 90に収まる。
+  scrape_odds_a:
     needs: scrape_beforeinfo
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 22 * * *'
+    if: >-
+      github.event.schedule == '0 22 * * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_date == '')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -64,16 +73,48 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4
 
-      - name: 当日全オッズ取得
+      - name: 当日全オッズ取得 (JCD 01〜12)
         env:
           API_PENDING: ${{ secrets.API_PENDING }}
           API_ODDS: ${{ secrets.API_URL_ODDS }}
           API_KEY: ${{ secrets.API_KEY }}
-        run: python scrape_odds_all.py
+        run: python scrape_odds_all.py --jcd-min 01 --jcd-max 12
+
+  # ─── scrape_beforeinfoの直後: 当日全オッズ取得 (後半: JCD 13〜24) ────────
+  scrape_odds_b:
+    needs: scrape_beforeinfo
+    if: >-
+      github.event.schedule == '0 22 * * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_date == '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: 当日全オッズ取得 (JCD 13〜24)
+        env:
+          API_PENDING: ${{ secrets.API_PENDING }}
+          API_ODDS: ${{ secrets.API_URL_ODDS }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: python scrape_odds_all.py --jcd-min 13 --jcd-max 24
 
   # ─── 毎夜20時: 競走成績取得 ──────────────────────────
+  # workflow_dispatchで target_date を指定すると、その日の成績だけをリカバリできる。
   fetch_results:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 11 * * *'
+    if: >-
+      github.event.schedule == '0 11 * * *' ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -94,15 +135,18 @@ jobs:
       # としか照合しないため、閲覧されなかったレースが的中速報に永久に
       # 反映されない問題があった。結果取込みの前に全レース分の戦略買い目を
       # 機械的に生成しておくことで、閲覧有無に関係なく網羅する。
-      - name: 前日分の戦略買い目を事前生成
+      - name: 対象日の戦略買い目を事前生成
         run: |
-          YESTERDAY=$(date -d 'yesterday' +%Y-%m-%d)
-          python generate_strategies_for_date.py --date $YESTERDAY
+          TARGET="${{ github.event.inputs.target_date }}"
+          if [ -z "$TARGET" ]; then TARGET=$(date -d 'yesterday' +%Y-%m-%d); fi
+          echo "対象日: $TARGET"
+          python generate_strategies_for_date.py --date $TARGET
 
       - name: 競走成績取得
         env:
           API_URL: ${{ secrets.API_URL_RESULTS }}
           API_KEY: ${{ secrets.API_KEY }}
         run: |
-          YESTERDAY=$(date -d 'yesterday' +%Y-%m-%d)
-          python download_results.py --start $YESTERDAY --end $YESTERDAY
+          TARGET="${{ github.event.inputs.target_date }}"
+          if [ -z "$TARGET" ]; then TARGET=$(date -d 'yesterday' +%Y-%m-%d); fi
+          python download_results.py --start $TARGET --end $TARGET
