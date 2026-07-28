@@ -187,20 +187,51 @@
     return card;
   }
 
+  var _hitsAll   = [];   // 当日分の全的中（ロード済み）
+  var _hitsShown = 0;    // 現在表示中の件数
+  var HITS_PER_PAGE = 20;
+
+  function renderMoreButton(container, total) {
+    var existing = document.getElementById('hitsMoreBtn');
+    if (existing) existing.remove();
+    if (_hitsShown >= _hitsAll.length) return;
+
+    var remaining = _hitsAll.length - _hitsShown;
+    var btn = document.createElement('button');
+    btn.id = 'hitsMoreBtn';
+    btn.style.cssText = 'display:block; width:100%; margin-top:8px; padding:8px; background:#f7fafc;' +
+      ' border:1px solid #e2e8f0; border-radius:8px; font-size:12px; color:#4a5568; cursor:pointer;';
+    btn.textContent = 'もっと見る（あと ' + remaining + '件）';
+    btn.onclick = function() {
+      var next = _hitsAll.slice(_hitsShown, _hitsShown + HITS_PER_PAGE);
+      next.forEach(function(hit) { container.insertBefore(renderHitCard(hit), btn); });
+      _hitsShown += next.length;
+      renderMoreButton(container, total);
+    };
+    container.appendChild(btn);
+  }
+
   async function loadHits() {
     var container = document.getElementById('hitsList');
     if (!container) return;
     try {
-      var res = await fetch(API_HOST + '/get_hits.php');
+      var url = API_HOST + '/get_hits.php?date=' + encodeURIComponent(currentDate) + '&limit=500';
+      var res = await fetch(url);
       if (!res.ok) throw new Error('fetch error');
       var data = await res.json();
-      var hits = (data.hits || []).slice(0, 5);
-      if (hits.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">まだ的中データがありません</div>';
+      _hitsAll   = data.hits || [];
+      _hitsShown = 0;
+
+      if (_hitsAll.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">本日の的中はまだありません</div>';
         return;
       }
+
       container.innerHTML = '';
-      hits.forEach(function(hit) { container.appendChild(renderHitCard(hit)); });
+      var first = _hitsAll.slice(0, HITS_PER_PAGE);
+      first.forEach(function(hit) { container.appendChild(renderHitCard(hit)); });
+      _hitsShown = first.length;
+      renderMoreButton(container, data.total);
     } catch(e) {
       container.innerHTML = '<div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">データを取得できませんでした</div>';
     }
