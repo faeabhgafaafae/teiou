@@ -166,3 +166,28 @@ else:
     print("  ⚠️ 過学習の疑いあり (train/test差 >6pt)")
 print()
 print("完了")
+
+# ─── 11. PHP定数出力 ─────────────────────────────────────────
+if '--php' in sys.argv:
+    scaler = pipe.named_steps['scaler']
+    lr     = pipe.named_steps['lr']
+    means  = scaler.mean_
+    scales = scaler.scale_
+    coefs  = lr.coef_[0]
+    intercept = lr.intercept_[0]
+
+    print("\n// ===== predict_v2_core.php 埋め込み用定数 =====")
+    print(f"// 学習日: {pd.Timestamp.now().strftime('%Y-%m-%d')}")
+    print(f"// Train期間: {dates[0]} ~ {dates[cutoff_idx-1]}")
+    print(f"// Train 1着的中率: {hit_tr/tot_tr*100:.1f}%  Test: {hit_te/tot_te*100:.1f}%")
+    print(f"// ROC-AUC(test): {roc_auc_score(y_test, proba_test):.4f}")
+    print(f"// 特徴量順: {FEATURES}")
+    print(f"private const FEATURES = {str(FEATURES)};")
+    print(f"private const INTERCEPT = {intercept:.6f};")
+    # means, scales, coefs を PHP配列形式で出力
+    def to_php_array(name, values):
+        vals = ', '.join(f'{v:.6f}' for v in values)
+        return f"private const {name} = [{vals}];"
+    print(to_php_array('MEANS',  means))
+    print(to_php_array('SCALES', scales))
+    print(to_php_array('COEFS',  coefs))
