@@ -91,12 +91,14 @@ foreach ($entries as $e) {
     $stmt2->execute([$player_id]);
     $period = $stmt2->fetch(PDO::FETCH_ASSOC);
 
-    $win_rate_national = $period['win_rate'] ?? 0;
-    $race_count        = $period['race_count'] ?? 0;
+    $win_rate_national     = (float)($period['win_rate']     ?? 0);
+    $fukusho_rate_national = (float)($period['fukusho_rate'] ?? 0);
+    $race_count            = $period['race_count'] ?? 0;
 
     $stmt2 = $pdo->prepare("
         SELECT COUNT(*) as total,
-               SUM(CASE WHEN r2.actual_rank = 1 THEN 1 ELSE 0 END) as rank1
+               SUM(CASE WHEN r2.actual_rank = 1 THEN 1 ELSE 0 END) as rank1,
+               SUM(CASE WHEN r2.actual_rank <= 2 THEN 1 ELSE 0 END) as rank2
         FROM results r2
         JOIN races rc ON r2.race_id = rc.id
         WHERE r2.player_id = ? AND rc.venue = ?
@@ -104,7 +106,9 @@ foreach ($entries as $e) {
     ");
     $stmt2->execute([$player_id, $venue, $date]);
     $local = $stmt2->fetch(PDO::FETCH_ASSOC);
-    $win_rate_local = ($local['total'] > 0) ? ($local['rank1'] / $local['total'] * 100) : $win_rate_national;
+    $win_rate_local       = ($local['total'] > 0) ? ($local['rank1'] / $local['total'] * 100) : $win_rate_national;
+    $local_win_rate_ratio = $local['total'] > 0 ? $local['rank1'] / $local['total'] : null;
+    $local_2rate_ratio    = $local['total'] > 0 ? $local['rank2'] / $local['total'] : null;
 
     $win_rate_weighted = $win_rate_national * 0.4 + $win_rate_local * 0.6;
     $score_ability_raw = min(40, $win_rate_weighted / 10 * 40);
@@ -207,6 +211,18 @@ foreach ($entries as $e) {
         'score_weather'     => round($score_weather, 2),
         'score_total'       => round($score_total, 2),
         'is_flying'         => $is_flying,
+        // v2シャドウ計算用（外部には返さない）
+        '_v2' => [
+            'lane'           => (int)$lane,
+            'player_id'      => (int)$player_id,
+            'exhibit_time'   => $e['exhibit_time'] !== null ? (float)$e['exhibit_time'] : null,
+            'start_timing'   => $e['start_timing'] !== null ? (float)$e['start_timing'] : null,
+            'motor_2rate'    => $e['motor_2rate']  !== null ? (float)$e['motor_2rate']  : null,
+            'global_win_rate'=> $win_rate_national,
+            'global_2rate'   => $fukusho_rate_national,
+            'local_win_rate' => $local_win_rate_ratio,
+            'local_2rate'    => $local_2rate_ratio,
+        ],
     ];
 }
 
@@ -252,6 +268,21 @@ for ($i = 0; $i < count($scores); $i++) {
         ':score_today'    => $scores[$i]['score_today'],
         ':score_weather'  => $scores[$i]['score_weather'],
     ]);
+}
+
+// v2シャドウ予測を並行保存（失敗しても既存ロジックに影響しない）
+try {
+    require_once __DIR__ . '/predict_v2_core.php';
+    $v2_entries = array_column($scores, '_v2');
+    $v2_weather = [
+        'wind_speed'  => $race['wind_speed'],
+        'wave_height' => $race['wave_height'],
+        'temperature' => $race['temperature'],
+    ];
+    $v2_results = PredictV2::score_race($v2_entries, $v2_weather);
+    PredictV2::save_predictions($pdo, $race_id, $v2_results);
+} catch (Exception $e) {
+    // v2はシャドウモード、非致命的エラーは無視
 }
 
 // 予測生成のタイミングで戦略買い目を自動生成

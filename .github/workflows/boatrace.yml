@@ -150,3 +150,12 @@ jobs:
           TARGET="${{ github.event.inputs.target_date }}"
           if [ -z "$TARGET" ]; then TARGET=$(date -d 'yesterday' +%Y-%m-%d); fi
           python download_results.py --start $TARGET --end $TARGET
+
+      - name: v2シャドウ予測バッチ保存
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          TARGET="${{ github.event.inputs.target_date }}"
+          if [ -z "$TARGET" ]; then TARGET=$(date -d 'yesterday' +%Y-%m-%d); fi
+          echo "v2バッチ: $TARGET"
+          curl -sf "https://2410049.moo.jp/api_v2_batch.php?date=${TARGET}&api_key=${API_KEY}" || echo "v2バッチ呼び出し失敗(非致命的)"
