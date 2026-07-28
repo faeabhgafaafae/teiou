@@ -51,9 +51,11 @@ try {
         JOIN races r      ON r.id = sr.race_id
         WHERE $where
     ");
-    $stmtCount->execute($params);
-    $total = (int)($stmtCount->fetch()['cnt'] ?? 0);
+    $stmtCount->execute($params ?: []);
+    $row   = $stmtCount->fetch(PDO::FETCH_ASSOC);
+    $total = (int)($row['cnt'] ?? 0);
 
+    // LIMIT / OFFSET は整数として直接埋め込む（(int)キャスト済みのため安全）
     $stmtHits = $pdo->prepare("
         SELECT
             r.venue,
@@ -72,9 +74,9 @@ try {
         JOIN races r      ON r.id = sr.race_id
         WHERE $where
         ORDER BY r.date DESC, r.race_no DESC, sr.id DESC
-        LIMIT ? OFFSET ?
+        LIMIT $limit OFFSET $offset
     ");
-    $stmtHits->execute(array_merge($params, [$limit, $offset]));
+    $stmtHits->execute($params ?: []);
     $hits = $stmtHits->fetchAll();
 } catch (PDOException $e) {
     $total = 0;
