@@ -6,6 +6,21 @@
  *
  * GET: ?date=YYYY-MM-DD&api_key=xxxx
  */
+// 未キャッチ例外をJSONで返す
+set_exception_handler(function(Throwable $e) {
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    echo json_encode([
+        'error'   => $e->getMessage(),
+        'file'    => basename($e->getFile()),
+        'line'    => $e->getLine(),
+        'trace'   => array_slice(array_map(fn($f) => ($f['file'] ?? '?') . ':' . ($f['line'] ?? 0), $e->getTrace()), 0, 5),
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+});
+
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/predict_v2_core.php';
 
