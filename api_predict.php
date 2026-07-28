@@ -301,6 +301,10 @@ $plan   = $user['plan'] ?? 'free';
 $isPaid = $user && in_array($plan, ['standard', 'premium'], true);
 
 $responseScores = $scores;
+// v2シャドウ計算用の内部フィールドをレスポンスから除去
+foreach ($responseScores as &$s) { unset($s['_v2']); }
+unset($s);
+
 if (!$isPaid) {
     foreach ($responseScores as &$s) {
         $s['score_ability']  = null;
