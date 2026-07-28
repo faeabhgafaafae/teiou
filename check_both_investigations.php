@@ -18,6 +18,8 @@ $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_U
 // 「締切時刻から何分前にオッズが最終更新されたか」のバケット分布を集計
 // 対象: 締切確定済み(scheduled_time is not null)・直近~2週間
 
+// scheduled_time はVARCHAR('HH:MM'), odds_updated_at はDATETIME
+// 正確な差分計算: CONCAT(date, ' ', scheduled_time, ':00') でDATETIMEに変換
 $odds_sql = "
 SELECT
     r.venue,
@@ -27,28 +29,34 @@ SELECT
     END) AS null_count,
     SUM(CASE
         WHEN r.odds_updated_at IS NOT NULL
-         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) > 60 THEN 1 ELSE 0
+         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) > 60 THEN 1 ELSE 0
     END) AS over_60min,
     SUM(CASE
         WHEN r.odds_updated_at IS NOT NULL
-         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) BETWEEN 30 AND 60 THEN 1 ELSE 0
+         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) BETWEEN 30 AND 60 THEN 1 ELSE 0
     END) AS between_30_60,
     SUM(CASE
         WHEN r.odds_updated_at IS NOT NULL
-         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) BETWEEN 10 AND 29 THEN 1 ELSE 0
+         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) BETWEEN 10 AND 29 THEN 1 ELSE 0
     END) AS between_10_29,
     SUM(CASE
         WHEN r.odds_updated_at IS NOT NULL
-         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) < 10 THEN 1 ELSE 0
+         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) BETWEEN 0 AND 9 THEN 1 ELSE 0
     END) AS under_10min,
-    -- 負値 = 締切後に更新(異常値)
+    -- 負値 = 締切後に更新(異常値 or 当日スクレイプが締切前に完了していない可能性)
     SUM(CASE
         WHEN r.odds_updated_at IS NOT NULL
-         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) < 0 THEN 1 ELSE 0
-    END) AS negative_diff
+         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) < 0 THEN 1 ELSE 0
+    END) AS negative_diff,
+    -- 平均差分(分): NULL除外
+    ROUND(AVG(CASE
+        WHEN r.odds_updated_at IS NOT NULL
+         THEN TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i'))
+         ELSE NULL
+    END), 1) AS avg_diff_min
 FROM races r
 WHERE r.date >= '2026-07-23'
-  AND r.scheduled_time IS NOT NULL
+  AND r.scheduled_time IS NOT NULL AND r.scheduled_time != ''
 GROUP BY r.venue
 ORDER BY r.venue
 ";
@@ -60,28 +68,35 @@ $odds_total_sql = "
 SELECT
     COUNT(*) AS total,
     SUM(CASE WHEN r.odds_updated_at IS NULL THEN 1 ELSE 0 END) AS null_count,
-    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) > 60 THEN 1 ELSE 0 END) AS over_60min,
-    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) BETWEEN 30 AND 60 THEN 1 ELSE 0 END) AS between_30_60,
-    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) BETWEEN 10 AND 29 THEN 1 ELSE 0 END) AS between_10_29,
-    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) < 10 THEN 1 ELSE 0 END) AS under_10min,
-    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) < 0 THEN 1 ELSE 0 END) AS negative_diff
+    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) > 60 THEN 1 ELSE 0 END) AS over_60min,
+    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) BETWEEN 30 AND 60 THEN 1 ELSE 0 END) AS between_30_60,
+    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) BETWEEN 10 AND 29 THEN 1 ELSE 0 END) AS between_10_29,
+    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) BETWEEN 0 AND 9 THEN 1 ELSE 0 END) AS under_10min,
+    SUM(CASE WHEN r.odds_updated_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) < 0 THEN 1 ELSE 0 END) AS negative_diff,
+    ROUND(AVG(CASE WHEN r.odds_updated_at IS NOT NULL THEN TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) ELSE NULL END), 1) AS avg_diff_min
 FROM races r
 WHERE r.date >= '2026-07-23'
-  AND r.scheduled_time IS NOT NULL
+  AND r.scheduled_time IS NOT NULL AND r.scheduled_time != ''
 ";
 $odds_total = $pdo->query($odds_total_sql)->fetch();
 
 // 時間帯別(hour_of_day)集計 (前回は14-16時台が悪かった)
 $odds_hour_sql = "
 SELECT
-    HOUR(r.scheduled_time) AS hour_jst,
+    LEFT(r.scheduled_time, 2) AS hour_jst,
     COUNT(*) AS total,
-    SUM(CASE WHEN r.odds_updated_at IS NULL OR TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) > 60 THEN 1 ELSE 0 END) AS bad_count
+    SUM(CASE
+        WHEN r.odds_updated_at IS NULL
+          OR TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) > 60
+        THEN 1 ELSE 0
+    END) AS bad_count,
+    SUM(CASE WHEN r.odds_updated_at IS NULL THEN 1 ELSE 0 END) AS null_count,
+    ROUND(AVG(CASE WHEN r.odds_updated_at IS NOT NULL THEN TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) ELSE NULL END), 0) AS avg_diff_min
 FROM races r
 WHERE r.date >= '2026-07-23'
-  AND r.scheduled_time IS NOT NULL
-GROUP BY HOUR(r.scheduled_time)
-ORDER BY HOUR(r.scheduled_time)
+  AND r.scheduled_time IS NOT NULL AND r.scheduled_time != ''
+GROUP BY LEFT(r.scheduled_time, 2)
+ORDER BY LEFT(r.scheduled_time, 2)
 ";
 $odds_hour = $pdo->query($odds_hour_sql)->fetchAll();
 
@@ -90,10 +105,21 @@ $odds_daily_sql = "
 SELECT
     r.date,
     COUNT(*) AS total,
-    SUM(CASE WHEN r.odds_updated_at IS NULL OR TIMESTAMPDIFF(MINUTE, r.odds_updated_at, r.scheduled_time) > 60 THEN 1 ELSE 0 END) AS bad_count
+    SUM(CASE WHEN r.odds_updated_at IS NULL THEN 1 ELSE 0 END) AS null_count,
+    SUM(CASE
+        WHEN r.odds_updated_at IS NOT NULL
+         AND TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) > 60
+        THEN 1 ELSE 0
+    END) AS over_60min_count,
+    SUM(CASE
+        WHEN r.odds_updated_at IS NULL
+          OR TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) > 60
+        THEN 1 ELSE 0
+    END) AS bad_count,
+    ROUND(AVG(CASE WHEN r.odds_updated_at IS NOT NULL THEN TIMESTAMPDIFF(MINUTE, r.odds_updated_at, STR_TO_DATE(CONCAT(r.date, ' ', r.scheduled_time), '%Y-%m-%d %H:%i')) ELSE NULL END), 0) AS avg_diff_min
 FROM races r
 WHERE r.date >= '2026-07-23'
-  AND r.scheduled_time IS NOT NULL
+  AND r.scheduled_time IS NOT NULL AND r.scheduled_time != ''
 GROUP BY r.date
 ORDER BY r.date
 ";
