@@ -21,6 +21,8 @@ set_exception_handler(function(Throwable $e) {
     exit;
 });
 
+set_time_limit(180);  // 1日分の全レースでも余裕を持って完了できるよう延長
+
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/predict_v2_core.php';
 
@@ -90,26 +92,27 @@ foreach ($all_entries as $e) {
 }
 
 // ── Step2: 全プレイヤーの能力値を一括取得 ────────────────────
-$player_ids = array_unique(array_column($all_entries, 'player_id'));
+// 相関サブクエリはタイムアウトを招くため、ORDER BY year DESC/period DESC で
+// 全行を引いてPHP側で最新periodの1行目だけを採用する方式にする。
+$player_ids = array_values(array_unique(array_column($all_entries, 'player_id')));
 $ph         = implode(',', array_fill(0, count($player_ids), '?'));
 
 $period_stmt = $pdo->prepare("
-    SELECT pp.player_id, pp.win_rate, pp.fukusho_rate
-    FROM player_periods pp
-    WHERE pp.player_id IN ($ph)
-      AND (pp.year * 10 + pp.period) = (
-          SELECT MAX(pp2.year * 10 + pp2.period)
-          FROM player_periods pp2
-          WHERE pp2.player_id = pp.player_id
-      )
+    SELECT player_id, win_rate, fukusho_rate
+    FROM player_periods
+    WHERE player_id IN ($ph)
+    ORDER BY player_id, year DESC, period DESC
 ");
 $period_stmt->execute($player_ids);
 $periods = [];
 foreach ($period_stmt->fetchAll() as $row) {
-    $periods[(int)$row['player_id']] = [
-        'win_rate'     => (float)$row['win_rate'],
-        'fukusho_rate' => (float)$row['fukusho_rate'],
-    ];
+    $pid = (int)$row['player_id'];
+    if (!isset($periods[$pid])) {   // ORDER BY により最新期が先頭に来る
+        $periods[$pid] = [
+            'win_rate'     => (float)$row['win_rate'],
+            'fukusho_rate' => (float)$row['fukusho_rate'],
+        ];
+    }
 }
 
 // ── Step3: 当地2年間の成績を一括取得 ─────────────────────────
