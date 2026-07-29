@@ -54,9 +54,9 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: python scrape_boatrace.py
 
-  # ─── scrape_beforeinfoの直後: 当日全オッズ取得 (前半: JCD 01〜12) ────────
-  # 156レース×約53秒=138分が1ジョブに収まらないため2並列に分割。
-  # 各ジョブ約78レース×53秒=69分でtimeout-minutes: 90に収まる。
+  # ─── scrape_beforeinfoの直後: 当日全オッズ取得 (1/3: JCD 01〜08) ────────
+  # evening_bが90分タイムアウトで失敗し続けていたため2分割→3分割に変更。
+  # 各ジョブ約52レース×53秒=46分でtimeout-minutes: 90に十分収まる見込み。
   scrape_odds_a:
     needs: scrape_beforeinfo
     if: >-
@@ -78,14 +78,14 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4
 
-      - name: 当日全オッズ取得 (JCD 01〜12)
+      - name: 当日全オッズ取得 (JCD 01〜08)
         env:
           API_PENDING: ${{ secrets.API_PENDING }}
           API_ODDS: ${{ secrets.API_URL_ODDS }}
           API_KEY: ${{ secrets.API_KEY }}
-        run: python scrape_odds_all.py --jcd-min 01 --jcd-max 12
+        run: python scrape_odds_all.py --jcd-min 01 --jcd-max 08
 
-  # ─── scrape_beforeinfoの直後: 当日全オッズ取得 (後半: JCD 13〜24) ────────
+  # ─── scrape_beforeinfoの直後: 当日全オッズ取得 (2/3: JCD 09〜16) ────────
   scrape_odds_b:
     needs: scrape_beforeinfo
     if: >-
@@ -107,18 +107,46 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4
 
-      - name: 当日全オッズ取得 (JCD 13〜24)
+      - name: 当日全オッズ取得 (JCD 09〜16)
         env:
           API_PENDING: ${{ secrets.API_PENDING }}
           API_ODDS: ${{ secrets.API_URL_ODDS }}
           API_KEY: ${{ secrets.API_KEY }}
-        run: python scrape_odds_all.py --jcd-min 13 --jcd-max 24
+        run: python scrape_odds_all.py --jcd-min 09 --jcd-max 16
 
-  # ─── 毎日14時: 当日全オッズ取得 2回目 (前半: JCD 01〜12) ────────
+  # ─── scrape_beforeinfoの直後: 当日全オッズ取得 (3/3: JCD 17〜24) ────────
+  scrape_odds_c:
+    needs: scrape_beforeinfo
+    if: >-
+      github.event.schedule == '0 22 * * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_date == '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: 当日全オッズ取得 (JCD 17〜24)
+        env:
+          API_PENDING: ${{ secrets.API_PENDING }}
+          API_ODDS: ${{ secrets.API_URL_ODDS }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: python scrape_odds_all.py --jcd-min 17 --jcd-max 24
+
+  # ─── 毎日14時: 当日全オッズ取得 2回目 (1/3: JCD 01〜08) ────────
   # 18-20時台のレースはオッズ最終更新が締切に間に合わないケースが構造的に
   # 多く(bad率90%超)、朝1回のみの取得では取りこぼしていたための追加分。
-  # 朝のscrape_odds_a/bと同じ2並列分割構成。scrape_beforeinfoには依存しない
-  # (出走表は朝のジョブで既に取得済みのため)。
+  # 朝のscrape_odds_a/b/cと同じ3並列分割構成。scrape_beforeinfoには依存しない。
   scrape_odds_evening_a:
     if: >-
       github.event.schedule == '0 5 * * *' ||
@@ -139,14 +167,14 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4
 
-      - name: 当日全オッズ取得 2回目 (JCD 01〜12)
+      - name: 当日全オッズ取得 2回目 (JCD 01〜08)
         env:
           API_PENDING: ${{ secrets.API_PENDING }}
           API_ODDS: ${{ secrets.API_URL_ODDS }}
           API_KEY: ${{ secrets.API_KEY }}
-        run: python scrape_odds_all.py --jcd-min 01 --jcd-max 12
+        run: python scrape_odds_all.py --jcd-min 01 --jcd-max 08
 
-  # ─── 毎日14時: 当日全オッズ取得 2回目 (後半: JCD 13〜24) ────────
+  # ─── 毎日14時: 当日全オッズ取得 2回目 (2/3: JCD 09〜16) ────────
   scrape_odds_evening_b:
     if: >-
       github.event.schedule == '0 5 * * *' ||
@@ -167,12 +195,40 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4
 
-      - name: 当日全オッズ取得 2回目 (JCD 13〜24)
+      - name: 当日全オッズ取得 2回目 (JCD 09〜16)
         env:
           API_PENDING: ${{ secrets.API_PENDING }}
           API_ODDS: ${{ secrets.API_URL_ODDS }}
           API_KEY: ${{ secrets.API_KEY }}
-        run: python scrape_odds_all.py --jcd-min 13 --jcd-max 24
+        run: python scrape_odds_all.py --jcd-min 09 --jcd-max 16
+
+  # ─── 毎日14時: 当日全オッズ取得 2回目 (3/3: JCD 17〜24) ────────
+  scrape_odds_evening_c:
+    if: >-
+      github.event.schedule == '0 5 * * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.test_evening_odds == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: 当日全オッズ取得 2回目 (JCD 17〜24)
+        env:
+          API_PENDING: ${{ secrets.API_PENDING }}
+          API_ODDS: ${{ secrets.API_URL_ODDS }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: python scrape_odds_all.py --jcd-min 17 --jcd-max 24
 
   # ─── 毎夜20時: 競走成績取得 ──────────────────────────
   # workflow_dispatchで target_date を指定すると、その日の成績だけをリカバリできる。
