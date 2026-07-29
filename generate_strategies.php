@@ -5,9 +5,15 @@
  *
  * 的中特化: 上位3艇の全順列（最大6点）
  * バランス: 上位2艇を1着に各固定 × 上位4艇の2,3着総流し（最大12点）
+ *           オッズ上限フィルタあり: BALANCE_MAX_ODDS 超の組み合わせは除外
  * 一撃重視: 1位固定 × 4〜6位の2,3着総流し（最大6点）
+ *           オッズ下限フィルタあり: ICHIGEKI_MIN_ODDS 未満の組み合わせは除外
  * 絞り込み: 上位3艇を枠番の若い順に並べた1点買い
  */
+
+// オッズフィルタ閾値（必要に応じて調整）
+const BALANCE_MAX_ODDS  = 25.0;  // バランス: これを超える3連単オッズは除外
+const ICHIGEKI_MIN_ODDS = 10.0;  // 一撃重視: これを下回る3連単オッズは除外
 
 function _strat_permutations(array $arr) {
     if (count($arr) <= 1) return [implode('-', $arr)];
@@ -39,12 +45,24 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
 
     $lanes = array_map('intval', array_column($rows, 'lane'));
     $n     = count($lanes);
+
+    // 3連単オッズを取得（フィルタ用。未取得の場合はフィルタをスキップ）
+    $odds_map = [];
+    try {
+        $os = $pdo->prepare('SELECT combo, odds FROM odds_3t WHERE race_id = ?');
+        $os->execute([$race_id]);
+        foreach ($os->fetchAll(PDO::FETCH_ASSOC) as $o) {
+            $odds_map[$o['combo']] = (float)$o['odds'];
+        }
+    } catch (PDOException $e) { /* odds未取得時は全組み合わせを許容 */ }
+
     $strats = [];
 
-    // 的中特化: 上位3艇の全順列（最大6点）
+    // 的中特化: 上位3艇の全順列（最大6点、オッズフィルタなし）
     $strats['的中特化'] = _strat_permutations(array_slice($lanes, 0, 3));
 
     // バランス: 上位2艇を1着に各固定、上位4艇から2,3着総流し（最大12点）
+    // BALANCE_MAX_ODDS 超のオッズ組み合わせは除外（オッズデータがある場合のみ適用）
     $top4 = array_slice($lanes, 0, min(4, $n));
     $combos_b = [];
     foreach (array_slice($top4, 0, 2) as $first) {
@@ -52,7 +70,11 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
         foreach ($rest as $sec) {
             foreach ($rest as $thi) {
                 if ($sec !== $thi) {
-                    $combos_b[] = $first . '-' . $sec . '-' . $thi;
+                    $combo = $first . '-' . $sec . '-' . $thi;
+                    if ($odds_map && isset($odds_map[$combo]) && $odds_map[$combo] > BALANCE_MAX_ODDS) {
+                        continue;
+                    }
+                    $combos_b[] = $combo;
                 }
             }
         }
@@ -60,6 +82,7 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
     $strats['バランス'] = $combos_b;
 
     // 一撃重視: 1位固定、4〜6位から2,3着（最大6点）
+    // ICHIGEKI_MIN_ODDS 未満のオッズ組み合わせは除外（オッズデータがある場合のみ適用）
     $combos_i = [];
     if ($n >= 4) {
         $first  = $lanes[0];
@@ -67,7 +90,11 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
         foreach ($bottom as $sec) {
             foreach ($bottom as $thi) {
                 if ($sec !== $thi) {
-                    $combos_i[] = $first . '-' . $sec . '-' . $thi;
+                    $combo = $first . '-' . $sec . '-' . $thi;
+                    if ($odds_map && isset($odds_map[$combo]) && $odds_map[$combo] < ICHIGEKI_MIN_ODDS) {
+                        continue;
+                    }
+                    $combos_i[] = $combo;
                 }
             }
         }
