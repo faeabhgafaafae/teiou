@@ -148,15 +148,20 @@ foreach ($gap_rows as $row) {
     }
 }
 
-echo json_encode([
-    'gap_details'       => $gap_rows,
-    'unique_races'      => $unique_races,
-    'summary_by_type'   => $summary_by_type,
-    'current_stats'     => $current_stats,
-    'odds_status'       => $odds_status,
-    'recovery_estimate' => [
-        'recoverable_count'   => $recoverable_count,
-        'recoverable_payout'  => $recoverable_payout,
-        'unrecoverable'       => $unrecoverable,
-    ],
-], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+$section = $_GET['section'] ?? 'all';
+
+if ($section === 'details') {
+    echo json_encode(['gap_details' => $gap_rows, 'unique_races' => $unique_races], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+} else {
+    echo json_encode([
+        'summary_by_type'   => $summary_by_type,
+        'current_stats'     => $current_stats,
+        'odds_status'       => $odds_status,
+        'recovery_estimate' => [
+            'recoverable_count'   => $recoverable_count,
+            'recoverable_payout'  => $recoverable_payout,
+            'unrecoverable_count' => count($unrecoverable),
+            'unrecoverable'       => $unrecoverable,
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+}
