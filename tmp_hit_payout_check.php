@@ -150,7 +150,40 @@ foreach ($gap_rows as $row) {
 
 $section = $_GET['section'] ?? 'all';
 
-if ($section === 'details') {
+if ($section === 'dates') {
+    // 日付別・戦略別の欠損集計のみ返す(軽量版)
+    $date_dist = $pdo->query('
+        SELECT r.date,
+               COUNT(DISTINCT sr.race_id) AS gap_races,
+               COUNT(*)                   AS gap_entries,
+               GROUP_CONCAT(DISTINCT s.strategy_type ORDER BY s.strategy_type) AS strategy_types
+        FROM strategy_results sr
+        JOIN strategies s ON s.id = sr.strategy_id
+        JOIN races r ON r.id = sr.race_id
+        WHERE sr.is_hit = 1 AND sr.payout = 0
+        GROUP BY r.date
+        ORDER BY r.date
+    ')->fetchAll();
+
+    // 欠損レースの日付と会場一覧(重複なし)
+    $race_list = $pdo->query('
+        SELECT DISTINCT r.date, r.venue, r.race_no,
+               (SELECT COUNT(*) FROM odds_3t o WHERE o.race_id = sr.race_id) AS odds_count,
+               (
+                   SELECT GROUP_CONCAT(res.lane ORDER BY res.actual_rank SEPARATOR "-")
+                   FROM results res WHERE res.race_id = sr.race_id AND res.actual_rank IN (1,2,3)
+               ) AS winning_combo
+        FROM strategy_results sr
+        JOIN races r ON r.id = sr.race_id
+        WHERE sr.is_hit = 1 AND sr.payout = 0
+        ORDER BY r.date, r.venue, r.race_no
+    ')->fetchAll();
+
+    echo json_encode([
+        'date_distribution' => $date_dist,
+        'race_list'         => $race_list,
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+} elseif ($section === 'details') {
     echo json_encode(['gap_details' => $gap_rows, 'unique_races' => $unique_races], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 } else {
     echo json_encode([
