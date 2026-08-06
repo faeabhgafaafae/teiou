@@ -4,3 +4,7 @@ package.json
 package-lock.json
 config.php
 .env
+
+# ログ・一時ファイル
+*.log
+tmp_*.php
