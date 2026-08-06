@@ -119,6 +119,10 @@ tr:hover td { background: #fafbfc; }
 .worse  { color: #dc2626; }
 .no-data { color: #ccc; }
 .note { font-size: 11px; color: #888; margin-top: 12px; line-height: 1.6; }
+.criteria-box { background: #fffbeb; border: 1px solid #f59e0b; border-left: 4px solid #f59e0b; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; line-height: 1.7; color: #444; }
+.criteria-box strong { color: #92400e; }
+.criteria-box ul { margin: 4px 0 0 0; padding-left: 18px; }
+.criteria-box li { margin-bottom: 2px; }
 </style>
 </head>
 <body>
@@ -156,6 +160,21 @@ tr:hover td { background: #fafbfc; }
       <div class="scard-val"><?= pct($v1_lane1_hits, $v1_total_races) ?></div>
       <div class="scard-sub"><?= $v1_lane1_hits ?>/<?= $v1_total_races ?> レース</div>
     </div>
+  </div>
+
+  <!-- v2 本番昇格基準 -->
+  <div class="criteria-box">
+    <strong>📋 v2 本番昇格基準</strong>
+    <ul>
+      <li><strong>蓄積期間:</strong> predictions_v2 が毎晩安定して <strong>1ヶ月間</strong> 記録され続けていること</li>
+      <li><strong>判断指標:</strong> 1着的中率と ROI(回収率) の両方を見る</li>
+      <li><strong>昇格条件(両方満たした場合に昇格を検討):</strong>
+        <ul>
+          <li>① 1号艇ベースライン(53.4%前後)を安定して上回っていること <strong>【最優先】</strong></li>
+          <li>② v1 比で <strong>+5 pt 以上</strong> の明確な差がついていること</li>
+        </ul>
+      </li>
+    </ul>
   </div>
 
   <!-- 日別比較テーブル -->
