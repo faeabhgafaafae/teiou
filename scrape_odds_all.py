@@ -7,6 +7,7 @@ get_pending_races.php?all=1 で当日の全レースを取得し、
 
 import argparse
 import os
+import sys
 import time
 import signal
 import requests
@@ -60,7 +61,7 @@ def main():
         races = get_all_races()
     except Exception as e:
         print(f'[ERROR] レース一覧取得失敗: {e}')
-        return
+        sys.exit(1)
 
     if args.jcd_min or args.jcd_max:
         races = [

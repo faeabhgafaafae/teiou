@@ -6,6 +6,7 @@ get_pending_races.php で対象レースを絞り込み、
 """
 
 import os
+import sys
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -507,7 +508,7 @@ def main():
         races = get_pending_races()
     except Exception as e:
         print(f'[ERROR] 対象レース取得失敗: {e}')
-        return
+        sys.exit(1)
 
     print(f'  対象: {len(races)}レース')
     if not races:
