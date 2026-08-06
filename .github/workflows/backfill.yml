@@ -1,0 +1,30 @@
+name: オッズバックフィル (is_hit=1 payout=0 修正)
+
+# 手動実行のみ。is_hit=1 & payout=0 の欠損データを再スクレイピングして修正する。
+on:
+  workflow_dispatch:
+
+jobs:
+  backfill_odds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: オッズ再スクレイピング + payout再計算
+        env:
+          API_PENDING: ${{ secrets.API_PENDING }}
+          API_ODDS: ${{ secrets.API_URL_ODDS }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: python backfill_odds_from_gap.py
