@@ -73,7 +73,7 @@ $stmt3 = $pdo->prepare("
     GROUP BY r.venue, period
     ORDER BY FIELD(r.venue,'高松','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'), period
 ");
-$stmt3->execute(array_merge($AFFECTED_VENUES, $AFFECTED_VENUES));
+$stmt3->execute($AFFECTED_VENUES);
 $fill_rates = $stmt3->fetchAll();
 
 // ─── 5. 非影響会場(対照群)の充足率 ────────────────────────────────
@@ -92,7 +92,7 @@ $stmt4 = $pdo->prepare("
     GROUP BY r.venue, period
     ORDER BY r.venue, period
 ");
-$stmt4->execute(array_merge($NORMAL_VENUES, $NORMAL_VENUES));
+$stmt4->execute($NORMAL_VENUES);
 $control_fill = $stmt4->fetchAll();
 
 // ─── 6. strategies/strategy_results への影響確認 ────────────────────
