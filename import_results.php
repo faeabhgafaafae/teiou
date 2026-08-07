@@ -9,6 +9,7 @@ require_once __DIR__ . '/config.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+// GETパラメータではなくPOSTボディで api_key を受け取るのは、Webサーバーのアクセスログにキーを残さないため
 $input = json_decode(file_get_contents('php://input'), true);
 if (!$input || ($input['api_key'] ?? '') !== API_KEY) {
     http_response_code(403);
@@ -52,7 +53,7 @@ $stmt_race_upsert = $pdo->prepare('
     ON DUPLICATE KEY UPDATE
         wind_speed  = COALESCE(VALUES(wind_speed),  wind_speed),
         wind_dir    = COALESCE(VALUES(wind_dir),    wind_dir),
-        wave_height = COALESCE(VALUES(wave_height), wave_height)
+        wave_height = COALESCE(VALUES(wave_height), wave_height) -- スクレイパーがNULLを送っても既存値を上書きしない
 ');
 $stmt_race_sel = $pdo->prepare('SELECT id FROM races WHERE date = ? AND venue = ? AND race_no = ?');
 
@@ -134,7 +135,7 @@ foreach ($race_groups as $race_records) {
     foreach ($strategies as $s) {
         $combos = json_decode($s['combinations'], true);
         $is_hit = in_array($winning_combo, $combos) ? 1 : 0;
-        $cost   = count($combos) * 100;
+        $cost   = count($combos) * 100; // 3連単1票100円固定(競艇ルール)×買い目数
         $payout = ($is_hit && $winning_odds !== null) ? (int)floor($winning_odds * 100) : 0;
         $stmt_sr->execute([(int)$s['id'], $race_id, $is_hit, $payout, $cost]);
     }

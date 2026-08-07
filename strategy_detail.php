@@ -97,10 +97,10 @@ $strats_data = [];
 foreach ($strats as $s) {
     $combos = json_decode($s['combinations'], true) ?? [];
     $strats_data[] = ['type' => $s['strategy_type'], 'combos' => $combos];
-    foreach ($combos as $c) { $all_combos[$c] = null; }
+    foreach ($combos as $c) { $all_combos[$c] = null; } // キーによる重複排除(in_arrayより高速)
 }
 
-// オッズを一括取得
+// 全戦略のコンボをまとめてIN句で一括取得（コンボ数分の個別クエリを避けるため）
 $odds_map   = [];
 $combo_keys = array_keys($all_combos);
 if ($combo_keys) {
