@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 
+// 認証ガードなし: このエンドポイントは集計値のみを返し個人情報を含まないため意図的に公開
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
@@ -37,7 +38,7 @@ $stmt = $pdo->prepare('
     JOIN races r ON r.id = s.race_id
     WHERE 1=1' . $where . '
     GROUP BY s.strategy_type
-    ORDER BY FIELD(s.strategy_type, \'的中特化\', \'バランス\', \'一撃重視\', \'絞り込み\')
+    ORDER BY FIELD(s.strategy_type, \'的中特化\', \'バランス\', \'一撃重視\', \'絞り込み\') -- strategy_detail.phpと表示順を統一
 ');
 $stmt->execute($params);
 $rows = $stmt->fetchAll();

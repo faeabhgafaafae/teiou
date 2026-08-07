@@ -57,6 +57,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$race_id]);
 $all_entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// スクレイパー再実行で同一枠に複数行が生まれるため、枠番の最新行(id DESC)だけ残す
 $entries = [];
 $seen_lanes = [];
 foreach ($all_entries as $e) {
@@ -110,6 +111,7 @@ foreach ($entries as $e) {
     $local_win_rate_ratio = $local['total'] > 0 ? $local['rank1'] / $local['total'] : null;
     $local_2rate_ratio    = $local['total'] > 0 ? $local['rank2'] / $local['total'] : null;
 
+    // 地元実績を重くするのは、開催場への適性が全国平均より当日の条件を反映しやすいため
     $win_rate_weighted = $win_rate_national * 0.4 + $win_rate_local * 0.6;
     $score_ability_raw = min(40, $win_rate_weighted / 10 * 40);
 
@@ -187,7 +189,7 @@ foreach ($entries as $e) {
 
     $score_total = $score_ability + $score_course + $score_today + $score_weather;
     if ($is_flying) $score_total -= 10;
-    if ($race_count < 10) $score_total *= 0.70;
+    if ($race_count < 10) $score_total *= 0.70; // 出走数10未満は母数不足でスコアの信頼性が低い
     $score_total = max(0, $score_total);
 
     $scores[] = [
