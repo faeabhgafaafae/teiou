@@ -123,22 +123,25 @@ def scrape_racelist(jcd: str, rno: int, hd: str) -> dict | None:
         'players': [],
     }
 
-    # 各選手のtbodyを処理
+    # ⚠️ 以下は boatrace.jp PC版 racelist の2026年時点のDOM構造に依存。
+    # クラス名・rowspan構造が変わると取得が壊れるため、サイトリニューアル時は要検証。
+
+    # racelist テーブルには beforeinfo の is-w748 のような固有クラスがないため全 table tbody を対象とする
     for tbody in soup.select('table tbody'):
         tds = tbody.find_all('td', recursive=False)
         if not tds:
             trs = tbody.find_all('tr')
             if not trs:
                 continue
-            # 枠番チェック
+            # クラス名が is-boatColor1〜6 と枠番付きのため部分一致(class*=)で取得
             waku_td = tbody.select_one('td[class*="is-boatColor"]')
             if not waku_td:
                 continue
             try:
+                # 一部環境で枠番が全角数字で出力されるため正規化
                 waku = int(waku_td.get_text(strip=True).replace('１','1').replace('２','2')
                            .replace('３','3').replace('４','4').replace('５','5').replace('６','6'))
             except:
-                # 全角数字変換
                 text = waku_td.get_text(strip=True)
                 num_map = {'１':1,'２':2,'３':3,'４':4,'５':5,'６':6}
                 waku = num_map.get(text)
@@ -154,7 +157,7 @@ def scrape_racelist(jcd: str, rno: int, hd: str) -> dict | None:
                 continue
             player_id = int(m.group(1))
 
-            # rowspan=4のtdを取得（主要データ）
+            # rowspan=4セルの並び順: [0]=枠色 [1]=写真 [2]=名前 [3]=F/L/平均ST [4]=全国成績 [5]=当地成績 [6]=モーター [7]=ボート
             rowspan4_tds = [td for td in tbody.find_all('td') if td.get('rowspan') == '4']
 
             # F数・L数・平均ST (rowspan=4の4番目)

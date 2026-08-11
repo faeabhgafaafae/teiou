@@ -90,6 +90,8 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
         print(f'    [ERROR] {e}')
         return None
 
+    # ⚠️ 以下はすべて boatrace.jp PC版 beforeinfo の2026年時点のDOM構造に依存。
+    # クラス名・rowspan構造が変わると取得が壊れるため、サイトリニューアル時は要検証。
     result = {
         'jcd':              jcd,
         'venue':            VENUES.get(jcd, jcd),
@@ -101,7 +103,9 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
     }
 
     # 選手ごとの展示タイム
+    # is-w748 クラスはページ内で選手テーブル固有。他のテーブルと区別するために指定
     for tbody in soup.select('table.is-w748 tbody'):
+        # クラス名が is-boatColor1〜6 と枠番付きのため部分一致(class*=)で取得
         waku_td = tbody.select_one('td[class*="is-boatColor"]')
         if not waku_td:
             continue
@@ -124,7 +128,9 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
         propeller_mark = None
         parts_exchange = None
 
+        # rowspan=4セルの並び順: [0]=F/フライング [1]=モーター [2]=ボート [3]=展示タイム [4]=チルト [5]=プロペラ [6]=部品交換
         rowspan4 = [td for td in tbody.find_all('td') if td.get('rowspan') == '4']
+        # rowspan=2セルの[0]が調整重量。他のrowspan=2セルと混在しないよう先頭のみ取得
         rowspan2 = [td for td in tbody.find_all('td') if td.get('rowspan') == '2']
 
         if len(rowspan4) >= 4:
@@ -162,8 +168,8 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
         })
 
     # スタート展示（コース・ST）- lane indexed
-    # 各 .table1_boatImage1 div の出現順がコース1〜6に対応し、
-    # is-typeN クラスが「そのコースに入った枠番(N号艇)」を示す
+    # .table1_boatImage1 の出現順がコース1〜6に対応。is-typeN クラスがそのコースに入った枠番Nを示す。
+    # コースと枠番のマッピングはここで確定し、PHP側は $starts[$lane-1] でアクセスする。
     start_by_lane = {}
     for i, div in enumerate(soup.select('.table1_boatImage1')):
         course_no = i + 1
@@ -171,6 +177,7 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
         time_span   = div.select_one('.table1_boatImage1Time')
         if not number_span:
             continue
+        # is-type{N} クラスの N が枠番。クラス文字列からパースして取得
         type_cls = [c for c in (number_span.get('class') or []) if c.startswith('is-type')]
         if not type_cls:
             continue
@@ -217,14 +224,14 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
                 weather['wind_dir'] = WIND_DIR_MAP.get(code, str(code))
                 break
 
-    # 天候（テキストは LabelTitle に格納されている）
+    # 天候テキストのみ LabelTitle に入っており、他の気象値が使う LabelData とは異なるクラスを参照
     weather_cond_el = soup.select_one('.weather1_bodyUnit.is-weather .weather1_bodyUnitLabelTitle')
     if weather_cond_el:
         w_text = weather_cond_el.get_text(strip=True)
         if w_text:
             weather['weather'] = w_text
 
-    # 気温（クラスは is-direction）
+    # 気温のブロックは is-direction クラスを持つ（is-temperature ではない点に注意）
     temp_el = soup.select_one('.weather1_bodyUnit.is-direction .weather1_bodyUnitLabelData')
     if temp_el:
         try:

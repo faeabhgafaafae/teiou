@@ -26,10 +26,10 @@ LOG_FILE          = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 SLEEP_MIN         = 7     # レース間スリープ: 最短(秒)
 SLEEP_MAX         = 14    # レース間スリープ: 最長(秒)
-DAY_BREAK_MIN     = 90    # 1日分完了後の追加休憩: 最短(秒)
-DAY_BREAK_MAX     = 180   # 1日分完了後の追加休憩: 最長(秒)
+DAY_BREAK_MIN     = 90    # 1日完了後に長く待つのはAkamaiのセッションカウンタをリセットするため
+DAY_BREAK_MAX     = 180   # 同上(最大秒)。人間のブラウジング間隔に近づけることでbot判定を回避
 VENUE_CHECK_SLEEP = 0.15  # api_races.php呼び出し間隔
-CONSEC_ERR_LIMIT  = 3     # 連続接続エラーでIPブロック判定し中断
+CONSEC_ERR_LIMIT  = 3     # 単発エラーと区別するため3連続を閾値とする(1〜2回は一時的障害と判断)
 
 HEADERS = {
     'User-Agent': (
@@ -94,6 +94,7 @@ SESSION = make_session()
 def is_ip_block_error(exc: Exception) -> bool:
     """接続リセット/空レスポンスならIPブロックの可能性"""
     msg = str(exc).lower()
+    # タイムアウトやHTTPエラーはIPブロックと区別するため除外し、接続切断系のみを対象とする
     return any(kw in msg for kw in [
         'remotedisconnected', 'connection aborted', 'empty reply',
         'connection reset', 'broken pipe', 'max retries exceeded',
@@ -131,7 +132,8 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str) -> dict | None:
         'start_exhibition': [],
     }
 
-    # 展示タイム・チルト等
+    # ⚠️ 以下は boatrace.jp PC版 beforeinfo のDOM構造に依存。クラス名変更で即壊れる。
+    # is-w748 クラスはページ内で選手テーブル固有。クラス名が is-boatColor1〜6 のため部分一致で取得。
     for tbody in soup.select('table.is-w748 tbody'):
         waku_td = tbody.select_one('td[class*="is-boatColor"]')
         if not waku_td:
@@ -155,7 +157,9 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str) -> dict | None:
         propeller_mark = None
         parts_exchange = None
 
+        # rowspan=4セルの並び順: [0]=F/フライング [1]=モーター [2]=ボート [3]=展示タイム [4]=チルト [5]=プロペラ [6]=部品交換
         rowspan4 = [td for td in tbody.find_all('td') if td.get('rowspan') == '4']
+        # rowspan=2セルの[0]が調整重量
         rowspan2 = [td for td in tbody.find_all('td') if td.get('rowspan') == '2']
 
         if len(rowspan4) >= 4:

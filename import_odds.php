@@ -23,6 +23,7 @@ if (!$date || !$venue || !$race_no || (!$odds && !$odds_multi)) {
     exit;
 }
 
+// 3連単以外の賭式はここに列挙された型のみ受け付ける。任意文字列がテーブルに混入するのを防ぐため
 $VALID_BET_TYPES = ['tansho', 'fukusho', 'rentan2', 'renfuku2', 'kakurenku', 'sanrenfuku'];
 
 try {
@@ -49,6 +50,8 @@ if (!$race) {
 
 $race_id = $race['id'];
 
+// 3連単は戦略生成・的中判定の主軸なので専用テーブル(odds_3t)に格納。他賭式は odds_multi に分離。
+// オッズはレース直前まで変動するためスクレイパーが複数回実行される。UPSERTで冪等にする。
 $upsert = $pdo->prepare('
     INSERT INTO odds_3t (race_id, combo, odds)
     VALUES (?, ?, ?)
@@ -67,6 +70,7 @@ foreach ($odds as $combo => $odds_val) {
     }
 }
 
+// odds_multi は3連単以外の賭式をすべてまとめて管理。bet_type+combo で一意になる
 $upsert_multi = $pdo->prepare('
     INSERT INTO odds_multi (race_id, bet_type, combo, odds)
     VALUES (?, ?, ?, ?)
