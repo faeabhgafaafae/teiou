@@ -206,6 +206,12 @@ var activeRaces = [];
 
 window.addEventListener('DOMContentLoaded', function() {
   document.title = '艇王 - ' + venueDisplayName(venue) + ' レース一覧';
+  // app.js を読み込まないページなので #headerDate をここで更新する
+  var _d = new Date(date + 'T00:00:00');
+  var _days = ['日','月','火','水','木','金','土'];
+  var _dateStr = _d.getFullYear() + '年' + (_d.getMonth()+1) + '月' + _d.getDate() + '日 (' + _days[_d.getDay()] + ')';
+  var _headerDateEl = document.getElementById('headerDate');
+  if (_headerDateEl) _headerDateEl.textContent = _dateStr;
 });
 
 function formatDateJP(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }

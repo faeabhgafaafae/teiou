@@ -223,7 +223,8 @@
       _hitsShown = 0;
 
       if (_hitsAll.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">本日の的中はまだありません</div>';
+        var _emptyMsg = isToday ? '本日の的中はまだありません' : 'この日の的中はまだありません';
+        container.innerHTML = '<div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">' + _emptyMsg + '</div>';
         return;
       }
 
