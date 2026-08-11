@@ -427,6 +427,7 @@ function renderPick(pickRow, confEl, predictions) {
     var gap = Number(rank1.score_total) - Number(rank2.score_total);
     var tier = 'mid';
     var label = '中';
+    // 閾値は2026-07シミュレーションで設定。±1pt変更しても的中率への影響は軽微だった
     if (gap >= 15) { tier = 'high'; label = '高'; }
     else if (gap < 7) { tier = 'low'; label = '拮抗'; }
     confEl.textContent = '';

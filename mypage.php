@@ -1,5 +1,6 @@
 <?php
-/* 必要に応じてログインチェックなどをここに記述 */
+// PHPレベルの認証ガードなし。ログインチェックはJS側のcheckAuth()で行い、
+// 未ログイン時はヘッダーのログインUIに置き換える。SSR不要の静的ページなのでこの設計で十分
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -146,6 +147,7 @@
     var apiDate = '';
     var favoriteVenues = [];
     var venueMap = {};
+    // checkAuth() 完了後に上書きされる。プラン変更API応答後も更新するため変数で保持
     var currentUserPlan = 'free';
 
     function formatDate(dateStr) {

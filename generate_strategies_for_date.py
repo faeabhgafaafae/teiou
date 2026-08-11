@@ -25,7 +25,7 @@ import requests
 
 API_VENUES  = os.environ.get('API_VENUES',  'https://2410049.moo.jp/venues.php')
 API_PREDICT = os.environ.get('API_PREDICT', 'https://2410049.moo.jp/api_predict.php')
-SLEEP_SEC   = 0.3
+SLEEP_SEC   = 0.3  # 自サーバーへの内部リクエストなので boatrace.jp 向けより大幅に短くて良い
 
 
 def write_summary(text: str) -> None:

@@ -9,6 +9,7 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawDate) || $rawDate > $today) {
 $isPast = ($pageDate < $today);
 $prevDate = date('Y-m-d', strtotime($pageDate . ' -1 day'));
 $nextDate = date('Y-m-d', strtotime($pageDate . ' +1 day'));
+// 未来日はデータが存在しないため無効化。当日より先へのナビゲーションを防ぐ
 $nextDisabled = ($nextDate > $today);
 $weekDays = array('日', '月', '火', '水', '木', '金', '土');
 $displayDay  = date('n月j日', strtotime($pageDate));
@@ -185,7 +186,7 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
 
   <div class="dashboard-container">
 
-    <script>var ACTIVE_NAV = 'home';</script>
+    <script>var ACTIVE_NAV = 'home';</script><!-- sidebar.php がこの変数を読んでアクティブ項目をハイライトする -->
     <?php include 'sidebar.php'; ?>
 
     <main class="main-content">
@@ -271,6 +272,7 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
     </main>
   </div>
 
+  <!-- PHP でサーバー側に確定させた日付を JS に渡す。JS で date を再計算すると timezone ずれが生じるため -->
   <script>var PAGE_DATE = '<?php echo htmlspecialchars($pageDate, ENT_QUOTES, 'UTF-8'); ?>';</script>
   <script src="venue-display.js"></script>
   <script src="app.js"></script>
