@@ -89,6 +89,8 @@ def fetch(url, *, timeout=30):
     return res
 
 # ─── 場名マスタ ────────────────────────────────────────
+# mbrace.or.jp の固定長テキストでは場名が全角スペースで3〜4文字に揃えられている。
+# キーが全角スペースを含む生文字列で、値が正規化済みの場名
 VENUE_MAP = {
     '桐　生': '桐生', '戸　田': '戸田', '江戸川': '江戸川',
     '平和島': '平和島', '多摩川': '多摩川', '浜名湖': '浜名湖',
@@ -110,7 +112,7 @@ BET_TYPE_NORMALIZE = {
     '単勝': '単勝', '複勝': '複勝', '２連単': '2連単',
     '２連複': '2連複', '拡連複': '拡連複', '３連単': '3連単', '３連複': '3連複',
 }
-CONTINUABLE_LABELS = ('複勝', '拡連複')
+CONTINUABLE_LABELS = ('複勝', '拡連複')  # これらは着外払戻が複数行に分かれて出力されることがある
 payout_label_pattern = re.compile(
     r'^[ 　]*(単勝|複勝|２連単|２連複|拡連複|３連単|３連複)[ 　]*(.*)$'
 )
@@ -126,16 +128,19 @@ def normalize_venue(raw):
 
 
 def parse_result_line(line):
+    # mbrace.or.jp の競走成績ファイルは Shift-JIS 固定長フォーマット。
+    # 以下の列番号は仕様書に基づく(1列=1バイト換算、全角は2バイトだが decode 後は1文字)。
+    # 58文字未満の行はヘッダ・空行・払戻行のため対象外
     if len(line) < 58:
         return None
     try:
-        rank_s      = line[2:4].strip()
-        lane_s      = line[6:7].strip()
-        pid_s       = line[8:12].strip()
-        exhibit_s   = line[31:35].strip()
-        course_s    = line[38:39].strip()
-        st_s        = line[43:47].strip()
-        race_time_s = line[52:58].strip()
+        rank_s      = line[2:4].strip()   # 着順
+        lane_s      = line[6:7].strip()   # 艇番(枠番)
+        pid_s       = line[8:12].strip()  # 登録番号(選手ID)
+        exhibit_s   = line[31:35].strip() # 展示タイム
+        course_s    = line[38:39].strip() # 進入コース
+        st_s        = line[43:47].strip() # スタートタイミング('F'で始まる場合はフライング)
+        race_time_s = line[52:58].strip() # レースタイム
 
         if not (rank_s.isdigit() and lane_s.isdigit() and pid_s.isdigit()):
             return None
@@ -150,6 +155,7 @@ def parse_result_line(line):
 
         st = None
         if st_s.startswith('F'):
+            # フライングは負値として表現。import_results.php 側でも同じ符号規約を使う
             st = -0.001
         elif st_s:
             try: st = float(st_s)
