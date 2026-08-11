@@ -41,6 +41,7 @@ for f in FEAT_CANDIDATES:
 print()
 
 # ─── 3. 使用特徴量の選定（欠損 < 30%のもの） ─────────────────
+# 欠損30%超の特徴量は自動除外。閾値を下げるほど高精度だが行数が激減するトレードオフ
 FEATURES = [f for f in FEAT_CANDIDATES if df[f].isna().mean() < 0.30]
 print(f"採用特徴量 ({len(FEATURES)}件): {FEATURES}\n")
 
@@ -59,6 +60,7 @@ print(f"欠損除外後: {len(df_clean)} rows, {df_clean['race_id'].nunique()} r
 print()
 
 # ─── 4. 時系列分割 (古い80% → train, 新しい20% → test) ──────
+# ランダム分割だと未来のデータが学習に混入しAUCが過大評価される(データリーク)ため日付順で分割
 dates = sorted(df_clean['date'].unique())
 cutoff_idx = int(len(dates) * 0.8)
 cutoff_date = dates[cutoff_idx]
@@ -168,6 +170,7 @@ print()
 print("完了")
 
 # ─── 11. PHP定数出力 ─────────────────────────────────────────
+# --php フラグ付きで実行すると predict_v2_core.php に貼り付けるPHP定数を標準出力する
 if '--php' in sys.argv:
     scaler = pipe.named_steps['scaler']
     lr     = pipe.named_steps['lr']

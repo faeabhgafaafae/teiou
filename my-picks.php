@@ -355,6 +355,7 @@ if (PREFILL.venue) formVenueEl.value = PREFILL.venue;
 if (PREFILL.date)  document.getElementById('formDate').value = PREFILL.date;
 
 // ===== 賭式別プレースホルダー(優先度5) =====
+// 賭式ごとに入力例が異なるため、選択変更時にプレースホルダーを差し替える
 var COMBO_PLACEHOLDER = {
   '3連単': '例) 1-3-2', '3連複': '例) 1-2-3',
   '2連単': '例) 1-3',   '2連複': '例) 1-2',

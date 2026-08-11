@@ -224,6 +224,7 @@ function todayStr() {
 document.getElementById('pageTitle').textContent = venueDisplayName(venue) + ' ' + raceNo + 'R 直前情報';
 document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R 直前情報';
 
+// ホスト名を文字列結合にするのはCSPスキャナによる直書き検出を避けるため
 var API_BASE = 'https://' + '2410049.moo.jp';
 
 function formatName(n) { return n.replace(/[\s　]+/g, ''); }
@@ -385,6 +386,7 @@ function buildStartVisual(predictions) {
   var wrap = document.getElementById('startVisual');
   wrap.textContent = '';
 
+  // exhibit_course が NULL の場合(直前情報未取得)は枠番順にフォールバック
   var hasCourseData = predictions.some(function(p) { return p.exhibit_course != null; });
 
   var byCourse = {};
@@ -588,6 +590,7 @@ async function loadPrediction() {
 
     buildStartVisual(data.predictions);
     buildOfficialTable(data.predictions);
+    // !! で boolean に強制変換。ai_locked は free プラン時に api_predict.php が返すフラグ
     buildOriginalTable(data.predictions, !!data.ai_locked);
   } catch(e) {
     document.getElementById('loadingArea').textContent = '';

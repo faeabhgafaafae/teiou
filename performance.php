@@ -2,6 +2,7 @@
 require_once __DIR__ . '/auth.php';
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
+// isPremium: Standard以上(セクション1-3対象)。isPremiumOnly: Premium専用(セクション4-6対象)
 $isPremium = ($plan === 'standard' || $plan === 'premium');
 $isPremiumOnly = ($plan === 'premium');
 ?>
@@ -602,7 +603,7 @@ async function loadVenue() {
 loadVenue();
 
 // ============================================================
-// 4. 戦略比較表(premium、summaryと同じデータを再利用)
+// 4. 戦略比較表。セクション1と同じ get_performance_summary.php を流用し、追加APIコールを避ける
 // ============================================================
 async function loadCompare() {
   if (!IS_PREMIUM) return;
@@ -857,6 +858,7 @@ async function toggleRaceDetail(row, body, race) {
     return;
   }
   body.classList.add('open');
+  // クリックのたびに再フェッチしないようにフラグで制御
   if (body.dataset.loaded === '1') return;
   body.textContent = '';
   body.appendChild(makeLoading('読み込み中...'));

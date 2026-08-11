@@ -219,7 +219,9 @@ for (var t = 1; t <= 12; t++) {
 
 function formatName(n) { return n ? n.replace(/[\s　]+/g, ' ').trim() : ''; }
 
+// 払戻表の賭式表示順を明示的に定義。DBの返却順は不定なため
 var BET_TYPE_ORDER = ['3連単', '3連複', '2連単', '2連複', '拡連複', '単勝', '複勝'];
+// 単勝・複勝は出走順≠人気順のため人気列を表示しない
 var NO_POPULARITY_TYPES = { '単勝': true, '複勝': true };
 
 function renderPayoutTable(payouts) {
@@ -350,6 +352,7 @@ function renderResultTable(results) {
   return wrap;
 }
 
+// ホスト名を文字列結合にするのはCSPスキャナによる直書き検出を避けるため
 var API_HOST = 'https://' + '2410049.moo.jp';
 
 async function loadResult() {

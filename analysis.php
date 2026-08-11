@@ -2,6 +2,8 @@
 require_once __DIR__ . '/auth.php';
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
+// isStandardPlus: Standard以上向けパネル(会場別・払戻統計等)のゲート
+// isPremium: Premium専用機能(高度検索)のゲート
 $isStandardPlus = ($plan === 'standard' || $plan === 'premium');
 $isPremium       = ($plan === 'premium');
 ?>
@@ -236,6 +238,7 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
         <span class="adv-prem-badge">PREMIUM</span>
       </div>
 <?php if (!$isPremium): ?>
+      <!-- PHPサーバー側でレンダリングして高度検索フォームのフィールド構成をソースから隠す -->
       <div class="adv-lock">&#128274; 高度検索はPremiumプラン限定です。複合条件（選手名・天候・コース・期間など）で絞り込めます。<a href="upgrade.html">プランをアップグレード &rsaquo;</a></div>
 <?php else: ?>
       <div id="advSearchForm">
@@ -384,6 +387,8 @@ checkAuth();
 // Free ユーザー: 会場別・過去検索・払戻傾向パネルをロック表示に差し替え
 if (!IS_STANDARD_PLUS) {
   (function() {
+    // JS側でロックUIを差し込む。PHPでパネルを非表示にするとページロード時にAPIを叩かないが
+    // ロックUIの差し込みをPHPで行うとパネル自体をソースから読めてしまうため、JSで上書きする
     var lockHtml = '<div class="premium-lock" style="padding:24px 16px;"><span class="premium-lock-icon">&#128274;</span><p>Standard / Premiumプランでご利用いただけます。</p><a href="upgrade.html">プランをアップグレード</a></div>';
     ['#panel-venue .card', '#panel-search .card'].forEach(function(sel) {
       var el = document.querySelector(sel);

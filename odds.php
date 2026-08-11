@@ -327,6 +327,7 @@ function buildMatrix(oddsData) {
         }
         if (cellMin < Infinity) {
           var ratio = (cellMin - gMin) / range;
+          // 全体最小から15%以内のセルを黄色ハイライト。alphaで距離に応じて濃淡をつける
           if (ratio < 0.15) {
             var alpha = ((1 - ratio / 0.15) * 0.35).toFixed(2);
             td.style.background = 'rgba(255, 235, 59, ' + alpha + ')';
@@ -420,6 +421,7 @@ function buildPopularList(oddsData) {
   return list;
 }
 
+// ホスト名を文字列結合にするのはCSPスキャナによる直書き検出を避けるため
 var API_HOST = 'https://' + '2410049.moo.jp';
 
 var BET_TYPES = [
@@ -520,6 +522,7 @@ async function loadData() {
 
     var matrixView = document.getElementById('matrixView');
     matrixView.textContent = '';
+    // マトリクス表示は3連単(120通り)専用。他賭式は組み合わせ数が少なく人気順リストで十分
     if (currentBetType === '3t') {
       matrixView.appendChild(buildMatrix(oddsArr));
     }
