@@ -4,6 +4,12 @@ require_once __DIR__ . '/auth.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
+// type を問わずログイン必須。未ログインでのGroq API呼び出しを防ぐ
+$user = current_user();
+if (!$user) {
+    json_response(['error' => 'login_required', 'message' => 'ログインが必要です'], 401);
+}
+
 $race_id = $_GET['race_id'] ?? '';
 if (!$race_id) {
     json_response(['error' => 'race_id は必須です'], 400);
@@ -11,11 +17,10 @@ if (!$race_id) {
 
 $type = $_GET['type'] ?? 'overall';
 
-// 個別解説(type=personal)はStandard/Premium限定。全体解説は現状通りFreeでも許可する
+// 個別解説(type=personal)はStandard/Premium限定
 if ($type === 'personal') {
-    $user = current_user();
     $plan = $user['plan'] ?? 'free';
-    if (!$user || $plan === 'free') {
+    if ($plan === 'free') {
         json_response(['error' => 'premium_required', 'message' => '個別解説はStandard/Premiumプラン限定です'], 403);
     }
 }
