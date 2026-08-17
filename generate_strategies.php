@@ -6,14 +6,14 @@
  * 的中特化: 上位3艇の全順列（最大6点）
  * バランス: 上位2艇を1着に各固定 × 上位4艇の2,3着総流し（最大12点）
  *           オッズ上限フィルタあり: BALANCE_MAX_ODDS 超の組み合わせは除外
- * 一撃重視: 1位固定 × 4〜6位の2,3着総流し（最大6点）
+ * 一撃重視: 1位固定 × 2〜4位の2,3着総流し（最大6点）
  *           オッズ下限フィルタあり: ICHIGEKI_MIN_ODDS 未満の組み合わせは除外
  * 絞り込み: 上位3艇を枠番の若い順に並べた1点買い
  */
 
 // オッズフィルタ閾値（必要に応じて調整）
 const BALANCE_MAX_ODDS  = 25.0;  // バランス: これを超える3連単オッズは除外
-const ICHIGEKI_MIN_ODDS = 10.0;  // 一撃重視: これを下回る3連単オッズは除外
+const ICHIGEKI_MIN_ODDS = 15.0;  // 一撃重視: これを下回る3連単オッズは除外
 
 function _strat_permutations(array $arr) {
     if (count($arr) <= 1) return [implode('-', $arr)];
@@ -81,12 +81,12 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
     }
     $strats['バランス'] = $combos_b;
 
-    // 一撃重視: 1位固定、4〜6位から2,3着（最大6点）
+    // 一撃重視: 1位固定、2〜4位から2,3着（最大6点）
     // ICHIGEKI_MIN_ODDS 未満のオッズ組み合わせは除外（オッズデータがある場合のみ適用）
     $combos_i = [];
     if ($n >= 4) {
         $first  = $lanes[0];
-        $bottom = array_slice($lanes, 3);
+        $bottom = array_slice($lanes, 1, 3);
         foreach ($bottom as $sec) {
             foreach ($bottom as $thi) {
                 if ($sec !== $thi) {
