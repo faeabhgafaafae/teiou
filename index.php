@@ -256,7 +256,7 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
           </div>
 
           <div class="bottom-card">
-            <h3><i class="fas fa-bullseye" style="color: #e53e3e; margin-right: 6px;"></i>的中速報</h3>
+            <h3><i class="fas fa-bullseye" style="color: #e53e3e; margin-right: 6px;"></i>今日の的中</h3>
             <div id="hitsList" style="max-height:480px; overflow-y:auto;">
               <div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">読み込み中...</div>
             </div>
