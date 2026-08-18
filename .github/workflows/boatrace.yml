@@ -4,7 +4,8 @@ on:
   schedule:
     - cron: '0 22 * * *'   # JST 7:00 出走表・直前情報取得
     - cron: '0 5 * * *'    # JST 14:00 オッズ2回目取得(夕方以降のレース分の取りこぼし対策)
-    - cron: '0 11 * * *'   # JST 20:00 競走成績取得
+    - cron: '0 11 * * *'   # JST 20:00 競走成績取得(前日分)
+    - cron: '30 12 * * *'  # JST 21:30 競走成績速報取得(当日分)
   workflow_dispatch:        # 手動実行も可能
     inputs:
       target_date:
@@ -230,11 +231,13 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: python scrape_odds_all.py --jcd-min 17 --jcd-max 24
 
-  # ─── 毎夜20時: 競走成績取得 ──────────────────────────
+  # ─── 毎夜20時(前日分) / 毎夜21:30(当日分速報): 競走成績取得 ───────
   # workflow_dispatchで target_date を指定すると、その日の成績だけをリカバリできる。
+  # 20:00バッチ: TARGET=前日 / 21:30バッチ: TARGET=当日 / 手動: inputs.target_date
   fetch_results:
     if: >-
       github.event.schedule == '0 11 * * *' ||
+      github.event.schedule == '30 12 * * *' ||
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -252,14 +255,26 @@ jobs:
           sudo apt-get install -y p7zip-full
           pip install requests
 
+      - name: 対象日を決定
+        run: |
+          if [ -n "${{ github.event.inputs.target_date }}" ]; then
+            TARGET="${{ github.event.inputs.target_date }}"
+            echo "[手動] 指定日: $TARGET"
+          elif [ "${{ github.event.schedule }}" = "30 12 * * *" ]; then
+            TARGET=$(date +%Y-%m-%d)
+            echo "[21:30速報バッチ] 当日分: $TARGET"
+          else
+            TARGET=$(date -d 'yesterday' +%Y-%m-%d)
+            echo "[20:00前日バッチ] 前日分: $TARGET"
+          fi
+          echo "TARGET=$TARGET" >> $GITHUB_ENV
+
       # 結果取込み(import_results.php)は、この時点で既に存在する strategies
       # としか照合しないため、閲覧されなかったレースが的中速報に永久に
       # 反映されない問題があった。結果取込みの前に全レース分の戦略買い目を
       # 機械的に生成しておくことで、閲覧有無に関係なく網羅する。
       - name: 対象日の戦略買い目を事前生成
         run: |
-          TARGET="${{ github.event.inputs.target_date }}"
-          if [ -z "$TARGET" ]; then TARGET=$(date -d 'yesterday' +%Y-%m-%d); fi
           echo "対象日: $TARGET"
           python generate_strategies_for_date.py --date $TARGET
 
@@ -268,15 +283,11 @@ jobs:
           API_URL: ${{ secrets.API_URL_RESULTS }}
           API_KEY: ${{ secrets.API_KEY }}
         run: |
-          TARGET="${{ github.event.inputs.target_date }}"
-          if [ -z "$TARGET" ]; then TARGET=$(date -d 'yesterday' +%Y-%m-%d); fi
           python download_results.py --start $TARGET --end $TARGET
 
       - name: v2シャドウ予測バッチ保存
         env:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
-          TARGET="${{ github.event.inputs.target_date }}"
-          if [ -z "$TARGET" ]; then TARGET=$(date -d 'yesterday' +%Y-%m-%d); fi
           echo "v2バッチ: $TARGET"
           curl -sf "https://2410049.moo.jp/api_v2_batch.php?date=${TARGET}&api_key=${API_KEY}" || echo "v2バッチ呼び出し失敗(非致命的)"
