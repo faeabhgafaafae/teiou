@@ -228,27 +228,52 @@ foreach ($entries as $e) {
     ];
 }
 
-// スコア降順でソート（同点の場合はlane順）
+// ── v2(LR)モデルで最終順位・スコアを決定 (2026-08-27 本番昇格) ──────────────
+// predicted_rank / score_total は v2 確率ベースに。
+// score_ability/course/today/weather は v1 計算値をそのまま保持し、
+// フロントのスコア内訳バー表示を維持する（downstream 変更不要）。
+require_once __DIR__ . '/predict_v2_core.php';
+$v2_inputs  = array_column($scores, '_v2');
+$v2_weather = [
+    'wind_speed'  => (float)($race['wind_speed']  ?? 0),
+    'wave_height' => (float)($race['wave_height'] ?? 0),
+    'temperature' => (float)($race['temperature'] ?? 0),
+];
+$v2_results = PredictV2::score_race($v2_inputs, $v2_weather);
+
+foreach ($scores as &$s) {
+    $pid = (int)$s['player_id'];
+    if (isset($v2_results[$pid])) {
+        $s['score_total']    = round($v2_results[$pid]['probability'] * 100, 2);
+        $s['predicted_rank'] = (int)$v2_results[$pid]['predicted_rank'];
+    } else {
+        // v2 評価不能時: v1 score_total をそのまま保持、順位は後続ソートで決定
+        $s['predicted_rank'] = 99;
+    }
+}
+unset($s);
+
+// v2 順位でソート（同順位の場合は枠番順）
 usort($scores, function($a, $b) {
-    if ($b['score_total'] != $a['score_total']) {
-        return $b['score_total'] <=> $a['score_total'];
+    if ($a['predicted_rank'] !== $b['predicted_rank']) {
+        return $a['predicted_rank'] <=> $b['predicted_rank'];
     }
     return $a['lane'] <=> $b['lane'];
 });
 
-// 予測順位を付与（参照渡しを使わない）
-for ($i = 0; $i < count($scores); $i++) {
-    $scores[$i]['predicted_rank'] = $i + 1;
-}
+// 初回のみ: model_version カラムを追加（既存の場合は無視）
+try {
+    $pdo->exec("ALTER TABLE predictions ADD COLUMN model_version VARCHAR(10) DEFAULT NULL");
+} catch (PDOException $e) {}
 
-// 予測結果をDBに保存
+// 予測結果をDBに保存（model_version='v2_lr' で記録）
 $stmt = $pdo->prepare("
     INSERT INTO predictions
         (race_id, player_id, predicted_rank, score_total,
-         score_ability, score_course, score_today, score_weather, created_at)
+         score_ability, score_course, score_today, score_weather, model_version, created_at)
     VALUES
         (:race_id, :player_id, :predicted_rank, :score_total,
-         :score_ability, :score_course, :score_today, :score_weather, NOW())
+         :score_ability, :score_course, :score_today, :score_weather, :model_version, NOW())
     ON DUPLICATE KEY UPDATE
         predicted_rank=VALUES(predicted_rank),
         score_total=VALUES(score_total),
@@ -256,6 +281,7 @@ $stmt = $pdo->prepare("
         score_course=VALUES(score_course),
         score_today=VALUES(score_today),
         score_weather=VALUES(score_weather),
+        model_version=VALUES(model_version),
         created_at=NOW()
 ");
 
@@ -269,22 +295,8 @@ for ($i = 0; $i < count($scores); $i++) {
         ':score_course'   => $scores[$i]['score_course'],
         ':score_today'    => $scores[$i]['score_today'],
         ':score_weather'  => $scores[$i]['score_weather'],
+        ':model_version'  => 'v2_lr',
     ]);
-}
-
-// v2シャドウ予測を並行保存（失敗しても既存ロジックに影響しない）
-try {
-    require_once __DIR__ . '/predict_v2_core.php';
-    $v2_entries = array_column($scores, '_v2');
-    $v2_weather = [
-        'wind_speed'  => $race['wind_speed'],
-        'wave_height' => $race['wave_height'],
-        'temperature' => $race['temperature'],
-    ];
-    $v2_results = PredictV2::score_race($v2_entries, $v2_weather);
-    PredictV2::save_predictions($pdo, $race_id, $v2_results);
-} catch (Exception $e) {
-    // v2はシャドウモード、非致命的エラーは無視
 }
 
 // 予測生成のタイミングで戦略買い目を自動生成

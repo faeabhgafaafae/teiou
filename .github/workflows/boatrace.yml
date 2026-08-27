@@ -285,9 +285,5 @@ jobs:
         run: |
           python download_results.py --start $TARGET --end $TARGET
 
-      - name: v2シャドウ予測バッチ保存
-        env:
-          API_KEY: ${{ secrets.API_KEY }}
-        run: |
-          echo "v2バッチ: $TARGET"
-          curl -sf "https://2410049.moo.jp/api_v2_batch.php?date=${TARGET}&api_key=${API_KEY}" || echo "v2バッチ呼び出し失敗(非致命的)"
+      # [2026-08-27] v2(LR)本番昇格により api_v2_batch.php の呼び出しを廃止。
+      # api_predict.php が直接 v2 モデルで predictions テーブルに書き込むため不要。

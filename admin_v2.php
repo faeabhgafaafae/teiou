@@ -183,6 +183,21 @@ tr:hover td { background: #fafbfc; }
        既に確認済み(score_today新提案が-1.9pt悪化)。v2(LR)への移行が効果的な
        解決策と見られ、8/28の昇格判定を予定通り実施する。 -->
 
+  <!-- [開発ログ 2026-08-27] v2(LR) 本番昇格判定クリア・切り替え完了
+       昇格判定期間: 2026-07-28 〜 2026-08-27 (30日間)
+       結果: v2=60.6% / 1号艇ベースライン=54.5% / v1=51.3%
+         ① ベースライン超え: +6.1pt、全27評価日でベースライン割れなし → 基準クリア
+         ② v1比+5pt基準:    +9.3pt(全体)、75%の日で+5pt超             → 基準クリア
+         ③ 蓄積期間1ヶ月:    30日・欠損日ゼロ                           → 基準クリア
+       切り替え内容:
+         - api_predict.php: PredictV2::score_race() で predicted_rank/score_total を決定
+         - predictions テーブル: model_version='v2_lr' で記録
+         - score_ability/course/today/weather は v1 計算値を維持(内訳バー表示のため)
+         - api_v2_batch.php の workflow ステップを削除(二重書き込み不要)
+       モニタリング: 切り替え後1週間は本ダッシュボードで継続監視を推奨。
+         ※ predictions_v2 への新規書き込みは停止。集計は predictions テーブルの
+            model_version='v2_lr' 行を参照すること(admin_v2.php の集計SQL要更新)。 -->
+
   <!-- 日別比較テーブル -->
   <table>
     <thead>
