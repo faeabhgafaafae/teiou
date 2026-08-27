@@ -22,7 +22,8 @@ try {
 }
 
 $stmt = $pdo->prepare("
-    SELECT venue, COUNT(*) as race_count
+    SELECT venue, COUNT(*) as race_count,
+           GROUP_CONCAT(race_no ORDER BY race_no) as race_nos_csv
     FROM races
     WHERE date = ?
     GROUP BY venue
@@ -30,6 +31,13 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$date]);
 $venues = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// race_nos_csv を整数配列に変換して race_nos として返す
+foreach ($venues as &$v) {
+    $v['race_nos'] = array_map('intval', explode(',', $v['race_nos_csv'] ?? ''));
+    unset($v['race_nos_csv']);
+}
+unset($v);
 
 echo json_encode([
     'date'   => $date,

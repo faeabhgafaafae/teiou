@@ -84,15 +84,21 @@ def main():
         print('  対象レースなし')
         return
 
-    total_races = sum(int(v['race_count']) for v in venues)
+    # venues.php が race_nos(実際のDB上の race_no リスト)を返す場合はそれを使う。
+    # 旧バグ: race_count=COUNT(*) を上限に range(1, race_count+1) でループすると、
+    # 連番の先頭が欠落している会場(例: 2R〜12R のみ存在)で最後のレースが漏れる。
+    all_race_nos = []
+    for v in venues:
+        race_nos = v.get('race_nos') or list(range(1, int(v['race_count']) + 1))
+        all_race_nos.append((v['venue'], race_nos))
+
+    total_races = sum(len(rns) for _, rns in all_race_nos)
     print(f'  対象: {len(venues)}会場 / {total_races}レース')
 
     ok = 0
     failed = []
-    for v in venues:
-        venue      = v['venue']
-        race_count = int(v['race_count'])
-        for race_no in range(1, race_count + 1):
+    for venue, race_nos in all_race_nos:
+        for race_no in race_nos:
             if generate_for_race(args.date, venue, race_no):
                 ok += 1
             else:
@@ -102,14 +108,14 @@ def main():
     print(f'完了: {ok}/{total_races}レース分の戦略を生成')
 
     if failed:
-        print(f'[FAILED] {len(failed)}/{total_races}件失敗: {", ".join(failed)}')
+        print(f'[WARN] {len(failed)}/{total_races}件失敗(後続の成績取得は続行): {", ".join(failed)}')
         write_summary(
-            f'## ⚠️ 戦略事前生成 一部失敗\n\n'
+            f'## ⚠️ 戦略事前生成 一部失敗(警告)\n\n'
             f'- 対象日: {args.date}\n'
             f'- 失敗: {len(failed)}/{total_races}件\n'
             f'- 失敗レース: {", ".join(failed)}\n'
+            f'- 後続の競走成績取得は継続されます\n'
         )
-        sys.exit(1)
 
 
 if __name__ == '__main__':
