@@ -887,12 +887,28 @@ var API_HOST = 'https://' + '2410049.moo.jp';
 async function loadData() {
   var list = document.getElementById('predList');
   try {
-    var url = API_HOST + '/get_prediction.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
-    var res = await fetch(url);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var data = await res.json();
+    var baseParams = 'date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
 
-    if (data.error || !data.predictions || data.predictions.length === 0) {
+    // まずキャッシュ済み予測(get_prediction.php)を取得
+    var data = null;
+    try {
+      var cachedRes = await fetch(API_HOST + '/get_prediction.php?' + baseParams);
+      if (cachedRes.ok) {
+        var cachedData = await cachedRes.json();
+        if (cachedData.predictions && cachedData.predictions.length > 0) {
+          data = cachedData;
+        }
+      }
+    } catch (e) {}
+
+    // DBに予測がなければ api_predict.php でリアルタイム生成
+    if (!data) {
+      var freshRes = await fetch(API_HOST + '/api_predict.php?' + baseParams);
+      if (!freshRes.ok) throw new Error('HTTP ' + freshRes.status);
+      data = await freshRes.json();
+    }
+
+    if (!data || data.error || !data.predictions || data.predictions.length === 0) {
       list.textContent = '';
       var err = document.createElement('div');
       err.className = 'error-msg';

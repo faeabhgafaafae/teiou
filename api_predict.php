@@ -261,32 +261,56 @@ usort($scores, function($a, $b) {
     return $a['lane'] <=> $b['lane'];
 });
 
-// 初回のみ: model_version カラムを追加（既存の場合は無視）
+// model_version カラムの存在確認・追加。
+// ALTER TABLE が権限エラー等で失敗した場合は model_version なしでINSERTする。
+// (error 1060 = カラム既存 は正常ケース)
+$has_model_version = true;
 try {
     $pdo->exec("ALTER TABLE predictions ADD COLUMN model_version VARCHAR(10) DEFAULT NULL");
-} catch (PDOException $e) {}
+} catch (PDOException $e) {
+    $has_model_version = ((int)$e->errorInfo[1] === 1060);
+}
 
-// 予測結果をDBに保存（model_version='v2_lr' で記録）
-$stmt = $pdo->prepare("
-    INSERT INTO predictions
-        (race_id, player_id, predicted_rank, score_total,
-         score_ability, score_course, score_today, score_weather, model_version, created_at)
-    VALUES
-        (:race_id, :player_id, :predicted_rank, :score_total,
-         :score_ability, :score_course, :score_today, :score_weather, :model_version, NOW())
-    ON DUPLICATE KEY UPDATE
-        predicted_rank=VALUES(predicted_rank),
-        score_total=VALUES(score_total),
-        score_ability=VALUES(score_ability),
-        score_course=VALUES(score_course),
-        score_today=VALUES(score_today),
-        score_weather=VALUES(score_weather),
-        model_version=VALUES(model_version),
-        created_at=NOW()
-");
+// 予測結果をDBに保存
+if ($has_model_version) {
+    $stmt = $pdo->prepare("
+        INSERT INTO predictions
+            (race_id, player_id, predicted_rank, score_total,
+             score_ability, score_course, score_today, score_weather, model_version, created_at)
+        VALUES
+            (:race_id, :player_id, :predicted_rank, :score_total,
+             :score_ability, :score_course, :score_today, :score_weather, :model_version, NOW())
+        ON DUPLICATE KEY UPDATE
+            predicted_rank=VALUES(predicted_rank),
+            score_total=VALUES(score_total),
+            score_ability=VALUES(score_ability),
+            score_course=VALUES(score_course),
+            score_today=VALUES(score_today),
+            score_weather=VALUES(score_weather),
+            model_version=VALUES(model_version),
+            created_at=NOW()
+    ");
+} else {
+    $stmt = $pdo->prepare("
+        INSERT INTO predictions
+            (race_id, player_id, predicted_rank, score_total,
+             score_ability, score_course, score_today, score_weather, created_at)
+        VALUES
+            (:race_id, :player_id, :predicted_rank, :score_total,
+             :score_ability, :score_course, :score_today, :score_weather, NOW())
+        ON DUPLICATE KEY UPDATE
+            predicted_rank=VALUES(predicted_rank),
+            score_total=VALUES(score_total),
+            score_ability=VALUES(score_ability),
+            score_course=VALUES(score_course),
+            score_today=VALUES(score_today),
+            score_weather=VALUES(score_weather),
+            created_at=NOW()
+    ");
+}
 
 for ($i = 0; $i < count($scores); $i++) {
-    $stmt->execute([
+    $params = [
         ':race_id'        => $race_id,
         ':player_id'      => $scores[$i]['player_id'],
         ':predicted_rank' => $scores[$i]['predicted_rank'],
@@ -295,8 +319,11 @@ for ($i = 0; $i < count($scores); $i++) {
         ':score_course'   => $scores[$i]['score_course'],
         ':score_today'    => $scores[$i]['score_today'],
         ':score_weather'  => $scores[$i]['score_weather'],
-        ':model_version'  => 'v2_lr',
-    ]);
+    ];
+    if ($has_model_version) {
+        $params[':model_version'] = 'v2_lr';
+    }
+    $stmt->execute($params);
 }
 
 // 予測生成のタイミングで戦略買い目を自動生成
