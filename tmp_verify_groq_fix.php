@@ -83,4 +83,5 @@ echo json_encode([
     'curl_error' => $curlError ?: null,
     'groq_error' => $result['error'] ?? null,
     'explanation_text' => $text,
+    'raw_response' => $result,
 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
