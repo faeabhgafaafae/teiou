@@ -283,6 +283,9 @@ def main():
         print(f'  開催場: {[VENUES.get(j, j) for j in jcds]}')
         time.sleep(SLEEP_SEC)
 
+    send_ok = 0
+    send_attempted = 0
+
     for jcd in jcds:
         venue_name = VENUES.get(jcd, jcd)
         rnos = [args.rno] if args.rno else range(1, 13)
@@ -308,10 +311,19 @@ def main():
                 data['scheduled_time'] = schedule_times[rno]
 
             print(f'{len(data["players"])}選手', end=' ')
-            send_data(data)
+            send_attempted += 1
+            if send_data(data):
+                send_ok += 1
             time.sleep(SLEEP_SEC)
 
-    print('\n完了!')
+    print(f'\n完了! 送信{send_attempted}件中、{send_ok}件成功')
+
+    # DB送信が1件も成功していない場合、boatrace.jp側の取得自体は動いていても
+    # 実質的にDBへ何も反映されていない(2026-09-01の障害で判明した問題)。
+    # GitHub Actionsがfailureとして検知できるようexit 1にする。
+    if send_attempted > 0 and send_ok == 0:
+        print('[ERROR] DB送信が全件失敗しました')
+        sys.exit(1)
 
 
 if __name__ == '__main__':
