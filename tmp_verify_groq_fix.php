@@ -56,7 +56,8 @@ $url = 'https://api.groq.com/openai/v1/chat/completions';
 $payload = json_encode([
     'model' => 'openai/gpt-oss-20b',
     'messages' => [['role' => 'user', 'content' => $prompt]],
-    'max_tokens' => 200,
+    'max_tokens' => 500,
+    'reasoning_effort' => 'low',
 ]);
 
 $ch = curl_init($url);

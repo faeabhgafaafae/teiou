@@ -67,6 +67,9 @@ function call_groq(string $prompt): string {
             ['role' => 'user', 'content' => $prompt]
         ],
         'max_tokens' => 500,
+        // gpt-oss-20bは推論モデルでreasoningトークンがmax_tokensを消費するため、
+        // effortを下げて本文(content)が空にならないようにする
+        'reasoning_effort' => 'low',
     ]);
 
     $ch = curl_init($url);
