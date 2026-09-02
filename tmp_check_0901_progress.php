@@ -36,4 +36,13 @@ $stmt = $pdo->prepare("
 $stmt->execute([$date]);
 $predictions = $stmt->fetchAll();
 
-echo json_encode(['races' => $races, 'entries' => $entries, 'odds_3t' => $odds, 'predictions' => $predictions], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+$stmt = $pdo->prepare("
+    SELECT r.venue, r.race_no
+    FROM races r
+    WHERE r.date = ? AND NOT EXISTS (SELECT 1 FROM entries e WHERE e.race_id = r.id)
+    ORDER BY r.venue, r.race_no
+");
+$stmt->execute([$date]);
+$missing = $stmt->fetchAll();
+
+echo json_encode(['races' => $races, 'entries' => $entries, 'odds_3t' => $odds, 'predictions' => $predictions, 'missing_entries' => $missing], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
