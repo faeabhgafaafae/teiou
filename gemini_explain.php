@@ -62,7 +62,7 @@ function fetch_players(PDO $pdo, int $race_id): array {
 function call_groq(string $prompt): string {
     $url = 'https://api.groq.com/openai/v1/chat/completions';
     $payload = json_encode([
-        'model' => 'llama-3.1-8b-instant',
+        'model' => 'openai/gpt-oss-20b',
         'messages' => [
             ['role' => 'user', 'content' => $prompt]
         ],
@@ -84,9 +84,14 @@ function call_groq(string $prompt): string {
     curl_close($ch);
 
     if ($curlError) {
+        error_log('Groq API通信エラー: ' . $curlError);
         json_response(['error' => 'Groq API通信エラー: ' . $curlError], 500);
     }
     if ($httpCode !== 200) {
+        $errBody = json_decode($response, true);
+        $errType = $errBody['error']['type'] ?? 'unknown';
+        $errMsg = $errBody['error']['message'] ?? $response;
+        error_log("Groq APIエラー (HTTP {$httpCode}, type={$errType}): {$errMsg}");
         json_response(['error' => 'Groq APIエラー (HTTP ' . $httpCode . ')'], 500);
     }
 
