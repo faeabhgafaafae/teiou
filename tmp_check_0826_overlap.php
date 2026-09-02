@@ -56,6 +56,33 @@ $stmt = $pdo->prepare("
 $stmt->execute([$date]);
 $createdRange = $stmt->fetch();
 
+// 修正後クエリでの8/26集計(重複排除版)
+$dedupSql = "
+    SELECT r.date,
+           COUNT(DISTINCT x.race_id)                                     AS races,
+           SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)          AS hits
+    FROM (
+        SELECT p2.race_id, p2.player_id
+        FROM predictions_v2 p2
+        WHERE p2.predicted_rank = 1
+
+        UNION ALL
+
+        SELECT p.race_id, p.player_id
+        FROM predictions p
+        WHERE p.predicted_rank = 1
+          AND p.model_version = 'v2_lr'
+          AND NOT EXISTS (SELECT 1 FROM predictions_v2 p2b WHERE p2b.race_id = p.race_id)
+    ) x
+    JOIN races r      ON r.id = x.race_id
+    JOIN results res  ON res.race_id = x.race_id AND res.player_id = x.player_id
+    WHERE r.date = ?
+    GROUP BY r.date
+";
+$stmt = $pdo->prepare($dedupSql);
+$stmt->execute([$date]);
+$dedupResult = $stmt->fetch();
+
 echo json_encode([
     'date' => $date,
     'from_predictions_v2_table' => $fromV2Table,
@@ -63,4 +90,5 @@ echo json_encode([
     'overlap_race_id_count' => $overlap,
     'model_version_breakdown' => $versionBreakdown,
     'v2lr_created_at_range' => $createdRange,
+    'dedup_query_result' => $dedupResult,
 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

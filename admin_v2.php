@@ -44,35 +44,31 @@ $v1_sql = "
 
 // v2: 同様
 // 2026-08-27のv2本番昇格でpredictions_v2への二重書き込みを停止したため、
-// それ以前はpredictions_v2、それ以降はpredictions(model_version='v2_lr')から取得しUNIONで統合する。
+// それ以降はpredictions(model_version='v2_lr')から取得する。
+// なお過去レースへのバックフィルにより両テーブルに同一race_idが存在するケースがあるため、
+// race_id単位でpredictions_v2を優先し、重複しないpredictions側の行のみ追加する(NOT EXISTS)。
 $v2_sql = "
-    SELECT date, SUM(races) AS races, SUM(hits) AS hits
+    SELECT r.date,
+           COUNT(DISTINCT x.race_id)                                     AS races,
+           SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)          AS hits
     FROM (
-        SELECT r.date,
-               COUNT(DISTINCT p2.race_id)                                AS races,
-               SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)      AS hits
+        SELECT p2.race_id, p2.player_id
         FROM predictions_v2 p2
-        JOIN races r      ON r.id = p2.race_id
-        JOIN results res  ON res.race_id = p2.race_id AND res.player_id = p2.player_id
         WHERE p2.predicted_rank = 1
-          AND r.date >= '2026-06-01'
-        GROUP BY r.date
 
         UNION ALL
 
-        SELECT r.date,
-               COUNT(DISTINCT p.race_id)                                 AS races,
-               SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)      AS hits
+        SELECT p.race_id, p.player_id
         FROM predictions p
-        JOIN races r      ON r.id = p.race_id
-        JOIN results res  ON res.race_id = p.race_id AND res.player_id = p.player_id
         WHERE p.predicted_rank = 1
           AND p.model_version = 'v2_lr'
-          AND r.date >= '2026-06-01'
-        GROUP BY r.date
-    ) combined
-    GROUP BY date
-    ORDER BY date DESC
+          AND NOT EXISTS (SELECT 1 FROM predictions_v2 p2b WHERE p2b.race_id = p.race_id)
+    ) x
+    JOIN races r      ON r.id = x.race_id
+    JOIN results res  ON res.race_id = x.race_id AND res.player_id = x.player_id
+    WHERE r.date >= '2026-06-01'
+    GROUP BY r.date
+    ORDER BY r.date DESC
 ";
 
 $v1_rows = $pdo->query($v1_sql)->fetchAll();
