@@ -42,7 +42,7 @@
       '</div>' +
       '<div class="urgent-btn-group">' +
         '<a class="urgent-btn" href="racelist.php?venue=' + encodeURIComponent(race.venue) + '&date=' + currentDate + '&race_no=' + race.race_no + '">出走表</a>' +
-        '<a class="urgent-btn main-btn" href="ai-predict.php?venue=' + encodeURIComponent(race.venue) + '&date=' + currentDate + '&race_no=' + race.race_no + '">AI予想</a>' +
+        '<a class="urgent-btn main-btn" href="ai-predict.php?venue=' + encodeURIComponent(race.venue) + '&date=' + currentDate + '&race_no=' + race.race_no + '">予想</a>' +
       '</div>';
 
     return card;
