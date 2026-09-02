@@ -43,17 +43,36 @@ $v1_sql = "
 ";
 
 // v2: 同様
+// 2026-08-27のv2本番昇格でpredictions_v2への二重書き込みを停止したため、
+// それ以前はpredictions_v2、それ以降はpredictions(model_version='v2_lr')から取得しUNIONで統合する。
 $v2_sql = "
-    SELECT r.date,
-           COUNT(DISTINCT p2.race_id)                                    AS races,
-           SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)          AS hits
-    FROM predictions_v2 p2
-    JOIN races r      ON r.id = p2.race_id
-    JOIN results res  ON res.race_id = p2.race_id AND res.player_id = p2.player_id
-    WHERE p2.predicted_rank = 1
-      AND r.date >= '2026-06-01'
-    GROUP BY r.date
-    ORDER BY r.date DESC
+    SELECT date, SUM(races) AS races, SUM(hits) AS hits
+    FROM (
+        SELECT r.date,
+               COUNT(DISTINCT p2.race_id)                                AS races,
+               SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)      AS hits
+        FROM predictions_v2 p2
+        JOIN races r      ON r.id = p2.race_id
+        JOIN results res  ON res.race_id = p2.race_id AND res.player_id = p2.player_id
+        WHERE p2.predicted_rank = 1
+          AND r.date >= '2026-06-01'
+        GROUP BY r.date
+
+        UNION ALL
+
+        SELECT r.date,
+               COUNT(DISTINCT p.race_id)                                 AS races,
+               SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)      AS hits
+        FROM predictions p
+        JOIN races r      ON r.id = p.race_id
+        JOIN results res  ON res.race_id = p.race_id AND res.player_id = p.player_id
+        WHERE p.predicted_rank = 1
+          AND p.model_version = 'v2_lr'
+          AND r.date >= '2026-06-01'
+        GROUP BY r.date
+    ) combined
+    GROUP BY date
+    ORDER BY date DESC
 ";
 
 $v1_rows = $pdo->query($v1_sql)->fetchAll();
@@ -247,5 +266,15 @@ tr:hover td { background: #fafbfc; }
     ※ v1レース数とv2レース数が異なる場合、v2バッチが一部スキップしたレースがあります。
   </p>
 </div>
+<script>
+// app.js を読み込まないページなので #headerDate をここで更新する
+window.addEventListener('DOMContentLoaded', function() {
+  var _d = new Date();
+  var _days = ['日','月','火','水','木','金','土'];
+  var _dateStr = _d.getFullYear() + '年' + (_d.getMonth()+1) + '月' + _d.getDate() + '日 (' + _days[_d.getDay()] + ')';
+  var _headerDateEl = document.getElementById('headerDate');
+  if (_headerDateEl) _headerDateEl.textContent = _dateStr;
+});
+</script>
 </body>
 </html>
