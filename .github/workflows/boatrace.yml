@@ -287,3 +287,12 @@ jobs:
 
       # [2026-08-27] v2(LR)本番昇格により api_v2_batch.php の呼び出しを廃止。
       # api_predict.php が直接 v2 モデルで predictions テーブルに書き込むため不要。
+
+      # [2026-09-04] v3シャドウテスト(design_v3_model_20260903.md §4.2)。
+      # predictions_v2テーブル(転用)のみに書き込み、本番predictions/strategiesには不干渉。
+      # 集計特徴量は対象日より前のresultsのみ使用のためレース後実行でもリークなし。
+      - name: v3シャドウ予測生成
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          curl -s --max-time 170 "https://2410049.moo.jp/api_v3_shadow.php?api_key=${API_KEY}&date=${TARGET}"
