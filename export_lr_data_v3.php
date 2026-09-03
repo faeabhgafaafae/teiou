@@ -15,6 +15,8 @@
  *   厳密に「レース日より前」のデータのみで算出する(v2学習時のリークを解消)
  * - player_periodsはas-of JOIN: レース日時点で公開済みの最新期のみ使用。
  *   公開日は period=2(04=後期データ)→当年5/1、period=1(10=前期データ)→当年11/1 とみなす
+ * - コース別成績はresultsから直接集計(枠番×選手、過去2年、レース日より前のみ)。
+ *   player_periodsのc2〜c6/c*_fukushoはimport_fan.phpが取り込んでおらず空のため使えない
  * - 直近10走: レース当日を除外した過去日、遡り180日、事故等でactual_rankがNULLの行は除外
  */
 
@@ -123,10 +125,7 @@ $ph         = implode(',', array_fill(0, count($player_ids), '?'));
 
 // ── 2. player_periods 全期データ(as-ofはPHP側で解決) ────────────────────
 $stmt = $pdo->prepare("
-    SELECT player_id, year, period, grade, win_rate, fukusho_rate, avg_st,
-           c1_rank1, c2_rank1, c3_rank1, c4_rank1, c5_rank1, c6_rank1,
-           c1_count, c2_count, c3_count, c4_count, c5_count, c6_count,
-           c1_fukusho, c2_fukusho, c3_fukusho, c4_fukusho, c5_fukusho, c6_fukusho
+    SELECT player_id, year, period, grade, win_rate, fukusho_rate, avg_st
     FROM player_periods
     WHERE player_id IN ($ph)
 ");
@@ -172,9 +171,10 @@ foreach ($stmt->fetchAll() as $row) {
         [(int)$row['total'], (int)$row['rank1'], (int)$row['rank2']];
 }
 
-// チャンク内増分(レース日ごとにPHPで加算するため個票で取得)
+// チャンク内増分(レース日ごとにPHPで加算するため個票で取得)。
+// 当地(venue)用とコース別(lane)用の両方でこの個票を使う
 $stmt = $pdo->prepare("
-    SELECT res.player_id, rc.venue, rc.date, res.actual_rank
+    SELECT res.player_id, rc.venue, res.lane, rc.date, res.actual_rank
     FROM results res
     JOIN races rc ON res.race_id = rc.id
     WHERE res.player_id IN ($ph)
@@ -182,17 +182,53 @@ $stmt = $pdo->prepare("
     ORDER BY rc.date
 ");
 $stmt->execute(array_merge($player_ids, [$from, $to]));
-$local_inc = []; // pid => venue => [ [date_int, rank|null], ... ] 日付昇順
+$local_inc  = []; // pid => venue => [ [date_int, rank|null], ... ] 日付昇順
+$course_inc = []; // pid => lane  => 同上
 foreach ($stmt->fetchAll() as $row) {
-    $local_inc[(int)$row['player_id']][$row['venue']][] =
-        [(int)str_replace('-', '', $row['date']),
-         $row['actual_rank'] !== null ? (int)$row['actual_rank'] : null];
+    $pid  = (int)$row['player_id'];
+    $item = [(int)str_replace('-', '', $row['date']),
+             $row['actual_rank'] !== null ? (int)$row['actual_rank'] : null];
+    $local_inc[$pid][$row['venue']][]      = $item;
+    $course_inc[$pid][(int)$row['lane']][] = $item;
 }
 
 function local_asof(array $local_base, array $local_inc, int $pid, string $venue, int $date_int): array {
     [$total, $rank1, $rank2] = $local_base[$pid][$venue] ?? [0, 0, 0];
     foreach ($local_inc[$pid][$venue] ?? [] as $item) {
         if ($item[0] >= $date_int) break; // 日付昇順なので打ち切り可
+        $total++;
+        if ($item[1] !== null) {
+            if ($item[1] === 1) $rank1++;
+            if ($item[1] <= 2)  $rank2++;
+        }
+    }
+    return [$total, $rank1, $rank2];
+}
+
+// ── 3b. コース別成績(枠番×選手): 基礎集計 + チャンク内増分 ──────────────
+// player_periodsのc2〜c6は未取込のため、resultsから直接集計する(全枠カバー・鮮度も上)
+$stmt = $pdo->prepare("
+    SELECT res.player_id, res.lane,
+           COUNT(*) AS total,
+           SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)  AS rank1,
+           SUM(CASE WHEN res.actual_rank <= 2 THEN 1 ELSE 0 END) AS rank2
+    FROM results res
+    JOIN races rc ON res.race_id = rc.id
+    WHERE res.player_id IN ($ph)
+      AND rc.date >= ? AND rc.date < ?
+    GROUP BY res.player_id, res.lane
+");
+$stmt->execute(array_merge($player_ids, [$cutoff_2y, $from]));
+$course_base = []; // pid => lane => [total, rank1, rank2]
+foreach ($stmt->fetchAll() as $row) {
+    $course_base[(int)$row['player_id']][(int)$row['lane']] =
+        [(int)$row['total'], (int)$row['rank1'], (int)$row['rank2']];
+}
+
+function course_asof(array $course_base, array $course_inc, int $pid, int $lane, int $date_int): array {
+    [$total, $rank1, $rank2] = $course_base[$pid][$lane] ?? [0, 0, 0];
+    foreach ($course_inc[$pid][$lane] ?? [] as $item) {
+        if ($item[0] >= $date_int) break;
         $total++;
         if ($item[1] !== null) {
             if ($item[1] === 1) $rank1++;
@@ -277,7 +313,7 @@ header('Content-Disposition: attachment; filename="lr_data_v3_' . $from . '_' . 
 echo "race_id,date,venue,lane,player_id," .
      "global_win_rate,global_2rate,local_win_rate,local_2rate,local_race_cnt," .
      "grade_period,avg_st," .
-     "course_rank1,course_count,course_fukusho," .
+     "course_rank1,course_count,course_rank2," .
      "recent10_avg_rank,recent10_win_rate,recent10_st_mean,recent10_count," .
      "exhibit_time_raw,exhibit_time_rel,start_timing,motor_2rate,motor_2rate_rel," .
      "wind_speed,wave_height,temperature," .
@@ -295,10 +331,11 @@ foreach ($entries_all as $e) {
     $g_wr  = $pp !== null && $pp['win_rate']     !== null ? $pp['win_rate']     : '';
     $g_2r  = $pp !== null && $pp['fukusho_rate'] !== null ? $pp['fukusho_rate'] : '';
     $grade = $pp !== null && $pp['grade']        !== null ? $pp['grade']        : '';
-    $avgst = $pp !== null && $pp['avg_st']       !== null ? $pp['avg_st']       : '';
-    $c_r1  = $pp !== null && $pp["c{$lane}_rank1"]   !== null ? $pp["c{$lane}_rank1"]   : '';
-    $c_cnt = $pp !== null && $pp["c{$lane}_count"]   !== null ? $pp["c{$lane}_count"]   : '';
-    $c_fk  = $pp !== null && $pp["c{$lane}_fukusho"] !== null ? $pp["c{$lane}_fukusho"] : '';
+    // avg_st=0はファンデータの欠損センチネルのため欠損扱い
+    $avgst = ($pp !== null && $pp['avg_st'] !== null && (float)$pp['avg_st'] > 0.001) ? $pp['avg_st'] : '';
+
+    // コース別成績 (resultsベース・レース日より前のみ)
+    [$c_cnt, $c_r1, $c_r2] = course_asof($course_base, $course_inc, $pid, $lane, $date_int);
 
     // 当地成績 (レース日より前のみ・リーク修正済み)
     [$l_total, $l_rank1, $l_rank2] = local_asof($local_base, $local_inc, $pid, $venue, $date_int);
@@ -328,7 +365,7 @@ foreach ($entries_all as $e) {
         $rid, $e['date'], $venue, $lane, $pid,
         $g_wr, $g_2r, $local_wr, $local_2r, $l_total,
         $grade, $avgst,
-        $c_r1, $c_cnt, $c_fk,
+        $c_r1, $c_cnt, $c_r2,
         $r10_rank !== null ? $r10_rank : '',
         $r10_win  !== null ? $r10_win  : '',
         $r10_st   !== null ? $r10_st   : '',
