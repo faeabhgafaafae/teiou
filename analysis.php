@@ -239,7 +239,7 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
       </div>
 <?php if (!$isPremium): ?>
       <!-- PHPサーバー側でレンダリングして高度検索フォームのフィールド構成をソースから隠す -->
-      <div class="adv-lock">&#128274; 高度検索はPremiumプラン限定です。複合条件（選手名・天候・コース・期間など）で絞り込めます。<a href="upgrade.html">プランをアップグレード &rsaquo;</a></div>
+      <div class="adv-lock">&#128274; 高度検索はPremiumプラン限定です。複合条件（選手名・天候・コース・期間など）で絞り込めます。<a href="mypage.php#planCardPremium">プランをアップグレード &rsaquo;</a></div>
 <?php else: ?>
       <div id="advSearchForm">
         <div class="adv-section-lbl">選手名（部分一致）</div>
@@ -389,7 +389,7 @@ if (!IS_STANDARD_PLUS) {
   (function() {
     // JS側でロックUIを差し込む。PHPでパネルを非表示にするとページロード時にAPIを叩かないが
     // ロックUIの差し込みをPHPで行うとパネル自体をソースから読めてしまうため、JSで上書きする
-    var lockHtml = '<div class="premium-lock" style="padding:24px 16px;"><span class="premium-lock-icon">&#128274;</span><p>Standard / Premiumプランでご利用いただけます。</p><a href="upgrade.html">プランをアップグレード</a></div>';
+    var lockHtml = '<div class="premium-lock" style="padding:24px 16px;"><span class="premium-lock-icon">&#128274;</span><p>Standard / Premiumプランでご利用いただけます。</p><a href="mypage.php#planCardStandard">プランをアップグレード</a></div>';
     ['#panel-venue .card', '#panel-search .card'].forEach(function(sel) {
       var el = document.querySelector(sel);
       if (el) el.innerHTML = lockHtml;
@@ -709,7 +709,7 @@ document.getElementById('showFullRankingBtn').addEventListener('click', function
   var full = document.getElementById('rankingFull');
   if (!IS_STANDARD_PLUS) {
     full.style.display = 'block';
-    full.innerHTML = '<div class="premium-lock" style="padding:20px;"><span class="premium-lock-icon">&#128274;</span><p>ランキング全件表示はStandard / Premiumプランでご利用いただけます。</p><a href="upgrade.html">プランをアップグレード</a></div>';
+    full.innerHTML = '<div class="premium-lock" style="padding:20px;"><span class="premium-lock-icon">&#128274;</span><p>ランキング全件表示はStandard / Premiumプランでご利用いただけます。</p><a href="mypage.php#planCardStandard">プランをアップグレード</a></div>';
     full.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     this.textContent = '一覧を閉じる';
     return;

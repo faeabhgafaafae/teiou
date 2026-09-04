@@ -684,7 +684,7 @@ function renderPremiumLock() {
   var p = document.createElement('p');
   p.textContent = '戦略別の買い目候補はStandard/Premium会員限定です。';
   var a = document.createElement('a');
-  a.href = 'upgrade.html';
+  a.href = 'mypage.php#planCardStandard';
   a.textContent = 'プランをアップグレード';
   lock.appendChild(icon);
   lock.appendChild(p);

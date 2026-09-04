@@ -619,7 +619,7 @@ function renderBreakdownSection(r) {
     lockDiv.className = 'bk-lock';
     lockDiv.appendChild(document.createTextNode('🔒 詳細スコア内訳はPremium限定 '));
     var lockLink = document.createElement('a');
-    lockLink.href = 'upgrade.html';
+    lockLink.href = 'mypage.php#planCardPremium';
     lockLink.textContent = 'プランをアップグレード';
     lockDiv.appendChild(lockLink);
     section.appendChild(lockDiv);

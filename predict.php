@@ -460,7 +460,7 @@ function buildOriginalTable(predictions, aiLocked) {
     var p = document.createElement('p');
     p.textContent = 'AI予想スコアはStandard/Premium会員限定です。';
     var a = document.createElement('a');
-    a.href = 'upgrade.html';
+    a.href = 'mypage.php#planCardStandard';
     a.textContent = 'プランをアップグレード';
     lock.appendChild(icon);
     lock.appendChild(p);

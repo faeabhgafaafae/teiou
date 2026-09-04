@@ -121,7 +121,7 @@ svg.trend-chart { width: 100%; height: auto; }
       <div class="premium-lock">
         <span class="premium-lock-icon">&#128274;</span>
         <p>日別推移グラフは Standard / Premium プラン限定機能です。</p>
-        <a href="upgrade.html">プランをアップグレード</a>
+        <a href="mypage.php#planCardStandard">プランをアップグレード</a>
       </div>
     <?php endif; ?>
   </div>
@@ -149,7 +149,7 @@ svg.trend-chart { width: 100%; height: auto; }
       <div class="premium-lock">
         <span class="premium-lock-icon">&#128274;</span>
         <p>会場別の内訳は Standard / Premium プラン限定機能です。</p>
-        <a href="upgrade.html">プランをアップグレード</a>
+        <a href="mypage.php#planCardStandard">プランをアップグレード</a>
       </div>
     <?php endif; ?>
   </div>
@@ -163,7 +163,7 @@ svg.trend-chart { width: 100%; height: auto; }
       <div class="premium-lock">
         <span class="premium-lock-icon">&#128274;</span>
         <p>戦略比較表は Standard / Premium プラン限定機能です。</p>
-        <a href="upgrade.html">プランをアップグレード</a>
+        <a href="mypage.php#planCardStandard">プランをアップグレード</a>
       </div>
     <?php endif; ?>
   </div>
@@ -188,7 +188,7 @@ svg.trend-chart { width: 100%; height: auto; }
       <div class="premium-lock">
         <span class="premium-lock-icon">&#128274;</span>
         <p>会場横断の的中率比較は Premium プラン限定機能です。</p>
-        <a href="upgrade.html">プランをアップグレード</a>
+        <a href="mypage.php#planCardPremium">プランをアップグレード</a>
       </div>
     <?php endif; ?>
   </div>
@@ -202,7 +202,7 @@ svg.trend-chart { width: 100%; height: auto; }
       <div class="premium-lock">
         <span class="premium-lock-icon">&#128274;</span>
         <p>個別レースの詳細スコア内訳は Premium プラン限定機能です。</p>
-        <a href="upgrade.html">プランをアップグレード</a>
+        <a href="mypage.php#planCardPremium">プランをアップグレード</a>
       </div>
     <?php endif; ?>
   </div>

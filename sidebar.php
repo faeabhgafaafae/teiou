@@ -15,7 +15,7 @@
       <li><i class="fas fa-check"></i> 回収率ランキング</li>
       <li><i class="fas fa-check"></i> 広告非表示</li>
     </ul>
-    <a href="upgrade.html" id="sidebarPromoBtn" class="btn-primary" style="display: block; text-align: center; text-decoration: none; line-height: 1.4;">詳しく見る</a>
+    <a href="mypage.php#planCardPremium" id="sidebarPromoBtn" class="btn-primary" style="display: block; text-align: center; text-decoration: none; line-height: 1.4;">詳しく見る</a>
   </div>
 
   <div class="stats-box">

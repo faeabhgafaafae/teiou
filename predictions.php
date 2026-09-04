@@ -132,7 +132,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 
   <div class="ai-locked-banner" id="aiLockedBanner" style="display:none">
     <span>🔒 AI予想の1位候補・自信度はStandard/Premium会員限定です。</span>
-    <a href="upgrade.html">プランをアップグレード</a>
+    <a href="mypage.php#planCardStandard">プランをアップグレード</a>
   </div>
 
   <div class="race-summary" id="raceSummary"></div>

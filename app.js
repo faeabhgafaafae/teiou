@@ -252,7 +252,7 @@ async function toggleFavoriteVenue(venueName) {
       renderFavoriteVenuesTop();
     } else if (data.error === 'favorite_limit') {
       if (confirm('Freeプランはお気に入り登録が3件までです。プランをアップグレードしますか？')) {
-        location.href = 'upgrade.html';
+        location.href = 'mypage.php#planCardStandard';
       }
     }
   } catch (e) {
