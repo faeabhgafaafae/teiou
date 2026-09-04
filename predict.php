@@ -224,6 +224,17 @@ function todayStr() {
 document.getElementById('pageTitle').textContent = venueDisplayName(venue) + ' ' + raceNo + 'R 直前情報';
 document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R 直前情報';
 
+// app.js を読み込まないページなので #headerDate・#headerLogo をここで設定する
+(function() {
+  var _d = new Date(date + 'T00:00:00');
+  var _days = ['日','月','火','水','木','金','土'];
+  var _dateStr = _d.getFullYear() + '年' + (_d.getMonth()+1) + '月' + _d.getDate() + '日 (' + _days[_d.getDay()] + ')';
+  var _headerDateEl = document.getElementById('headerDate');
+  if (_headerDateEl) _headerDateEl.textContent = _dateStr;
+  var _headerLogoEl = document.getElementById('headerLogo');
+  if (_headerLogoEl) _headerLogoEl.addEventListener('click', function() { location.href = 'index.php'; });
+})();
+
 // ホスト名を文字列結合にするのはCSPスキャナによる直書き検出を避けるため
 var API_BASE = 'https://' + '2410049.moo.jp';
 
