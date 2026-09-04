@@ -2,9 +2,9 @@
 require_once __DIR__ . '/auth.php';
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
-// isPremium: Standard以上(セクション1-3対象)。isPremiumOnly: Premium専用(セクション4-6対象)
-$isPremium = ($plan === 'standard' || $plan === 'premium');
-$isPremiumOnly = ($plan === 'premium');
+// isStandardPlus: Standard以上(セクション1-3対象)。isPremium: Premium専用(セクション4-6対象)
+$isStandardPlus = ($plan === 'standard' || $plan === 'premium');
+$isPremium = ($plan === 'premium');
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -115,7 +115,7 @@ svg.trend-chart { width: 100%; height: auto; }
   <!-- 2. 日別推移グラフ(premium) -->
   <div class="card">
     <h2>日別推移(的中率・回収率)</h2>
-    <?php if ($isPremium): ?>
+    <?php if ($isStandardPlus): ?>
       <div id="dailyResult"><div class="loading">読み込み中...</div></div>
     <?php else: ?>
       <div class="premium-lock">
@@ -129,7 +129,7 @@ svg.trend-chart { width: 100%; height: auto; }
   <!-- 3. 会場別内訳(premium) -->
   <div class="card">
     <h2>会場別 内訳</h2>
-    <?php if ($isPremium): ?>
+    <?php if ($isStandardPlus): ?>
       <div class="filter-row" id="venueBreakdownFilterRow" style="display:none;">
         <label>会場:</label>
         <select id="venueBreakdownFilterVenue">
@@ -157,7 +157,7 @@ svg.trend-chart { width: 100%; height: auto; }
   <!-- 4. 戦略比較表(premium) -->
   <div class="card">
     <h2>戦略比較表</h2>
-    <?php if ($isPremium): ?>
+    <?php if ($isStandardPlus): ?>
       <div id="compareResult"><div class="loading">読み込み中...</div></div>
     <?php else: ?>
       <div class="premium-lock">
@@ -171,7 +171,7 @@ svg.trend-chart { width: 100%; height: auto; }
   <!-- 5. 会場横断比較(premium限定) -->
   <div class="card" id="venueCmpCard">
     <h2>会場横断比較</h2>
-    <?php if ($isPremiumOnly): ?>
+    <?php if ($isPremium): ?>
       <div class="note">全会場・全期間の的中率をランキング形式で比較できます。会場ごとの詳しい数値(投資額・払戻額・回収率)は上の「会場別 内訳」で確認できます。</div>
       <div class="filter-row">
         <label>戦略:</label>
@@ -196,7 +196,7 @@ svg.trend-chart { width: 100%; height: auto; }
   <!-- 6. 個別レース詳細(スコア内訳、premium限定) -->
   <div class="card">
     <h2>個別レース詳細(スコア内訳)</h2>
-    <?php if ($isPremiumOnly): ?>
+    <?php if ($isPremium): ?>
       <div id="raceDetailResult"><div class="loading">読み込み中...</div></div>
     <?php else: ?>
       <div class="premium-lock">
@@ -278,8 +278,8 @@ svg.trend-chart { width: 100%; height: auto; }
 })();
 
 var API_HOST = 'https://' + '2410049.moo.jp';
-var IS_PREMIUM = <?php echo $isPremium ? 'true' : 'false'; ?>;
-var IS_PREMIUM_ONLY = <?php echo $isPremiumOnly ? 'true' : 'false'; ?>;
+var IS_STANDARD_PLUS = <?php echo $isStandardPlus ? 'true' : 'false'; ?>;
+var IS_PREMIUM       = <?php echo $isPremium      ? 'true' : 'false'; ?>;
 var STRATEGY_COLORS = { '的中特化': '#0055a4', 'バランス': '#16a34a', '一撃重視': '#dc2626', '絞り込み': '#d97706' };
 var ALL_VENUES = [
   '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
@@ -461,7 +461,7 @@ function buildLegend(types) {
 }
 
 async function loadDaily() {
-  if (!IS_PREMIUM) return;
+  if (!IS_STANDARD_PLUS) return;
   var el = document.getElementById('dailyResult');
   el.textContent = '';
   el.appendChild(makeLoading('読み込み中...'));
@@ -566,7 +566,7 @@ function renderVenueBreakdownTable() {
 }
 
 async function loadVenue() {
-  if (!IS_PREMIUM) return;
+  if (!IS_STANDARD_PLUS) return;
   var el = document.getElementById('venueResult');
   el.textContent = '';
   el.appendChild(makeLoading('読み込み中...'));
@@ -606,7 +606,7 @@ loadVenue();
 // 4. 戦略比較表。セクション1と同じ get_performance_summary.php を流用し、追加APIコールを避ける
 // ============================================================
 async function loadCompare() {
-  if (!IS_PREMIUM) return;
+  if (!IS_STANDARD_PLUS) return;
   var el = document.getElementById('compareResult');
   el.textContent = '';
   el.appendChild(makeLoading('読み込み中...'));
@@ -739,7 +739,7 @@ function renderVenueCmpChart() {
 }
 
 async function loadVenueComparison() {
-  if (!IS_PREMIUM_ONLY) return;
+  if (!IS_PREMIUM) return;
 
   document.getElementById('venueCmpFilterStrategy').addEventListener('change', renderVenueCmpChart);
 
@@ -940,7 +940,7 @@ function renderRaceDetailRow(race) {
 }
 
 async function loadRaceDetails() {
-  if (!IS_PREMIUM_ONLY) return;
+  if (!IS_PREMIUM) return;
   var el = document.getElementById('raceDetailResult');
   el.textContent = '';
   el.appendChild(makeLoading('読み込み中...'));

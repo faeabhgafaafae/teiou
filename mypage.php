@@ -368,7 +368,7 @@
       });
     }
 
-    // プラン特典リストはplan-features.js(mypage.php・upgrade.html共通)から描画する
+    // プラン特典リストはplan-features.jsから描画する
     function renderPlanFeatures(ulId, tierKey) {
       var ul = document.getElementById(ulId);
       if (!ul) return;
