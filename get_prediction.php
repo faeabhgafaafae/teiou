@@ -33,7 +33,9 @@ try {
     $stmt = $pdo->prepare('
         SELECT p.player_id, p.predicted_rank, p.score_total,
                p.score_ability, p.score_course, p.score_today, p.score_weather,
-               e.lane, e.exhibit_time, e.start_timing, e.motor_2rate, pl.name, pl.grade,
+               e.lane, e.exhibit_time, e.start_timing, e.motor_2rate, e.exhibit_course,
+               IF(e.start_timing IS NOT NULL AND e.start_timing < 0, 1, 0) AS is_flying,
+               pl.name, pl.grade,
                pp.win_rate, pp.fukusho_rate,
                pp.c1_rank1, pp.c1_count, pp.c1_fukusho,
                pp.c2_rank1, pp.c2_count, pp.c2_fukusho,
