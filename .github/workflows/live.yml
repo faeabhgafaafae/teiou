@@ -2,10 +2,18 @@ name: 艇王 直前情報・オッズ更新
 
 on:
   schedule:
-    # 10分ごとに実行（UTC基準。GitHub Actions の cron は数分の遅延がある）
-    # レース開催時間帯のみ実行: UTC 23:00-12:00 = JST 8:00-21:00
+    # GitHub Actions の cron は実際には4〜5時間に1回しか発火しない(throttling)。
+    # 10分間隔はcron-job.orgから workflow_dispatch で外部トリガーする形で補完している。
+    # このscheduleは外部トリガーが停止した場合の保険として残す。
     - cron: '*/10 23-23,0-12 * * *'
   workflow_dispatch:
+
+# 外部cronから10分ごとに叩かれる場合の同時実行制御。
+# 前のrunが15分以内に完了しないケースでは新runが古いrunをキャンセルして起動する。
+# import_beforeinfo.php はCOALESCE UPDATEで冪等なので中断されても安全。
+concurrency:
+  group: live-scrape
+  cancel-in-progress: true
 
 jobs:
   scrape_live:
