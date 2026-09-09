@@ -110,7 +110,8 @@ h2.sub { font-size: 14px; font-weight: 700; margin: 24px 0 8px; color: #333; }
 .scard-sub { font-size: 11px; color: #888; }
 .scard.v3  { border-color: #0055a4; background: #f0f5ff; }
 .scard.baseline { border-color: #718096; }
-table { width: 100%; border-collapse: collapse; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #e0e3e8; }
+table { width: 100%; min-width: 600px; border-collapse: collapse; }
 th { background: #f7f8fa; font-size: 11px; font-weight: 700; color: #888; padding: 8px 10px; text-align: center; border-bottom: 2px solid #e0e3e8; white-space: nowrap; }
 td { padding: 8px 10px; text-align: center; border-bottom: 1px solid #f0f0f0; }
 tr:hover td { background: #fafbfc; }
@@ -201,6 +202,7 @@ tr:hover td { background: #fafbfc; }
 
   <!-- 日別比較テーブル -->
   <h2 class="sub">日別 1着的中率比較</h2>
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -245,9 +247,11 @@ tr:hover td { background: #fafbfc; }
     <?php endif; ?>
     </tbody>
   </table>
+  </div>
 
   <!-- 戦略KPI比較(昇格基準③) -->
   <h2 class="sub">戦略KPI比較(v3順位シミュレーション vs v2本番実績、<?= htmlspecialchars($shadow_from) ?>〜<?= htmlspecialchars($shadow_to) ?>)</h2>
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -278,6 +282,7 @@ tr:hover td { background: #fafbfc; }
     <?php endif; ?>
     </tbody>
   </table>
+  </div>
 
   <p class="note">
     ※ v2/v3の日別・戦略シミュレーション集計は shadow_eval_v3.php のロジックをそのまま利用しています。<br>
