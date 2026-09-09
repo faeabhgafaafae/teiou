@@ -4,23 +4,10 @@ session_set_cookie_params([
     'path'     => '/',
     'secure'   => true,
     'httponly' => true,
-    'samesite' => 'None',
+    'samesite' => 'Lax',
 ]);
 session_start();
 require_once __DIR__ . '/config.php';
-
-// 認証必須APIをAPI_HOST(2410049.moo.jp)経由でクロスオリジン呼び出しする際、
-// Cookie付きリクエストを許可するためのCORSヘッダーを出力する。
-// ワイルドカードOriginはcredentials付きリクエストと併用できないため、
-// 許可オリジンとの一致を確認した上で個別に返す。
-function send_cors_headers(): void {
-    $allowedOrigins = ['https://2410049.moo.jp'];
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    if (in_array($origin, $allowedOrigins, true)) {
-        header('Access-Control-Allow-Origin: ' . $origin);
-        header('Access-Control-Allow-Credentials: true');
-    }
-}
 
 function get_db(): PDO {
     $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
