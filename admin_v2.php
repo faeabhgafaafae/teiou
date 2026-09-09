@@ -141,8 +141,16 @@ tr:hover td { background: #fafbfc; }
 </style>
 </head>
 <body>
-<?php require_once __DIR__ . '/header.php'; ?>
-<div class="adm-wrap">
+
+  <?php include 'header.php'; ?>
+
+<div class="dashboard-container">
+
+  <script>var ACTIVE_NAV = 'admin';</script>
+  <?php include 'sidebar.php'; ?>
+
+  <main class="main-content">
+  <div class="adm-wrap">
   <h1>🔬 v2 シャドウテスト ダッシュボード</h1>
   <p class="note">
     v1 = 現行手動スコアモデル (predict_rank=1 が実際に1着か) ／
@@ -261,6 +269,9 @@ tr:hover td { background: #fafbfc; }
     ※ 結果が登録されていないレース（当日中など）は v2 数値が「-」になります。<br>
     ※ v1レース数とv2レース数が異なる場合、v2バッチが一部スキップしたレースがあります。
   </p>
+  </div>
+  </main>
+
 </div>
 <script>
 // app.js を読み込まないページなので #headerDate・#headerLogo をここで設定する
