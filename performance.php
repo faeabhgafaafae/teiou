@@ -467,7 +467,7 @@ async function loadDaily() {
   el.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch(API_HOST + '/get_performance_daily.php');
+    var res = await fetch(API_HOST + '/get_performance_daily.php', { credentials: 'include' });
     var data = await res.json();
     if (data.error) throw new Error(data.message || data.error);
 
@@ -572,7 +572,7 @@ async function loadVenue() {
   el.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch(API_HOST + '/get_performance_venue.php');
+    var res = await fetch(API_HOST + '/get_performance_venue.php', { credentials: 'include' });
     var data = await res.json();
     if (data.error) throw new Error(data.message || data.error);
 
@@ -744,7 +744,7 @@ async function loadVenueComparison() {
   document.getElementById('venueCmpFilterStrategy').addEventListener('change', renderVenueCmpChart);
 
   try {
-    var res = await fetch(API_HOST + '/get_dashboard_comparison.php');
+    var res = await fetch(API_HOST + '/get_dashboard_comparison.php', { credentials: 'include' });
     var data = await res.json();
     if (data.error) throw new Error(data.message || data.error);
     venueCmpAllRows = data.by_venue || [];
@@ -946,7 +946,7 @@ async function loadRaceDetails() {
   el.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch(API_HOST + '/get_performance_races.php');
+    var res = await fetch(API_HOST + '/get_performance_races.php', { credentials: 'include' });
     var data = await res.json();
     if (data.error) throw new Error(data.message || data.error);
 
