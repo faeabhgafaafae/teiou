@@ -9,7 +9,7 @@ $displayDate = date('n月j日', strtotime($today)) . ' (' . $weekDays[date('w', 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>艇王 - 予測レース</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 .header-left { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }

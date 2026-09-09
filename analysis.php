@@ -13,7 +13,7 @@ $isPremium       = ($plan === 'premium');
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>艇王 - データ分析</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 .premium-lock { background: #fff; border: 1px solid #e0e3e8; border-radius: 12px; text-align: center; padding: 40px 20px; margin: 0 auto; max-width: 1000px; }

@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>艇王 - 直前情報</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
 <script src="venue-display.js"></script>
 <style>
 .page-title { font-size: 18px; font-weight: 700; color: #1a202c; margin-bottom: 16px; }

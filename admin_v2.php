@@ -97,7 +97,7 @@ $criterion1_pass = $has_shadow && $v3_total['races'] > 0 && $v2_total['races'] >
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>艇王 v2/v3シャドウテスト比較</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
 <style>
 body { font-family: sans-serif; font-size: 13px; }
 .adm-wrap { max-width: 900px; margin: 24px auto; padding: 0 16px; }
