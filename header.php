@@ -1,4 +1,9 @@
 <header>
+  <button class="hamburger-btn" id="sidebarToggle" aria-label="メニューを開く">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
   <div class="logo" id="headerLogo" style="cursor: pointer;">
     <img src="艇王.jpg" alt="艇王 BOATRACE ROYAL" style="height: 44px; width: auto; display: block;">
   </div>

@@ -1,3 +1,4 @@
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 <aside class="sidebar">
   <nav class="side-nav">
     <a href="index.php" class="nav-item" id="menuHome" data-nav="home"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> ホーム</a>
@@ -37,6 +38,42 @@ function showComingSoon(e) {
   if (e) e.preventDefault();
   alert('準備中です。しばらくお待ちください。');
 }
+
+(function() {
+  var toggleBtn = document.getElementById('sidebarToggle');
+  var sidebar = document.querySelector('.sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+    if (toggleBtn) toggleBtn.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+    if (toggleBtn) toggleBtn.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function() {
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+  }
+
+  if (overlay) {
+    overlay.addEventListener('click', closeSidebar);
+  }
+
+  document.querySelectorAll('.side-nav .nav-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      if (window.innerWidth <= 900) closeSidebar();
+    });
+  });
+})();
 
 (function() {
   var activeNav = window.ACTIVE_NAV || null;
