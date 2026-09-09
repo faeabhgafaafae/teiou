@@ -43,6 +43,12 @@ if ($action === 'apply') {
     exit;
 }
 
+if ($action === 'list_users') {
+    $rows = $pdo->query('SELECT id, email, name, plan, is_admin FROM users ORDER BY id')->fetchAll();
+    echo json_encode(['users' => $rows], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if ($action === 'grant_admin') {
     $email = $_GET['email'] ?? $_POST['email'] ?? '';
     if (!$email) {
