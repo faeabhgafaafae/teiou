@@ -1,9 +1,9 @@
 <?php
 // 一撃重視戦略の詳細分析スクリプト（一時利用）
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+require_admin_json();
 
 try {
     $pdo = new PDO(

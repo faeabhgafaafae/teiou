@@ -3,9 +3,10 @@
  * tmp: exhibit_time/start_timing欠損レースのバックフィル対象一覧(使用後にneutralize予定)
  * GET /backfill_list_run.php
  */
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
+require_admin_json();
 set_time_limit(120);
 
 try {

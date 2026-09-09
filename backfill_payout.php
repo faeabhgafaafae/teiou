@@ -5,15 +5,11 @@
  * POST { api_key: "..." }
  * Returns: { updated, skipped, before_stats, after_stats }
  */
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $input = json_decode(file_get_contents('php://input'), true);
-if (!$input || ($input['api_key'] ?? '') !== API_KEY) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Invalid API key'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+require_admin_or_api_key($input['api_key'] ?? '');
 
 try {
     $pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS, [

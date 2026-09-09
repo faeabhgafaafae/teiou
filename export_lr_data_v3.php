@@ -20,14 +20,9 @@
  * - 直近10走: レース当日を除外した過去日、遡り180日、事故等でactual_rankがNULLの行は除外
  */
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 
-if (($_GET['api_key'] ?? '') !== API_KEY) {
-    http_response_code(403);
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['error' => '認証エラー'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+require_admin_or_api_key($_GET['api_key'] ?? '');
 
 $from = $_GET['from'] ?? '';
 $to   = $_GET['to']   ?? '';

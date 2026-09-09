@@ -12,15 +12,11 @@
  * 呼び出し: ?api_key=xxx&from=YYYY-MM-DD&to=YYYY-MM-DD
  */
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (($_GET['api_key'] ?? '') !== API_KEY) {
-    http_response_code(403);
-    echo json_encode(['error' => '認証エラー'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+require_admin_or_api_key($_GET['api_key'] ?? '');
 
 $from = $_GET['from'] ?? date('Y-m-d', strtotime('-7 days'));
 $to   = $_GET['to']   ?? date('Y-m-d', strtotime('-1 day'));

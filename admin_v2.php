@@ -6,11 +6,11 @@
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/config.php';
 
-// 管理者チェック（メールアドレスで判定。auth.phpのcurrent_user()を使用）
+// 管理者チェック（users.is_adminで判定。auth.phpのcurrent_user()を使用）
 $user = current_user();
-if (!$user) {
+if (!$user || !$user['is_admin']) {
     http_response_code(403);
-    echo '<p>ログインが必要です</p>';
+    echo '<p>管理者権限が必要です</p>';
     exit;
 }
 

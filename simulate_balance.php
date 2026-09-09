@@ -11,16 +11,12 @@
  * 呼び出し: ?api_key=teio2025 [&days=30]
  */
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
-if (($_GET['api_key'] ?? '') !== API_KEY) {
-    http_response_code(403);
-    echo json_encode(['error' => '認証エラー'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+require_admin_or_api_key($_GET['api_key'] ?? '');
 
 set_time_limit(180);
 $days = max(1, min(90, (int)($_GET['days'] ?? 30)));

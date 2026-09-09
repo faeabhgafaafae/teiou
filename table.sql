@@ -283,6 +283,7 @@ CREATE TABLE `users` (
   `name` varchar(50) NOT NULL,
   `plan` enum('free','standard','premium') NOT NULL DEFAULT 'free',
   `favorite_venue` varchar(50) DEFAULT NULL,
+  `is_admin` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

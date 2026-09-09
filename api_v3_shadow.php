@@ -25,16 +25,12 @@ set_exception_handler(function(Throwable $e) {
 
 set_time_limit(180);
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/predict_v3_core.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (($_GET['api_key'] ?? '') !== API_KEY) {
-    http_response_code(403);
-    echo json_encode(['error' => 'forbidden']);
-    exit;
-}
+require_admin_or_api_key($_GET['api_key'] ?? '');
 
 $date = $_GET['date'] ?? date('Y-m-d', strtotime('-1 day'));
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
