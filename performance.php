@@ -413,7 +413,7 @@ function buildTrendChart(daily, metricKey, metricSuffix) {
   function yPos(v) { return padT + plotH - ((v - minV) / range) * plotH; }
 
   var svgParts = [];
-  svgParts.push('<svg class="trend-chart" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">');
+  svgParts.push('<svg class="trend-chart" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">');
   // 0ライン
   var zeroY = yPos(0);
   svgParts.push('<line x1="' + padL + '" y1="' + zeroY + '" x2="' + (W - padR) + '" y2="' + zeroY + '" stroke="#e0e3e8" stroke-width="1" />');
@@ -689,7 +689,7 @@ function buildVenueCmpBarChart(rows) {
   var plotW = W - padL - padR;
 
   var svgParts = [];
-  svgParts.push('<svg class="bar-chart" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">');
+  svgParts.push('<svg class="bar-chart" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">');
   sorted.forEach(function(row, i) {
     var y = GAP + i * (BAR_H + GAP);
     var rate = Math.max(0, Math.min(100, row.hit_rate)) / 100;
