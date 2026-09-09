@@ -43,5 +43,20 @@ if ($action === 'apply') {
     exit;
 }
 
+if ($action === 'grant_admin') {
+    $email = $_GET['email'] ?? $_POST['email'] ?? '';
+    if (!$email) {
+        http_response_code(400);
+        echo json_encode(['error' => 'email is required']);
+        exit;
+    }
+    $stmt = $pdo->prepare('UPDATE users SET is_admin = 1 WHERE email = ?');
+    $stmt->execute([$email]);
+    $check = $pdo->prepare('SELECT id, email, is_admin FROM users WHERE email = ?');
+    $check->execute([$email]);
+    echo json_encode(['affected' => $stmt->rowCount(), 'user' => $check->fetch()], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 http_response_code(400);
 echo json_encode(['error' => 'invalid action']);
