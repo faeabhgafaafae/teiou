@@ -69,13 +69,30 @@ if ($is_finished) {
     }
 }
 
+// stakes カラム(傾斜配分、2026-09-09導入)の有無を確認
+$has_stakes = true;
+try {
+    $pdo->query('SELECT stakes FROM strategies LIMIT 1');
+} catch (PDOException $e) {
+    $has_stakes = false;
+}
+
 // このレースの戦略を取得
-$stmt = $pdo->prepare("
-    SELECT strategy_type, combinations
-    FROM strategies
-    WHERE race_id = ?
-    ORDER BY FIELD(strategy_type, '的中特化', 'バランス', '一撃重視', '絞り込み')
-");
+if ($has_stakes) {
+    $stmt = $pdo->prepare("
+        SELECT strategy_type, combinations, stakes, stake_scheme
+        FROM strategies
+        WHERE race_id = ?
+        ORDER BY FIELD(strategy_type, '的中特化', 'バランス', '一撃重視', '絞り込み')
+    ");
+} else {
+    $stmt = $pdo->prepare("
+        SELECT strategy_type, combinations, NULL AS stakes, NULL AS stake_scheme
+        FROM strategies
+        WHERE race_id = ?
+        ORDER BY FIELD(strategy_type, '的中特化', 'バランス', '一撃重視', '絞り込み')
+    ");
+}
 $stmt->execute([$race_id]);
 $strats = $stmt->fetchAll();
 
@@ -96,7 +113,13 @@ $all_combos  = [];
 $strats_data = [];
 foreach ($strats as $s) {
     $combos = json_decode($s['combinations'], true) ?? [];
-    $strats_data[] = ['type' => $s['strategy_type'], 'combos' => $combos];
+    $stakes = !empty($s['stakes']) ? (json_decode($s['stakes'], true) ?? []) : [];
+    $strats_data[] = [
+        'type'         => $s['strategy_type'],
+        'combos'       => $combos,
+        'stakes'       => $stakes,
+        'stake_scheme' => $s['stake_scheme'] ?? null,
+    ];
     foreach ($combos as $c) { $all_combos[$c] = null; } // キーによる重複排除(in_arrayより高速)
 }
 
@@ -115,23 +138,34 @@ if ($combo_keys) {
 // レスポンス構築
 $result = [];
 foreach ($strats_data as $s) {
-    $items      = [];
-    $strat_hit  = false;
-    foreach ($s['combos'] as $c) {
+    $items             = [];
+    $strat_hit         = false;
+    $strat_hit_payout  = null;
+    foreach ($s['combos'] as $idx => $c) {
+        $stake  = isset($s['stakes'][$idx]) ? (int)$s['stakes'][$idx] : 100;
         $is_hit = $is_finished && ($c === $hit_combination);
-        if ($is_hit) { $strat_hit = true; }
+        if ($is_hit) {
+            $strat_hit = true;
+            if ($hit_odds !== null) {
+                $strat_hit_payout = (int)floor($hit_odds * $stake);
+            }
+        }
         $items[] = [
             'combo'  => $c,
             'odds'   => isset($odds_map[$c]) ? $odds_map[$c] : null,
             'is_hit' => $is_hit,
+            'stake'  => $stake,
         ];
     }
+    $total_cost = array_sum(array_column($items, 'stake'));
     $result[] = [
         'strategy_type' => $s['type'],
         'combinations'  => $items,
         'combo_count'   => count($s['combos']),
-        'total_cost'    => count($s['combos']) * 100,
+        'total_cost'    => $total_cost,
+        'stake_scheme'  => $s['stake_scheme'],
         'is_hit'        => $strat_hit,
+        'hit_payout'    => $strat_hit_payout,
     ];
 }
 

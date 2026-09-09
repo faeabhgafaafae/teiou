@@ -390,7 +390,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   </div>
 
   <div id="strategySection">
-    <div class="note-box">各戦略の全期間実績と今レースの買い目を表示します。1点100円換算。</div>
+    <div class="note-box">各戦略の全期間実績と今レースの買い目を表示します。</div>
     <div class="pikaichi-bar" id="pikaichiBar" style="display:none">
       <button class="pikaichi-toggle" id="pikaichiToggle">&#11088; ピカイチのみを表示</button>
     </div>
@@ -1197,13 +1197,14 @@ function makeComboRow(item, maxOdds, isFinished) {
   }
 
   var costCell = document.createElement('div'); costCell.className = 'ct-col-cost';
-  var costVal = document.createElement('span'); costVal.className = 'ct-cost-val'; costVal.textContent = '100円';
+  var costVal = document.createElement('span'); costVal.className = 'ct-cost-val';
+  costVal.textContent = (item.stake || 100).toLocaleString() + '円';
   costCell.appendChild(costVal);
 
   var payoutCell = document.createElement('div'); payoutCell.className = 'ct-col-payout';
   if (item.odds !== null) {
     var payoutVal = document.createElement('span'); payoutVal.className = 'ct-payout-val';
-    payoutVal.textContent = Math.floor(item.odds * 100).toLocaleString() + '円';
+    payoutVal.textContent = Math.floor(item.odds * (item.stake || 100)).toLocaleString() + '円';
     payoutCell.appendChild(payoutVal);
   } else {
     var payoutNone = document.createElement('span'); payoutNone.className = 'ct-odds-none'; payoutNone.textContent = '-';
@@ -1230,7 +1231,9 @@ function renderStrategySection(strat, def, statRow, ctx) {
   var isFinished     = ctx ? ctx.isFinished     : false;
   var hitCombination = ctx ? ctx.hitCombination : null;
   var hitOdds        = ctx ? ctx.hitOdds        : null;
-  var hitPayout      = ctx ? ctx.hitPayout      : null;
+  // 傾斜配分がある場合はper-strategyの払戻を優先、なければctxの払戻(100円ベース)を使用
+  var hitPayout      = (strat.hit_payout !== undefined && strat.hit_payout !== null)
+      ? strat.hit_payout : (ctx ? ctx.hitPayout : null);
   var color          = def ? def.color : '#888';
 
   var section = document.createElement('div'); section.className = 'strat-section';
@@ -1245,7 +1248,12 @@ function renderStrategySection(strat, def, statRow, ctx) {
   var nameEl = document.createElement('div'); nameEl.className = 'strat-name'; nameEl.style.color = color;
   nameEl.textContent = strat.strategy_type;
   var descEl = document.createElement('div'); descEl.className = 'strat-desc';
-  descEl.textContent = def ? def.desc : '';
+  var pts = strat.combo_count || (strat.combinations ? strat.combinations.length : 0) || 0;
+  if (pts > 0 && strat.total_cost) {
+    descEl.textContent = pts + '点 / 合計' + strat.total_cost.toLocaleString() + '円';
+  } else {
+    descEl.textContent = def ? def.desc : '';
+  }
   nameWrap.appendChild(nameEl); nameWrap.appendChild(descEl);
   hdr.appendChild(nameWrap);
 
@@ -1300,6 +1308,13 @@ function renderStrategySection(strat, def, statRow, ctx) {
 
   if (isFinished) {
     body.appendChild(makeBanner(strat.is_hit, hitCombination, hitOdds, hitPayout));
+  }
+
+  if (strat.stake_scheme === 'prob') {
+    var tiltNote = document.createElement('div');
+    tiltNote.style.cssText = 'font-size:11px;color:#1e40af;background:#eff6ff;padding:5px 14px;border-bottom:1px solid #bfdbfe;';
+    tiltNote.textContent = 'AIの予測確率に応じて賭け金を配分しています';
+    body.appendChild(tiltNote);
   }
 
   var maxOdds = null;
