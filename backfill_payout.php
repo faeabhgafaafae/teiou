@@ -59,13 +59,28 @@ function get_stats(PDO $pdo): array {
 // Before
 $before_stats = get_stats($pdo);
 
-// is_hit=1 & payout=0 の全件を取得
-$gap_rows = $pdo->query('
-    SELECT sr.id AS sr_id, sr.race_id
-    FROM strategy_results sr
-    WHERE sr.is_hit = 1 AND sr.payout = 0
-    ORDER BY sr.race_id
-')->fetchAll();
+// stakes カラム(傾斜配分、2026-09-09導入)の有無を確認
+$has_stakes = true;
+try {
+    $pdo->query('SELECT stakes FROM strategies LIMIT 1');
+} catch (PDOException $e) {
+    $has_stakes = false;
+}
+
+// is_hit=1 & payout=0 の全件を取得(傾斜清算のため買い目・配分も引く)
+$gap_rows = $pdo->query(
+    $has_stakes
+    ? 'SELECT sr.id AS sr_id, sr.race_id, s.combinations, s.stakes
+       FROM strategy_results sr
+       JOIN strategies s ON s.id = sr.strategy_id
+       WHERE sr.is_hit = 1 AND sr.payout = 0
+       ORDER BY sr.race_id'
+    : 'SELECT sr.id AS sr_id, sr.race_id, s.combinations, NULL AS stakes
+       FROM strategy_results sr
+       JOIN strategies s ON s.id = sr.strategy_id
+       WHERE sr.is_hit = 1 AND sr.payout = 0
+       ORDER BY sr.race_id'
+)->fetchAll();
 
 $stmt_combo  = $pdo->prepare('
     SELECT GROUP_CONCAT(lane ORDER BY actual_rank SEPARATOR "-") AS combo
@@ -87,7 +102,17 @@ foreach ($gap_rows as $row) {
     $or = $stmt_odds->fetch();
     if (!$or) { $skipped++; continue; } // odds_3t にまだデータなし
 
-    $payout = (int)floor((float)$or['odds'] * 100);
+    // 傾斜配分(stakes)がある場合は的中買い目の金額で払戻を計算。なければ100円
+    $stake_win = 100;
+    if (!empty($row['stakes'])) {
+        $combos = json_decode($row['combinations'], true);
+        $stakes = json_decode($row['stakes'], true);
+        $idx    = is_array($combos) ? array_search($cr['combo'], $combos, true) : false;
+        if ($idx !== false && is_array($stakes) && isset($stakes[$idx])) {
+            $stake_win = (int)$stakes[$idx];
+        }
+    }
+    $payout = (int)floor((float)$or['odds'] * $stake_win);
     if ($payout > 0) {
         $stmt_update->execute([$payout, $row['sr_id']]);
         $updated++;

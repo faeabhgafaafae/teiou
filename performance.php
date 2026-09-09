@@ -109,6 +109,7 @@ svg.trend-chart { width: 100%; height: auto; }
   <!-- 1. 全体サマリー(無料) -->
   <div class="card">
     <h2>全体サマリー</h2>
+    <div class="note">2026年9月9日のレースから、AIの予測確率に応じた賭け金の傾斜配分(1点平均600円)を導入しました。それ以前の成績は全買い目1点100円均等での実績です。回収率・的中率は期間をまたいで比較できます。</div>
     <div id="summaryResult"><div class="loading">読み込み中...</div></div>
   </div>
 

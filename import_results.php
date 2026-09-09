@@ -68,12 +68,21 @@ $stmt_result = $pdo->prepare('
         course       = VALUES(course)
 ');
 
-$stmt_strats = $pdo->prepare('SELECT id, strategy_type, combinations FROM strategies WHERE race_id = ?');
+// stakes カラム(傾斜配分、2026-09-09導入)の有無を確認して照会SQLを切り替え
+$has_stakes = true;
+try {
+    $pdo->query('SELECT stakes FROM strategies LIMIT 1');
+} catch (PDOException $e) {
+    $has_stakes = false;
+}
+$stmt_strats = $has_stakes
+    ? $pdo->prepare('SELECT id, strategy_type, combinations, stakes FROM strategies WHERE race_id = ?')
+    : $pdo->prepare('SELECT id, strategy_type, combinations FROM strategies WHERE race_id = ?');
 $stmt_odds   = $pdo->prepare('SELECT odds FROM odds_3t WHERE race_id = ? AND combo = ? LIMIT 1');
 $stmt_sr     = $pdo->prepare('
     INSERT INTO strategy_results (strategy_id, race_id, is_hit, payout, cost)
     VALUES (?, ?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE is_hit = VALUES(is_hit), payout = VALUES(payout)
+    ON DUPLICATE KEY UPDATE is_hit = VALUES(is_hit), payout = VALUES(payout), cost = VALUES(cost)
 ');
 
 foreach ($race_groups as $race_records) {
@@ -134,9 +143,22 @@ foreach ($race_groups as $race_records) {
 
     foreach ($strategies as $s) {
         $combos = json_decode($s['combinations'], true);
-        $is_hit = in_array($winning_combo, $combos) ? 1 : 0;
-        $cost   = count($combos) * 100; // 3連単1票100円固定(競艇ルール)×買い目数
-        $payout = ($is_hit && $winning_odds !== null) ? (int)floor($winning_odds * 100) : 0;
+        // stakes(傾斜配分)があれば買い目ごとの金額で清算。なければ従来の1点100円均等
+        $stakes = null;
+        if ($has_stakes && !empty($s['stakes'])) {
+            $decoded = json_decode($s['stakes'], true);
+            if (is_array($decoded) && count($decoded) === count($combos)) {
+                $stakes = $decoded;
+            }
+        }
+        $idx       = array_search($winning_combo, $combos, true);
+        $stake_win = 100;
+        if ($idx !== false && $stakes !== null) {
+            $stake_win = (int)$stakes[$idx];
+        }
+        $is_hit = ($idx !== false && $stake_win > 0) ? 1 : 0;
+        $cost   = $stakes !== null ? (int)array_sum($stakes) : count($combos) * 100;
+        $payout = ($is_hit && $winning_odds !== null) ? (int)floor($winning_odds * $stake_win) : 0;
         $stmt_sr->execute([(int)$s['id'], $race_id, $is_hit, $payout, $cost]);
     }
 }
