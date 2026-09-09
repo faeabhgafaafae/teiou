@@ -28,7 +28,7 @@ try {
     // 全体集計
     $stmt = $pdo->prepare("
         SELECT sr.stake_scheme,
-               COUNT(*) AS rows,
+               COUNT(*) AS total_rows,
                SUM(sr.is_hit) AS hits,
                SUM(sr.cost) AS cost_sum,
                MIN(sr.cost) AS cost_min,
