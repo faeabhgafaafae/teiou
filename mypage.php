@@ -159,7 +159,7 @@
 
     async function loadHeaderStats() {
       try {
-        var res = await fetch('https://2410049.moo.jp/venues.php');
+        var res = await fetch('venues.php');
         if (res.ok) {
           var data = await res.json();
           apiDate = data.date;

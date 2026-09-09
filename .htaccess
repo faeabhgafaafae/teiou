@@ -1,0 +1,6 @@
+# HTTP → HTTPS リダイレクト
+# ロリポップの Apache は %{HTTPS} を正しく設定するため、このパターンで動作する。
+# RewriteCond %{HTTPS} off のみで十分（ループしない: HTTPS接続では条件が偽になる）
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

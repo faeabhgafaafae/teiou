@@ -8,3 +8,10 @@ config.php
 # ログ・一時ファイル
 *.log
 tmp_*.php
+
+# Python キャッシュ
+__pycache__/
+*.pyc
+
+# スクレイパーエラーログ
+*.err
