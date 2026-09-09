@@ -1,108 +1,82 @@
 <?php
 // 清算検証スクリプト (使用後削除)
-require_once __DIR__ . '/auth.php';
+// エラー表示を強制ON
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 $key = $_GET['key'] ?? '';
-require_admin_or_api_key($key);
+if ($key !== 'teio2025') { http_response_code(403); echo 'forbidden'; exit; }
 
 header('Content-Type: application/json; charset=utf-8');
 
 try {
-    $pdo = get_db();
+    require_once __DIR__ . '/config.php';
+    $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
     $date = $_GET['date'] ?? '2026-09-09';
-    $out = [];
+    $out = ['ok' => true, 'date' => $date];
 
-    // stake_scheme カラムの存在確認
-    $out['col_stake_scheme_in_strategies']       = $pdo->query("SHOW COLUMNS FROM strategies LIKE 'stake_scheme'")->fetchAll();
-    $out['col_stake_scheme_in_strategy_results'] = $pdo->query("SHOW COLUMNS FROM strategy_results LIKE 'stake_scheme'")->fetchAll();
-    $out['col_stakes_in_strategies']             = $pdo->query("SHOW COLUMNS FROM strategies LIKE 'stakes'")->fetchAll();
+    // カラム存在確認
+    $out['cols']['strategies_stakes']              = count($pdo->query("SHOW COLUMNS FROM strategies LIKE 'stakes'")->fetchAll());
+    $out['cols']['strategies_stake_scheme']        = count($pdo->query("SHOW COLUMNS FROM strategies LIKE 'stake_scheme'")->fetchAll());
+    $out['cols']['strategy_results_stake_scheme']  = count($pdo->query("SHOW COLUMNS FROM strategy_results LIKE 'stake_scheme'")->fetchAll());
+    $out['cols']['strategy_results_cost']          = count($pdo->query("SHOW COLUMNS FROM strategy_results LIKE 'cost'")->fetchAll());
 
-    // 1. 当日 strategy_results 集計(stake_scheme別)
+    // 全体集計
     $stmt = $pdo->prepare("
-        SELECT
-            sr.stake_scheme,
-            COUNT(*)        AS total_rows,
-            SUM(sr.is_hit)  AS hits,
-            SUM(sr.cost)    AS total_cost,
-            MIN(sr.cost)    AS min_cost,
-            MAX(sr.cost)    AS max_cost
+        SELECT sr.stake_scheme,
+               COUNT(*) AS rows,
+               SUM(sr.is_hit) AS hits,
+               SUM(sr.cost) AS cost_sum,
+               MIN(sr.cost) AS cost_min,
+               MAX(sr.cost) AS cost_max
         FROM strategy_results sr
-        JOIN strategies s  ON sr.strategy_id = s.id
-        JOIN races r       ON s.race_id = r.id
+        JOIN strategies s ON sr.strategy_id = s.id
+        JOIN races r ON s.race_id = r.id
         WHERE r.date = ?
         GROUP BY sr.stake_scheme
     ");
     $stmt->execute([$date]);
-    $out['summary_by_scheme'] = $stmt->fetchAll();
+    $out['summary'] = $stmt->fetchAll();
 
-    // 2. strategy_type別コスト集計
+    // strategy_type×scheme別コスト
     $stmt = $pdo->prepare("
-        SELECT
-            s.strategy_type,
-            sr.stake_scheme,
-            COUNT(*)        AS cnt,
-            AVG(sr.cost)    AS avg_cost,
-            MIN(sr.cost)    AS min_cost,
-            MAX(sr.cost)    AS max_cost
+        SELECT s.strategy_type, sr.stake_scheme,
+               COUNT(*) AS cnt, AVG(sr.cost) AS avg_cost,
+               MIN(sr.cost) AS min_cost, MAX(sr.cost) AS max_cost
         FROM strategy_results sr
         JOIN strategies s ON sr.strategy_id = s.id
-        JOIN races r      ON s.race_id = r.id
+        JOIN races r ON s.race_id = r.id
         WHERE r.date = ?
         GROUP BY s.strategy_type, sr.stake_scheme
         ORDER BY s.strategy_type
     ");
     $stmt->execute([$date]);
-    $out['cost_by_type'] = $stmt->fetchAll();
+    $out['by_type'] = $stmt->fetchAll();
 
-    // 3. 的中レコード詳細
+    // 的中詳細
     $stmt = $pdo->prepare("
-        SELECT
-            r.venue, r.race_no, s.strategy_type,
-            sr.stake_scheme, sr.cost, sr.payout, sr.is_hit,
-            s.stakes
+        SELECT r.venue, r.race_no, s.strategy_type,
+               sr.stake_scheme, sr.cost, sr.payout, s.stakes
         FROM strategy_results sr
         JOIN strategies s ON sr.strategy_id = s.id
-        JOIN races r      ON s.race_id = r.id
+        JOIN races r ON s.race_id = r.id
         WHERE r.date = ? AND sr.is_hit = 1
-        ORDER BY r.venue, r.race_no, s.strategy_type
-        LIMIT 20
+        ORDER BY r.venue, r.race_no LIMIT 20
     ");
     $stmt->execute([$date]);
     $out['hits'] = $stmt->fetchAll();
 
-    // 4. prob方式サンプル(コスト検証用)
-    $stmt = $pdo->prepare("
-        SELECT
-            r.venue, r.race_no, s.strategy_type,
-            sr.cost, sr.payout, sr.stake_scheme, s.stakes
-        FROM strategy_results sr
-        JOIN strategies s ON sr.strategy_id = s.id
-        JOIN races r      ON s.race_id = r.id
-        WHERE r.date = ? AND sr.stake_scheme = 'prob'
-        ORDER BY r.race_no, s.strategy_type
-        LIMIT 20
-    ");
-    $stmt->execute([$date]);
-    $out['prob_sample'] = $stmt->fetchAll();
-
-    // 5. flat/NULL サンプル
-    $stmt = $pdo->prepare("
-        SELECT
-            r.venue, r.race_no, s.strategy_type,
-            sr.cost, sr.payout, sr.stake_scheme, s.stakes
-        FROM strategy_results sr
-        JOIN strategies s ON sr.strategy_id = s.id
-        JOIN races r      ON s.race_id = r.id
-        WHERE r.date = ? AND (sr.stake_scheme IS NULL OR sr.stake_scheme = 'flat')
-        ORDER BY r.race_no, s.strategy_type
-        LIMIT 10
-    ");
-    $stmt->execute([$date]);
-    $out['flat_sample'] = $stmt->fetchAll();
-
     echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } catch (Throwable $e) {
-    http_response_code(500);
-    echo json_encode(['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()], JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'error' => $e->getMessage(),
+        'file'  => basename($e->getFile()),
+        'line'  => $e->getLine(),
+        'trace' => substr($e->getTraceAsString(), 0, 500),
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 }
