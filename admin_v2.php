@@ -1,7 +1,12 @@
 <?php
 /**
- * admin_v2.php  開発者専用 シャドウテスト比較ダッシュボード
- * ユーザー向けには公開しない。auth.php のログイン認証を通過した場合のみ表示。
+ * admin_v2.php  開発者専用 v2/v3シャドウテスト比較ダッシュボード
+ * ユーザー向けには公開しない。is_admin判定を通過した場合のみ表示。
+ *
+ * 2026-09-04のv3シャドウテスト開始に伴い、比較対象を v1 vs v2 から
+ * v2(本番) vs v3(シャドウ) vs 1号艇ベースラインに更新。
+ * v2/v3の集計ロジックはshadow_eval_v3.phpの実装をそのまま再利用する
+ * (自ホストのAPIをapi_key付きで呼び出し、重複実装を避ける)。
  */
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/config.php';
@@ -17,114 +22,93 @@ if (!$user || !$user['is_admin']) {
 $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
 
-// predictions_v2 が存在するか確認
-$has_v2 = false;
-try {
-    $pdo->query("SELECT 1 FROM predictions_v2 LIMIT 1");
-    $has_v2 = true;
-} catch (PDOException $e) {}
+// ── v2/v3の集計はshadow_eval_v3.phpを再利用(重複実装を避ける) ──────────
+// v3シャドウテストは2026-09-04開始のため、それより前を含めて広めに取得する
+$shadow_from = '2026-09-01';
+$shadow_to   = date('Y-m-d');
+$shadow_url  = 'https://2410049.moo.jp/shadow_eval_v3.php?api_key=' . urlencode(API_KEY)
+    . '&from=' . urlencode($shadow_from) . '&to=' . urlencode($shadow_to);
 
-// ── 集計クエリ ────────────────────────────────────────────────
+$ch = curl_init($shadow_url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+$shadow_json = curl_exec($ch);
+curl_close($ch);
+$shadow = $shadow_json ? json_decode($shadow_json, true) : null;
+$has_shadow = $shadow && empty($shadow['error']);
+$daily = $has_shadow ? $shadow['daily'] : [];
+krsort($daily);
 
-// v1: predicted_rank=1 の選手が actual_rank=1 だったか (日別)
-$v1_sql = "
-    SELECT r.date,
-           COUNT(DISTINCT p.race_id)                                     AS races,
-           SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)          AS hits,
-           SUM(CASE WHEN lres.actual_rank = 1 THEN 1 ELSE 0 END)         AS lane1_hits
+// ── 1号艇ベースライン(shadow_eval_v3.phpの対象日と揃えて算出) ──────────
+$baseline_map = [];
+if ($daily) {
+    $dates = array_keys($daily);
+    $ph = implode(',', array_fill(0, count($dates), '?'));
+    $stmt = $pdo->prepare("
+        SELECT r.date,
+               COUNT(DISTINCT res.race_id)                            AS races,
+               SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)   AS hits
+        FROM results res
+        JOIN races r ON r.id = res.race_id
+        WHERE res.lane = 1 AND r.date IN ($ph)
+        GROUP BY r.date
+    ");
+    $stmt->execute($dates);
+    foreach ($stmt->fetchAll() as $row) {
+        $baseline_map[$row['date']] = $row;
+    }
+}
+$baseline_total_races = array_sum(array_column($baseline_map, 'races'));
+$baseline_total_hits  = array_sum(array_column($baseline_map, 'hits'));
+
+// ── 参考: v1(旧モデル、model_version未設定の過去行)全期間実績 ──────────
+$v1_row = $pdo->query("
+    SELECT COUNT(DISTINCT p.race_id) AS races,
+           SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END) AS hits
     FROM predictions p
     JOIN races r      ON r.id = p.race_id
     JOIN results res  ON res.race_id = p.race_id AND res.player_id = p.player_id
-    JOIN results lres ON lres.race_id = p.race_id AND lres.lane = 1 AND lres.actual_rank IS NOT NULL
     WHERE p.predicted_rank = 1
+      AND p.model_version IS NULL
       AND r.date >= '2026-06-01'
-    GROUP BY r.date
-    ORDER BY r.date DESC
-";
-
-// v2: 同様
-// 2026-08-27のv2本番昇格でpredictions_v2への二重書き込みを停止したため、
-// それ以降はpredictions(model_version='v2_lr')から取得する。
-// なお過去レースへのバックフィルにより両テーブルに同一race_idが存在するケースがあるため、
-// race_id単位でpredictions_v2を優先し、重複しないpredictions側の行のみ追加する(NOT EXISTS)。
-$v2_sql = "
-    SELECT r.date,
-           COUNT(DISTINCT x.race_id)                                     AS races,
-           SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END)          AS hits
-    FROM (
-        SELECT p2.race_id, p2.player_id
-        FROM predictions_v2 p2
-        WHERE p2.predicted_rank = 1
-
-        UNION ALL
-
-        SELECT p.race_id, p.player_id
-        FROM predictions p
-        WHERE p.predicted_rank = 1
-          AND p.model_version = 'v2_lr'
-          AND NOT EXISTS (SELECT 1 FROM predictions_v2 p2b WHERE p2b.race_id = p.race_id)
-    ) x
-    JOIN races r      ON r.id = x.race_id
-    JOIN results res  ON res.race_id = x.race_id AND res.player_id = x.player_id
-    WHERE r.date >= '2026-06-01'
-    GROUP BY r.date
-    ORDER BY r.date DESC
-";
-
-$v1_rows = $pdo->query($v1_sql)->fetchAll();
-$v1_map  = [];
-foreach ($v1_rows as $row) {
-    $v1_map[$row['date']] = $row;
-}
-
-$v2_map = [];
-if ($has_v2) {
-    $v2_rows = $pdo->query($v2_sql)->fetchAll();
-    foreach ($v2_rows as $row) {
-        $v2_map[$row['date']] = $row;
-    }
-}
-
-// 全期間サマリー
-$v1_total_races = array_sum(array_column($v1_rows, 'races'));
-$v1_total_hits  = array_sum(array_column($v1_rows, 'hits'));
-$v1_lane1_hits  = array_sum(array_column($v1_rows, 'lane1_hits'));
-$v2_total_races = 0;
-$v2_total_hits  = 0;
-if ($has_v2) {
-    $v2_total_races = array_sum(array_column($v2_rows, 'races'));
-    $v2_total_hits  = array_sum(array_column($v2_rows, 'hits'));
-}
-
-$all_dates = array_unique(array_merge(array_keys($v1_map), array_keys($v2_map)));
-rsort($all_dates);
+")->fetch();
+$v1_total_races = (int)($v1_row['races'] ?? 0);
+$v1_total_hits  = (int)($v1_row['hits']  ?? 0);
 
 function pct($hit, $total) {
     if ($total <= 0) return '-';
     return sprintf('%.1f%%', $hit / $total * 100);
 }
-function diff_class($v2, $v1) {
-    if ($v2 === null || $v1 === null) return '';
-    return $v2 > $v1 ? 'better' : ($v2 < $v1 ? 'worse' : '');
+function diff_class($a, $b) {
+    if ($a === null || $b === null) return '';
+    return $a > $b ? 'better' : ($a < $b ? 'worse' : '');
 }
+
+$v2_total = $has_shadow ? $shadow['top1']['v2'] : ['races' => 0, 'hit_rate' => 0];
+$v3_total = $has_shadow ? $shadow['top1']['v3'] : ['races' => 0, 'hit_rate' => 0];
+
+// 昇格基準①: シャドウ1着的中率がv2同期間実績を上回るか(自動判定できる部分のみ)
+$criterion1_pass = $has_shadow && $v3_total['races'] > 0 && $v2_total['races'] > 0
+    && $v3_total['hit_rate'] > $v2_total['hit_rate'];
 ?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>艇王 v2シャドウテスト</title>
+<title>艇王 v2/v3シャドウテスト比較</title>
 <link rel="stylesheet" href="style.css">
 <style>
 body { font-family: sans-serif; font-size: 13px; }
 .adm-wrap { max-width: 900px; margin: 24px auto; padding: 0 16px; }
 h1 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+h2.sub { font-size: 14px; font-weight: 700; margin: 24px 0 8px; color: #333; }
 .summary-cards { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
 .scard { background: #f7f8fa; border: 1px solid #e0e3e8; border-radius: 8px; padding: 12px 16px; min-width: 160px; }
 .scard-label { font-size: 11px; color: #888; margin-bottom: 4px; }
 .scard-val { font-size: 22px; font-weight: 700; color: #0055a4; }
 .scard-sub { font-size: 11px; color: #888; }
-.scard.v2  { border-color: #0055a4; background: #f0f5ff; }
+.scard.v3  { border-color: #0055a4; background: #f0f5ff; }
 .scard.baseline { border-color: #718096; }
 table { width: 100%; border-collapse: collapse; }
 th { background: #f7f8fa; font-size: 11px; font-weight: 700; color: #888; padding: 8px 10px; text-align: center; border-bottom: 2px solid #e0e3e8; white-space: nowrap; }
@@ -138,6 +122,11 @@ tr:hover td { background: #fafbfc; }
 .criteria-box strong { color: #92400e; }
 .criteria-box ul { margin: 4px 0 0 0; padding-left: 18px; }
 .criteria-box li { margin-bottom: 2px; }
+.pass { color: #16a34a; font-weight: 700; }
+.pending { color: #a0724b; font-weight: 700; }
+.reference-box { background: #f7f8fa; border: 1px solid #e0e3e8; border-radius: 8px; padding: 12px 16px; margin-top: 24px; }
+.reference-box .scard-label { font-weight: 700; color: #555; }
+.error-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px 16px; color: #dc2626; margin-bottom: 16px; }
 </style>
 </head>
 <body>
@@ -151,124 +140,159 @@ tr:hover td { background: #fafbfc; }
 
   <main class="main-content">
   <div class="adm-wrap">
-  <h1>🔬 v2 シャドウテスト ダッシュボード</h1>
+  <h1>🔬 v2/v3 シャドウテスト比較</h1>
   <p class="note">
-    v1 = 現行手動スコアモデル (predict_rank=1 が実際に1着か) ／
-    v2 = ロジスティック回帰 (2026-07-28 学習, train期間 6/29〜7/19) ／
+    v2 = 本番稼働中モデル(ロジスティック回帰、2026-08-27昇格) ／
+    v3 = シャドウテスト中モデル(特徴量拡張版、2026-09-04〜) ／
     ベースライン = 1号艇決め打ち
   </p>
 
+  <?php if (!$has_shadow): ?>
+  <div class="error-box">
+    shadow_eval_v3.php からのデータ取得に失敗しました。対象期間(<?= htmlspecialchars($shadow_from) ?>〜<?= htmlspecialchars($shadow_to) ?>)にレースデータがまだ無い可能性があります。
+  </div>
+  <?php endif; ?>
+
   <!-- サマリーカード -->
   <div class="summary-cards">
+    <div class="scard v3">
+      <div class="scard-label">v3(シャドウ) 1着的中率</div>
+      <div class="scard-val"><?= $v3_total['races'] > 0 ? $v3_total['hit_rate'] . '%' : '-' ?></div>
+      <div class="scard-sub"><?= $v3_total['races'] > 0 ? round($v3_total['hit_rate'] / 100 * $v3_total['races']) . '/' . $v3_total['races'] . ' レース' : 'データなし' ?></div>
+    </div>
     <div class="scard">
-      <div class="scard-label">v1 全期間 1着的中率</div>
-      <div class="scard-val"><?= pct($v1_total_hits, $v1_total_races) ?></div>
-      <div class="scard-sub"><?= $v1_total_hits ?>/<?= $v1_total_races ?> レース</div>
+      <div class="scard-label">v2(本番) 1着的中率</div>
+      <div class="scard-val"><?= $v2_total['races'] > 0 ? $v2_total['hit_rate'] . '%' : '-' ?></div>
+      <div class="scard-sub"><?= $v2_total['races'] > 0 ? round($v2_total['hit_rate'] / 100 * $v2_total['races']) . '/' . $v2_total['races'] . ' レース' : 'データなし' ?></div>
     </div>
-    <?php if ($has_v2): ?>
-    <div class="scard v2">
-      <div class="scard-label">v2 全期間 1着的中率</div>
-      <div class="scard-val"><?= pct($v2_total_hits, $v2_total_races) ?></div>
-      <div class="scard-sub"><?= $v2_total_hits ?>/<?= $v2_total_races ?> レース</div>
-    </div>
-    <?php else: ?>
-    <div class="scard v2">
-      <div class="scard-label">v2</div>
-      <div class="scard-val no-data">データなし</div>
-      <div class="scard-sub">api_v2_batch.php 実行後に表示</div>
-    </div>
-    <?php endif; ?>
     <div class="scard baseline">
       <div class="scard-label">1号艇ベースライン</div>
-      <div class="scard-val"><?= pct($v1_lane1_hits, $v1_total_races) ?></div>
-      <div class="scard-sub"><?= $v1_lane1_hits ?>/<?= $v1_total_races ?> レース</div>
+      <div class="scard-val"><?= pct($baseline_total_hits, $baseline_total_races) ?></div>
+      <div class="scard-sub"><?= $baseline_total_hits ?>/<?= $baseline_total_races ?> レース</div>
     </div>
   </div>
 
-  <!-- v2 本番昇格基準 -->
+  <!-- v3 昇格基準(design_v3_model_20260903.md §4.2) -->
   <div class="criteria-box">
-    <strong>📋 v2 本番昇格基準</strong>
+    <strong>📋 v3 昇格基準(3つすべて満たすこと)</strong>
     <ul>
-      <li><strong>蓄積期間:</strong> predictions_v2 が毎晩安定して <strong>1ヶ月間</strong> 記録され続けていること</li>
-      <li><strong>判断指標:</strong> 1着的中率と ROI(回収率) の両方を見る</li>
-      <li><strong>昇格条件(両方満たした場合に昇格を検討):</strong>
-        <ul>
-          <li>① 1号艇ベースライン(53.4%前後)を安定して上回っていること <strong>【最優先】</strong></li>
-          <li>② v1 比で <strong>+5 pt 以上</strong> の明確な差がついていること</li>
-        </ul>
+      <li>
+        ① シャドウ1着的中率がv2同期間実績を上回ること
+        — <?php if (!$has_shadow || $v3_total['races'] === 0): ?><span class="pending">判定不可(データ不足)</span>
+           <?php elseif ($criterion1_pass): ?><span class="pass">達成(v3 <?= $v3_total['hit_rate'] ?>% &gt; v2 <?= $v2_total['hit_rate'] ?>%)</span>
+           <?php else: ?><span class="pending">未達成(v3 <?= $v3_total['hit_rate'] ?>% ≤ v2 <?= $v2_total['hit_rate'] ?>%)</span><?php endif; ?>
       </li>
+      <li>② シャドウ1着的中率がオフライン推定値の <strong>±3pt以内</strong> であること(乖離が大きい場合は実装バグ・リーク残りを疑う) — <span class="pending">要手動確認(run_lr_v3.pyのablationレポートと照合)</span></li>
+      <li>③ v3順位での戦略シミュレーション(4戦略)が現行実績を悪化させないこと — 下表「戦略KPI比較」参照</li>
     </ul>
   </div>
-
-  <!-- [開発ログ 2026-08-13]
-       v1(ルールベース)スコアリングの的中率が競合他社比で大きく劣ることが判明
-       (艇王17.6% vs 競合49.1%、約31pt差)。手動重み調整では改善が頭打ちであることも
-       既に確認済み(score_today新提案が-1.9pt悪化)。v2(LR)への移行が効果的な
-       解決策と見られ、8/28の昇格判定を予定通り実施する。 -->
 
   <!-- [開発ログ 2026-08-27] v2(LR) 本番昇格判定クリア・切り替え完了
        昇格判定期間: 2026-07-28 〜 2026-08-27 (30日間)
        結果: v2=60.6% / 1号艇ベースライン=54.5% / v1=51.3%
-         ① ベースライン超え: +6.1pt、全27評価日でベースライン割れなし → 基準クリア
-         ② v1比+5pt基準:    +9.3pt(全体)、75%の日で+5pt超             → 基準クリア
-         ③ 蓄積期間1ヶ月:    30日・欠損日ゼロ                           → 基準クリア
-       切り替え内容:
-         - api_predict.php: PredictV2::score_race() で predicted_rank/score_total を決定
-         - predictions テーブル: model_version='v2_lr' で記録
-         - score_ability/course/today/weather は v1 計算値を維持(内訳バー表示のため)
-         - api_v2_batch.php の workflow ステップを削除(二重書き込み不要)
-       モニタリング: 切り替え後1週間は本ダッシュボードで継続監視を推奨。
-         ※ predictions_v2 への新規書き込みは停止。集計は predictions テーブルの
-            model_version='v2_lr' 行を参照すること(admin_v2.php の集計SQL要更新)。 -->
+       ※ 2026-09-03のリーク修正調査で、この60.6%はlocal_win_rateの
+          先読みリークによる過大評価と判明(design_v3_model_20260903.md §0)。
+          リーク修正済み評価では v2=48.4%。以後の評価はv3系(リーク修正済み)を正とする。
+
+     [開発ログ 2026-09-04] v3シャドウテスト開始
+       特徴量拡張(枠番one-hot・avg_st・コース別成績・直近10走・grade)。
+       predictions_v2テーブルをv3シャドウ書き込み用に転用(v2のシャドウ運用は終了済み)。
+       1週間・約1,000レースで昇格判定予定(design_v3_model_20260903.md §4.2)。 -->
 
   <!-- 日別比較テーブル -->
+  <h2 class="sub">日別 1着的中率比較</h2>
   <table>
     <thead>
       <tr>
         <th>日付</th>
-        <th>v1 レース数</th>
-        <th>v1 1着的中率</th>
         <th>v2 レース数</th>
         <th>v2 1着的中率</th>
-        <th>差 (v2-v1)</th>
+        <th>v3 レース数</th>
+        <th>v3 1着的中率</th>
+        <th>差 (v3-v2)</th>
         <th>ベースライン</th>
       </tr>
     </thead>
     <tbody>
-    <?php foreach ($all_dates as $d): ?>
+    <?php foreach ($daily as $d => $row): ?>
       <?php
-        $v1 = $v1_map[$d] ?? null;
-        $v2 = $v2_map[$d] ?? null;
-        $v1_r = $v1 ? (int)$v1['races'] : 0;
-        $v1_h = $v1 ? (int)$v1['hits']  : 0;
-        $v2_r = $v2 ? (int)$v2['races'] : 0;
-        $v2_h = $v2 ? (int)$v2['hits']  : 0;
-        $bl_h = $v1 ? (int)$v1['lane1_hits'] : 0;
-        $v1_rate = $v1_r > 0 ? $v1_h / $v1_r : null;
+        $v2_r = (int)($row['v2_races'] ?? 0);
+        $v2_h = (int)($row['v2_hits']  ?? 0);
+        $v3_r = (int)($row['v3_races'] ?? 0);
+        $v3_h = (int)($row['v3_hits']  ?? 0);
+        $bl   = $baseline_map[$d] ?? null;
+        $bl_r = $bl ? (int)$bl['races'] : 0;
+        $bl_h = $bl ? (int)$bl['hits']  : 0;
         $v2_rate = $v2_r > 0 ? $v2_h / $v2_r : null;
-        $diff    = ($v1_rate !== null && $v2_rate !== null) ? $v2_rate - $v1_rate : null;
-        $dc      = diff_class($v2_rate, $v1_rate);
+        $v3_rate = $v3_r > 0 ? $v3_h / $v3_r : null;
+        $diff    = ($v2_rate !== null && $v3_rate !== null) ? $v3_rate - $v2_rate : null;
+        $dc      = diff_class($v3_rate, $v2_rate);
       ?>
       <tr>
         <td><?= htmlspecialchars($d) ?></td>
-        <td><?= $v1_r ?: '-' ?></td>
-        <td><?= pct($v1_h, $v1_r) ?></td>
-        <td><?= $v2_r ? $v2_r : '<span class="no-data">-</span>' ?></td>
-        <td class="<?= $dc ?>"><?= pct($v2_h, $v2_r) ?></td>
+        <td><?= $v2_r ?: '-' ?></td>
+        <td><?= pct($v2_h, $v2_r) ?></td>
+        <td><?= $v3_r ? $v3_r : '<span class="no-data">-</span>' ?></td>
+        <td class="<?= $dc ?>"><?= pct($v3_h, $v3_r) ?></td>
         <td class="<?= $dc ?>">
           <?= $diff !== null ? sprintf('%+.1f pt', $diff * 100) : '<span class="no-data">-</span>' ?>
         </td>
-        <td><?= pct($bl_h, $v1_r) ?></td>
+        <td><?= pct($bl_h, $bl_r) ?></td>
       </tr>
     <?php endforeach; ?>
+    <?php if (!$daily): ?>
+      <tr><td colspan="7" class="no-data">データがありません</td></tr>
+    <?php endif; ?>
+    </tbody>
+  </table>
+
+  <!-- 戦略KPI比較(昇格基準③) -->
+  <h2 class="sub">戦略KPI比較(v3順位シミュレーション vs v2本番実績、<?= htmlspecialchars($shadow_from) ?>〜<?= htmlspecialchars($shadow_to) ?>)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>戦略</th>
+        <th>v3シミュレーション 的中率</th>
+        <th>v3シミュレーション ROI</th>
+        <th>v2本番実績 的中率</th>
+        <th>v2本番実績 ROI</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php if ($has_shadow): ?>
+      <?php foreach (['的中特化', 'バランス', '一撃重視', '絞り込み'] as $name): ?>
+        <?php
+          $sim  = $shadow['strategy_sim_v3'][$name]  ?? null;
+          $prod = $shadow['strategy_prod_v2'][$name] ?? null;
+        ?>
+        <tr>
+          <td><?= htmlspecialchars($name) ?></td>
+          <td><?= $sim ? $sim['hit_rate'] . '%' : '<span class="no-data">-</span>' ?></td>
+          <td><?= $sim ? $sim['roi'] . '%' : '<span class="no-data">-</span>' ?></td>
+          <td><?= $prod ? $prod['hit_rate'] . '%' : '<span class="no-data">-</span>' ?></td>
+          <td><?= $prod ? $prod['roi'] . '%' : '<span class="no-data">-</span>' ?></td>
+        </tr>
+      <?php endforeach; ?>
+    <?php else: ?>
+      <tr><td colspan="5" class="no-data">データがありません</td></tr>
+    <?php endif; ?>
     </tbody>
   </table>
 
   <p class="note">
-    ※ v2の予測は毎晩の fetch_results ジョブ完了後に api_v2_batch.php 経由で自動記録されます。<br>
-    ※ 結果が登録されていないレース（当日中など）は v2 数値が「-」になります。<br>
-    ※ v1レース数とv2レース数が異なる場合、v2バッチが一部スキップしたレースがあります。
+    ※ v2/v3の日別・戦略シミュレーション集計は shadow_eval_v3.php のロジックをそのまま利用しています。<br>
+    ※ v3の予測は毎晩の日次バッチ経由で predictions_v2 テーブル(シャドウ用に転用)に自動記録されます。<br>
+    ※ 結果が未確定のレース(当日中など)は集計対象外になります。<br>
+    ※ v2レース数とv3レース数が異なる場合、シャドウバッチが一部スキップしたレースがあります。
   </p>
+
+  <!-- 参考: v1(旧モデル)実績 -->
+  <div class="reference-box">
+    <div class="scard-label">参考(旧モデル): v1 全期間 1着的中率</div>
+    <div class="scard-val" style="font-size:16px;"><?= pct($v1_total_hits, $v1_total_races) ?></div>
+    <div class="scard-sub"><?= $v1_total_hits ?>/<?= $v1_total_races ?> レース(2026-06-01〜2026-08-27、v2昇格前の手動スコアモデル。現在の昇格判定には使用しない)</div>
+  </div>
+
   </div>
   </main>
 

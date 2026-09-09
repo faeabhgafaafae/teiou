@@ -110,7 +110,7 @@ function permutations3(array $a): array {
 }
 
 $top1 = ['v2' => [0, 0], 'v3' => [0, 0]]; // [hits, races]
-$daily = [];
+$daily = []; // date => [v2_hits, v2_races, v3_hits, v3_races]
 $strat = [];
 foreach (['tokka', 'balance', 'ichigeki', 'shibori'] as $s) {
     $strat[$s] = ['races' => 0, 'hits' => 0, 'cost' => 0, 'payout' => 0];
@@ -127,12 +127,11 @@ foreach ($races as $r) {
         $top1[$m][1]++;
         $hit = $map[$rid][0] === $finish[$rid][1] ? 1 : 0;
         $top1[$m][0] += $hit;
-        if ($m === 'v3') {
-            $d = $r['date'];
-            if (!isset($daily[$d])) $daily[$d] = ['v3_hits' => 0, 'races' => 0];
-            $daily[$d]['v3_hits'] += $hit;
-            $daily[$d]['races']++;
-        }
+
+        $d = $r['date'];
+        if (!isset($daily[$d])) $daily[$d] = ['v2_hits' => 0, 'v2_races' => 0, 'v3_hits' => 0, 'v3_races' => 0];
+        $daily[$d][$m . '_hits']  += $hit;
+        $daily[$d][$m . '_races']++;
     }
 
     // v3順位での4戦略シミュレーション(現行本番設定)
@@ -219,7 +218,7 @@ echo json_encode([
         'v2' => ['races' => $top1['v2'][1], 'hit_rate' => $top1['v2'][1] > 0 ? round($top1['v2'][0] / $top1['v2'][1] * 100, 1) : 0],
         'v3' => ['races' => $top1['v3'][1], 'hit_rate' => $top1['v3'][1] > 0 ? round($top1['v3'][0] / $top1['v3'][1] * 100, 1) : 0],
     ],
-    'daily_v3' => $daily,
+    'daily' => $daily,
     'strategy_sim_v3' => $strat_out,
     'strategy_prod_v2' => $prod,
 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
