@@ -224,8 +224,6 @@ var ALL_VENUES = [
 var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
 
-var API_HOST = 'https://' + '2410049.moo.jp';
-
 var selectedVenues = [];
 var selectedGrades = [];
 var allRaces = [];
@@ -269,7 +267,7 @@ function getDeadlineInfo(race) {
 async function loadAllRaces() {
   var results = await Promise.all(ALL_VENUES.map(async function(v) {
     try {
-      var res = await fetch(API_HOST + '/api_races.php?date=' + TODAY + '&venue=' + encodeURIComponent(v));
+      var res = await fetch('api_races.php?date=' + TODAY + '&venue=' + encodeURIComponent(v));
       if (!res.ok) return [];
       var data = await res.json();
       if (!data.races) return [];
@@ -511,7 +509,7 @@ function renderRaceCard(race) {
 async function fetchPredictions(race) {
   var baseQ = 'date=' + TODAY + '&venue=' + encodeURIComponent(race.venue) + '&race_no=' + race.race_no;
   try {
-    var cachedRes = await fetch(API_HOST + '/get_prediction.php?' + baseQ);
+    var cachedRes = await fetch('get_prediction.php?' + baseQ);
     if (cachedRes.ok) {
       var cachedData = await cachedRes.json();
       if (cachedData.predictions && cachedData.predictions.length > 0) {
@@ -521,7 +519,7 @@ async function fetchPredictions(race) {
   } catch (e) {}
 
   try {
-    var freshRes = await fetch(API_HOST + '/api_predict.php?' + baseQ);
+    var freshRes = await fetch('api_predict.php?' + baseQ);
     if (!freshRes.ok) return null;
     var freshData = await freshRes.json();
     return freshData.predictions || null;
@@ -552,7 +550,7 @@ function runPool(items, worker, concurrency, onDone) {
 /* --- 初期化 --- */
 async function init() {
   try {
-    var meRes = await fetch(API_HOST + '/me.php');
+    var meRes = await fetch('me.php');
     if (meRes.ok) {
       var meData = await meRes.json();
       if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }

@@ -406,8 +406,6 @@ var ALL_VENUES = [
   '尼崎','鳴門','高松','丸亀','児島','宮島','徳山',
   '下関','若松','芦屋','福岡','唐津','大村'
 ];
-var API_HOST = 'https://' + '2410049.moo.jp';
-
 function formatName(n) { return n ? n.replace(/[\s　]+/g, ' ').trim() : ''; }
 function formatDateJP(iso) {
   if (!iso) return '';
@@ -458,7 +456,7 @@ async function searchPlayers() {
   resultEl.appendChild(makeLoading('検索中...'));
 
   try {
-    var res = await fetch(API_HOST + '/search_players.php?keyword=' + encodeURIComponent(keyword));
+    var res = await fetch('search_players.php?keyword=' + encodeURIComponent(keyword));
     var data = await res.json();
     resultEl.textContent = '';
     if (!data.players || data.players.length === 0) {
@@ -501,7 +499,7 @@ async function showPlayerDetail(playerId) {
   card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   try {
-    var res = await fetch(API_HOST + '/get_player_detail.php?player_id=' + playerId);
+    var res = await fetch('get_player_detail.php?player_id=' + playerId);
     var data = await res.json();
     if (data.error) throw new Error(data.error);
 
@@ -679,7 +677,7 @@ async function loadCompactRanking() {
 
   var qs = 'scope=national&min_races=20&sort=' + currentMetric + '&order=' + currentMetricOrder + '&limit=10';
   try {
-    var res = await fetch(API_HOST + '/get_analysis_players.php?' + qs);
+    var res = await fetch('get_analysis_players.php?' + qs);
     var data = await res.json();
     if (data.error) throw new Error(data.error);
     el.textContent = '';
@@ -825,7 +823,7 @@ async function loadPlayers() {
   }
 
   try {
-    var res = await fetch(API_HOST + '/get_analysis_players.php?' + qs);
+    var res = await fetch('get_analysis_players.php?' + qs);
     var data = await res.json();
     if (data.error) throw new Error(data.error);
     resultEl.textContent = '';
@@ -911,7 +909,7 @@ async function loadVenueAnalysis(venue) {
   resultEl.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch(API_HOST + '/get_analysis_venue.php?venue=' + encodeURIComponent(venue));
+    var res = await fetch('get_analysis_venue.php?venue=' + encodeURIComponent(venue));
     var data = await res.json();
     if (data.error) throw new Error(data.error);
 
@@ -998,7 +996,7 @@ async function searchRaces() {
   if (!date) { resultEl.textContent = ''; resultEl.appendChild(makeError('日付を選択してください')); return; }
 
   try {
-    var res = await fetch(API_HOST + '/api_races.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue));
+    var res = await fetch('api_races.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue));
     var data = await res.json();
     resultEl.textContent = '';
     if (!data.races || data.races.length === 0) {
@@ -1084,7 +1082,7 @@ if (IS_PREMIUM) {
     var params = buildAdvSearchParams();
 
     try {
-      var res  = await fetch(API_HOST + '/search_races_advanced.php?' + params.join('&'));
+      var res  = await fetch('search_races_advanced.php?' + params.join('&'));
       var data = await res.json();
       resultEl.textContent = '';
 
@@ -1182,7 +1180,7 @@ if (IS_PREMIUM) {
   if (advExportBtnEl) {
     advExportBtnEl.addEventListener('click', function() {
       var params = buildAdvSearchParams();
-      window.open(API_HOST + '/export_race_search.php?' + params.join('&'), '_blank');
+      window.open('export_race_search.php?' + params.join('&'), '_blank');
     });
   }
 }
@@ -1254,7 +1252,7 @@ async function loadPayouts() {
   var byTypeEl = document.getElementById('payoutsByType');
   var popEl = document.getElementById('payoutsPopularity');
   try {
-    var res = await fetch(API_HOST + '/get_analysis_payouts.php');
+    var res = await fetch('get_analysis_payouts.php');
     var data = await res.json();
     if (data.error) throw new Error(data.error);
 

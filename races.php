@@ -286,8 +286,7 @@ function updateAllCountdowns() {
 // 1分ごとに再計算。締切まで秒単位の精度は不要なのでこの間隔で十分
 setInterval(updateAllCountdowns, 60000);
 
-var API_HOST = 'https://2410049.moo.jp';
-function buildApiUrl(ep, pr) { var qs=Object.keys(pr).map(function(k){return k+'='+encodeURIComponent(pr[k]);}).join('&'); return API_HOST+'/'+ep+'?'+qs; }
+function buildApiUrl(ep, pr) { var qs=Object.keys(pr).map(function(k){return k+'='+encodeURIComponent(pr[k]);}).join('&'); return ep+'?'+qs; }
 
 function renderPlayerRow(p) {
   var row = document.createElement('div');

@@ -278,7 +278,6 @@ svg.trend-chart { width: 100%; height: auto; }
   checkAuth();
 })();
 
-var API_HOST = 'https://' + '2410049.moo.jp';
 var IS_STANDARD_PLUS = <?php echo $isStandardPlus ? 'true' : 'false'; ?>;
 var IS_PREMIUM       = <?php echo $isPremium      ? 'true' : 'false'; ?>;
 var STRATEGY_COLORS = { '的中特化': '#0055a4', 'バランス': '#16a34a', '一撃重視': '#dc2626', '絞り込み': '#d97706' };
@@ -324,7 +323,7 @@ async function loadSummary() {
   el.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch(API_HOST + '/get_performance_summary.php');
+    var res = await fetch('get_performance_summary.php');
     var data = await res.json();
     if (data.error) throw new Error(data.error);
 
@@ -613,7 +612,7 @@ async function loadCompare() {
   el.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch(API_HOST + '/get_performance_summary.php');
+    var res = await fetch('get_performance_summary.php');
     var data = await res.json();
     if (data.error) throw new Error(data.error);
 
@@ -866,7 +865,7 @@ async function toggleRaceDetail(row, body, race) {
 
   try {
     var qs = 'date=' + encodeURIComponent(race.date) + '&venue=' + encodeURIComponent(race.venue) + '&race_no=' + race.race_no;
-    var res = await fetch(API_HOST + '/get_prediction.php?' + qs);
+    var res = await fetch('get_prediction.php?' + qs);
     var data = await res.json();
     if (data.error) throw new Error(data.error);
 

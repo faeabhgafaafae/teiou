@@ -421,9 +421,6 @@ function buildPopularList(oddsData) {
   return list;
 }
 
-// ホスト名を文字列結合にするのはCSPスキャナによる直書き検出を避けるため
-var API_HOST = 'https://' + '2410049.moo.jp';
-
 var BET_TYPES = [
   { key: '3t',         label: '3連単' },
   { key: 'sanrenfuku', label: '3連複' },
@@ -490,7 +487,7 @@ async function loadData() {
   content.appendChild(loading);
 
   try {
-    var url = API_HOST + '/get_odds.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo + '&bet_type=' + currentBetType + '&all=1';
+    var url = 'get_odds.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo + '&bet_type=' + currentBetType + '&all=1';
     var res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();

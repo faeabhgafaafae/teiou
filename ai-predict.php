@@ -870,7 +870,7 @@ function updateRateDisplay(playerId, data) {
 function loadStats(tab) {
   for (var i = 0; i < renderedPlayers.length; i++) {
     (function(rp) {
-      var url = API_HOST + '/get_stats.php?player_id=' + rp.player_id + '&lane=' + rp.lane + '&venue=' + encodeURIComponent(venue) + '&tab=' + tab;
+      var url = 'get_stats.php?player_id=' + rp.player_id + '&lane=' + rp.lane + '&venue=' + encodeURIComponent(venue) + '&tab=' + tab;
       fetch(url).then(function(res) {
         return res.json();
       }).then(function(data) {
@@ -882,8 +882,6 @@ function loadStats(tab) {
   }
 }
 
-var API_HOST = 'https://' + '2410049.moo.jp';
-
 async function loadData() {
   var list = document.getElementById('predList');
   try {
@@ -892,7 +890,7 @@ async function loadData() {
     // まずキャッシュ済み予測(get_prediction.php)を取得
     var data = null;
     try {
-      var cachedRes = await fetch(API_HOST + '/get_prediction.php?' + baseParams);
+      var cachedRes = await fetch('get_prediction.php?' + baseParams);
       if (cachedRes.ok) {
         var cachedData = await cachedRes.json();
         if (cachedData.predictions && cachedData.predictions.length > 0) {
@@ -903,7 +901,7 @@ async function loadData() {
 
     // DBに予測がなければ api_predict.php でリアルタイム生成
     if (!data) {
-      var freshRes = await fetch(API_HOST + '/api_predict.php?' + baseParams);
+      var freshRes = await fetch('api_predict.php?' + baseParams);
       if (!freshRes.ok) throw new Error('HTTP ' + freshRes.status);
       data = await freshRes.json();
     }
@@ -1023,7 +1021,7 @@ function loadPersonalExplain(playerId) {
   box.textContent = '💬 解説を生成中...';
   box.style.display = '';
   var raceId = currentRaceId;
-  var url = API_HOST + '/gemini_explain.php?race_id=' + raceId + '&type=personal';
+  var url = 'gemini_explain.php?race_id=' + raceId + '&type=personal';
   fetch(url).then(function(res) {
     return res.json();
   }).then(function(data) {
@@ -1041,7 +1039,7 @@ async function loadExplain(raceId) {
   section.style.display = '';
   body.textContent = '解説を生成中...';
   try {
-    var url = API_HOST + '/gemini_explain.php?race_id=' + raceId;
+    var url = 'gemini_explain.php?race_id=' + raceId;
     var res = await fetch(url);
     if (!res.ok) {
       body.textContent = '解説を取得できませんでした';
@@ -1459,7 +1457,7 @@ function renderStrategySections(comboData, statsMap) {
 
 async function fetchStrategyStats() {
   try {
-    var res = await fetch(API_HOST + '/strategy_stats.php');
+    var res = await fetch('strategy_stats.php');
     if (!res.ok) return {};
     var data = await res.json();
     var map = {};
@@ -1472,7 +1470,7 @@ async function fetchStrategyStats() {
 async function fetchStrategyCombos() {
   if (!venue || !raceNo) return null;
   try {
-    var url = API_HOST + '/strategy_detail.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+    var url = 'strategy_detail.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
     var res = await fetch(url);
     if (!res.ok) return null;
     return await res.json();
@@ -1705,7 +1703,7 @@ async function loadStrategyTab() {
 
 async function init() {
   try {
-    var meRes = await fetch(API_HOST + '/me.php');
+    var meRes = await fetch('me.php');
     if (meRes.ok) {
       var meData = await meRes.json();
       if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }

@@ -240,7 +240,6 @@ var venue  = params.get('venue')   || '';
 var date   = params.get('date')    || todayStr();
 var raceNo = params.get('race_no') || '1';
 
-var API_HOST  = 'https://' + '2410049.moo.jp';
 var COMBO_LIMIT = 10;
 
 var STRAT_DEFS = [
@@ -656,7 +655,7 @@ function renderSections(comboData, statsMap) {
 // 取得失敗(通信エラー・HTTPエラー)は例外を投げ、init()側でエラー表示する。
 // 「まだ買い目が生成されていない」等の正常な空データとは区別する。
 async function fetchStats() {
-  var res = await fetch(API_HOST + '/strategy_stats.php');
+  var res = await fetch('strategy_stats.php');
   if (!res.ok) throw new Error('strategy_stats.php HTTP ' + res.status);
   var data = await res.json();
   var map = {};
@@ -667,7 +666,7 @@ async function fetchStats() {
 
 async function fetchCombos() {
   if (!venue || !raceNo) return null;
-  var url = API_HOST + '/strategy_detail.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
+  var url = 'strategy_detail.php?venue=' + encodeURIComponent(venue) + '&date=' + date + '&race_no=' + raceNo;
   var res = await fetch(url);
   if (!res.ok) throw new Error('strategy_detail.php HTTP ' + res.status);
   return await res.json();
@@ -696,7 +695,7 @@ function renderPremiumLock() {
 async function init() {
   var userPlan = 'free';
   try {
-    var meRes = await fetch(API_HOST + '/me.php');
+    var meRes = await fetch('me.php');
     if (meRes.ok) {
       var meData = await meRes.json();
       if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }

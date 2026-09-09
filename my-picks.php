@@ -298,7 +298,6 @@ svg.trend-chart { width: 100%; height: auto; }
   checkAuth();
 })();
 
-var API_HOST = 'https://' + '2410049.moo.jp';
 var ALL_VENUES = [
   '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
   '蒲郡','常滑','津','三国','琵琶湖','住之江',
@@ -387,7 +386,7 @@ async function findRaces() {
   selectedRaceNo = 0;
 
   try {
-    var res = await fetch(API_HOST + '/api_races.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue));
+    var res = await fetch('api_races.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue));
     var data = await res.json();
     if (!data.races || data.races.length === 0) {
       showInlineMsg('findMsg', 'error', 'この会場・日付のレースは見つかりませんでした');
@@ -451,7 +450,7 @@ document.getElementById('savePickBtn').addEventListener('click', async function(
 
   this.disabled = true;
   try {
-    var res = await fetch(API_HOST + '/save_user_pick.php', {
+    var res = await fetch('save_user_pick.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -480,7 +479,7 @@ var allPicks = [];
 
 async function loadPicks() {
   try {
-    var res = await fetch(API_HOST + '/get_user_picks.php');
+    var res = await fetch('get_user_picks.php');
     if (!res.ok) throw new Error('取得に失敗しました');
     var data = await res.json();
     allPicks = data.picks || [];
@@ -741,7 +740,7 @@ function renderPicksList() {
 async function deletePick(id) {
   if (!confirm('この買い目を削除しますか？\nこの操作は元に戻せません。')) return;
   try {
-    var res = await fetch(API_HOST + '/delete_user_pick.php', {
+    var res = await fetch('delete_user_pick.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: id })

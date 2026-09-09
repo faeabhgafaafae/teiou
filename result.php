@@ -352,13 +352,10 @@ function renderResultTable(results) {
   return wrap;
 }
 
-// ホスト名を文字列結合にするのはCSPスキャナによる直書き検出を避けるため
-var API_HOST = 'https://' + '2410049.moo.jp';
-
 async function loadResult() {
   var body = document.getElementById('resultBody');
   try {
-    var url = API_HOST + '/get_race_result.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
+    var url = 'get_race_result.php?date=' + encodeURIComponent(date) + '&venue=' + encodeURIComponent(venue) + '&race_no=' + raceNo;
     var res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
