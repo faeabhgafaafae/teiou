@@ -117,10 +117,13 @@ final class PredictV3ScoreRaceTest extends TestCase
     public function test_identical_profiles_are_symmetric_and_inner_lane_favored(): void
     {
         // 枠番以外すべて同一プロファイル。
-        // 現行モデルはlane_2..lane_6のダミー変数の係数が全て負(=1号艇が基準で優位)なので、
-        // 他条件が全く同じなら確率は lane1 > lane2 > ... > lane6 の単調減少になるはず。
-        // 再学習でこの符号が変わった場合はモデル自体の大きな挙動変化を意味するので、
-        // このテストの失敗は「デグレ」ではなく要調査のシグナルとして扱う。
+        // 現行モデルはlane_2..lane_6のダミー変数の係数が全て負(=1号艇が基準で優位)な上、
+        // コース別成績のベイズ平滑化priorも1号艇が突出して高い(COURSE_PRIOR1[0]=0.537)。
+        // そのため他の生入力が全艇同一でも、1号艇の確率が最も高くなるはず。
+        // (2,3号艇以降はcourse priorの非単調な差により順位が入れ替わりうるため、
+        //  ここでは「1号艇が最大」という頑健な性質のみを検証する。
+        //  再学習でこれが崩れた場合はモデル自体の大きな挙動変化を意味するので、
+        //  このテストの失敗は「デグレ」ではなく要調査のシグナルとして扱う。)
         $entries = [];
         for ($lane = 1; $lane <= 6; $lane++) {
             $e = $this->baseEntry($lane, 3000 + $lane);
@@ -136,11 +139,11 @@ final class PredictV3ScoreRaceTest extends TestCase
         foreach ($results as $r) {
             $probByLane[$r['lane']] = $r['probability'];
         }
-        for ($lane = 1; $lane <= 5; $lane++) {
+        for ($lane = 2; $lane <= 6; $lane++) {
             $this->assertGreaterThan(
-                $probByLane[$lane + 1],
                 $probByLane[$lane],
-                "lane{$lane}はlane" . ($lane + 1) . "より確率が高いはず(内枠優位)"
+                $probByLane[1],
+                "lane1はlane{$lane}より確率が高いはず(内枠優位)"
             );
         }
     }
