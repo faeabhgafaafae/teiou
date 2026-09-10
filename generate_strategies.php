@@ -156,67 +156,19 @@ function _strat_permutations(array $arr) {
     return $result;
 }
 
-function generate_and_save_strategies(PDO $pdo, int $race_id): array {
-    // score_total は v2昇格(2026-08-27)後は win_probability×100 が入る
-    // (api_predict.php参照)。model_version='v2_lr' で判別する。
-    try {
-        $stmt = $pdo->prepare('
-            SELECT p.predicted_rank, MIN(e.lane) as lane,
-                   MAX(p.score_total) AS score_total,
-                   MAX(p.model_version) AS model_version
-            FROM predictions p
-            JOIN entries e ON e.race_id = p.race_id AND e.player_id = p.player_id
-            WHERE p.race_id = ?
-            GROUP BY p.player_id, p.predicted_rank
-            ORDER BY p.predicted_rank ASC
-        ');
-        $stmt->execute([$race_id]);
-    } catch (PDOException $e) {
-        // model_version カラム未追加の環境向けフォールバック
-        $stmt = $pdo->prepare('
-            SELECT p.predicted_rank, MIN(e.lane) as lane,
-                   MAX(p.score_total) AS score_total,
-                   NULL AS model_version
-            FROM predictions p
-            JOIN entries e ON e.race_id = p.race_id AND e.player_id = p.player_id
-            WHERE p.race_id = ?
-            GROUP BY p.player_id, p.predicted_rank
-            ORDER BY p.predicted_rank ASC
-        ');
-        $stmt->execute([$race_id]);
-    }
-    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    if (count($rows) < 3) return [];
-
-    $lanes = array_map('intval', array_column($rows, 'lane'));
-    $n     = count($lanes);
-
-    // v2の1着確率マップ(lane => probability)。全艇がv2予測で、確率の
-    // 合計がほぼ1のときのみ有効(v1スコアが混在した場合はフォールバック)。
-    $prob_map = [];
-    $prob_ok  = true;
-    foreach ($rows as $row) {
-        if (($row['model_version'] ?? null) !== 'v2_lr' || $row['score_total'] === null) {
-            $prob_ok = false;
-            break;
-        }
-        $prob_map[(int)$row['lane']] = (float)$row['score_total'] / 100.0;
-    }
-    if ($prob_ok) {
-        $psum = array_sum($prob_map);
-        $prob_ok = count($prob_map) === $n && $psum > 0.8 && $psum < 1.2;
-    }
-
-    // 3連単オッズを取得（フィルタ用。未取得の場合はフィルタをスキップ）
-    $odds_map = [];
-    try {
-        $os = $pdo->prepare('SELECT combo, odds FROM odds_3t WHERE race_id = ?');
-        $os->execute([$race_id]);
-        foreach ($os->fetchAll(PDO::FETCH_ASSOC) as $o) {
-            $odds_map[$o['combo']] = (float)$o['odds'];
-        }
-    } catch (PDOException $e) { /* odds未取得時は全組み合わせを許容 */ }
+/**
+ * 戦略選定+オッズフィルタ+傾斜配分の純粋ロジック(DB非依存)。
+ * generate_and_save_strategies() のDB取得結果($lanes/$prob_map/$prob_ok/$odds_map)から
+ * 戦略種別ごとの combinations/stakes/stake_scheme/total_cost を計算して返す。
+ *
+ * @param array $lanes    predicted_rank昇順の枠番配列(先頭が1位予測)
+ * @param array $prob_map lane => v2の1着確率(win_probability)
+ * @param bool  $prob_ok  $prob_map が全艇分・合計ほぼ1で有効かどうか
+ * @param array $odds_map combo('a-b-c') => 3連単オッズ
+ * @return array strategy_type => ['combinations'=>, 'stakes'=>, 'stake_scheme'=>, 'total_cost'=>]
+ */
+function build_strategies(array $lanes, array $prob_map, bool $prob_ok, array $odds_map): array {
+    $n = count($lanes);
 
     $strats = [];
 
@@ -294,6 +246,83 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
         }
     }
 
+    $result = [];
+    foreach ($strats as $type => $combos) {
+        $stakes = $stakes_map[$type];
+        $result[$type] = [
+            'combinations' => $combos,
+            'stakes'       => $stakes,
+            'stake_scheme' => $scheme_map[$type],
+            'total_cost'   => $stakes !== null ? array_sum($stakes) : count($combos) * 100,
+        ];
+    }
+    return $result;
+}
+
+function generate_and_save_strategies(PDO $pdo, int $race_id): array {
+    // score_total は v2昇格(2026-08-27)後は win_probability×100 が入る
+    // (api_predict.php参照)。model_version='v2_lr' で判別する。
+    try {
+        $stmt = $pdo->prepare('
+            SELECT p.predicted_rank, MIN(e.lane) as lane,
+                   MAX(p.score_total) AS score_total,
+                   MAX(p.model_version) AS model_version
+            FROM predictions p
+            JOIN entries e ON e.race_id = p.race_id AND e.player_id = p.player_id
+            WHERE p.race_id = ?
+            GROUP BY p.player_id, p.predicted_rank
+            ORDER BY p.predicted_rank ASC
+        ');
+        $stmt->execute([$race_id]);
+    } catch (PDOException $e) {
+        // model_version カラム未追加の環境向けフォールバック
+        $stmt = $pdo->prepare('
+            SELECT p.predicted_rank, MIN(e.lane) as lane,
+                   MAX(p.score_total) AS score_total,
+                   NULL AS model_version
+            FROM predictions p
+            JOIN entries e ON e.race_id = p.race_id AND e.player_id = p.player_id
+            WHERE p.race_id = ?
+            GROUP BY p.player_id, p.predicted_rank
+            ORDER BY p.predicted_rank ASC
+        ');
+        $stmt->execute([$race_id]);
+    }
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (count($rows) < 3) return [];
+
+    $lanes = array_map('intval', array_column($rows, 'lane'));
+    $n     = count($lanes);
+
+    // v2の1着確率マップ(lane => probability)。全艇がv2予測で、確率の
+    // 合計がほぼ1のときのみ有効(v1スコアが混在した場合はフォールバック)。
+    $prob_map = [];
+    $prob_ok  = true;
+    foreach ($rows as $row) {
+        if (($row['model_version'] ?? null) !== 'v2_lr' || $row['score_total'] === null) {
+            $prob_ok = false;
+            break;
+        }
+        $prob_map[(int)$row['lane']] = (float)$row['score_total'] / 100.0;
+    }
+    if ($prob_ok) {
+        $psum = array_sum($prob_map);
+        $prob_ok = count($prob_map) === $n && $psum > 0.8 && $psum < 1.2;
+    }
+
+    // 3連単オッズを取得（フィルタ用。未取得の場合はフィルタをスキップ）
+    $odds_map = [];
+    try {
+        $os = $pdo->prepare('SELECT combo, odds FROM odds_3t WHERE race_id = ?');
+        $os->execute([$race_id]);
+        foreach ($os->fetchAll(PDO::FETCH_ASSOC) as $o) {
+            $odds_map[$o['combo']] = (float)$o['odds'];
+        }
+    } catch (PDOException $e) { /* odds未取得時は全組み合わせを許容 */ }
+
+    $built = build_strategies($lanes, $prob_map, $prob_ok, $odds_map);
+
     // stakes/stake_scheme カラムの存在確認・追加 (api_predict.phpと同方式。
     // error 1060 = カラム既存 は正常ケース)
     $has_stake_cols = true;
@@ -329,14 +358,15 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
     }
 
     $saved = [];
-    foreach ($strats as $type => $combos) {
-        $stakes = $stakes_map[$type];
+    foreach ($built as $type => $b) {
+        $combos = $b['combinations'];
+        $stakes = $b['stakes'];
         if ($has_stake_cols) {
             $upsert->execute([
                 $race_id, $type,
                 json_encode($combos, JSON_UNESCAPED_UNICODE),
                 $stakes !== null ? json_encode($stakes) : null,
-                $scheme_map[$type],
+                $b['stake_scheme'],
             ]);
         } else {
             $upsert->execute([$race_id, $type, json_encode($combos, JSON_UNESCAPED_UNICODE)]);
@@ -346,8 +376,8 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
             'combo_count'   => count($combos),
             'combinations'  => $combos,
             'stakes'        => $stakes,
-            'stake_scheme'  => $scheme_map[$type],
-            'total_cost'    => $stakes !== null ? array_sum($stakes) : count($combos) * 100,
+            'stake_scheme'  => $b['stake_scheme'],
+            'total_cost'    => $b['total_cost'],
         ];
     }
 

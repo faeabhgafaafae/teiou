@@ -15,3 +15,8 @@ __pycache__/
 
 # スクレイパーエラーログ
 *.err
+
+# PHPUnit(開発依存。composer install/CIで再生成する)
+/vendor/
+composer.lock
+.phpunit.cache/

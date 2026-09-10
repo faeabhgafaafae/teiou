@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/settlement_lib.php';
 
 /**
  * 艇王 - 競走成績インポートAPI
@@ -151,15 +152,8 @@ foreach ($race_groups as $race_records) {
                 $stakes = $decoded;
             }
         }
-        $idx       = array_search($winning_combo, $combos, true);
-        $stake_win = 100;
-        if ($idx !== false && $stakes !== null) {
-            $stake_win = (int)$stakes[$idx];
-        }
-        $is_hit = ($idx !== false && $stake_win > 0) ? 1 : 0;
-        $cost   = $stakes !== null ? (int)array_sum($stakes) : count($combos) * 100;
-        $payout = ($is_hit && $winning_odds !== null) ? (int)floor($winning_odds * $stake_win) : 0;
-        $stmt_sr->execute([(int)$s['id'], $race_id, $is_hit, $payout, $cost]);
+        $settlement = calc_settlement($combos, $stakes, $winning_combo, $winning_odds);
+        $stmt_sr->execute([(int)$s['id'], $race_id, $settlement['is_hit'], $settlement['payout'], $settlement['cost']]);
     }
 }
 

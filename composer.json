@@ -1,0 +1,17 @@
+{
+    "name": "teiou/teiou",
+    "description": "艇王 - 競艇予想アプリ(単体テスト用開発依存)",
+    "type": "project",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}

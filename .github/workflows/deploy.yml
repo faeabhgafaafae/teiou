@@ -18,7 +18,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Composerキャッシュ
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.json') }}
+          restore-keys: composer-
+
+      - name: Composer install
+        run: composer install --no-progress --prefer-dist
+
+      - name: PHPUnit実行
+        run: vendor/bin/phpunit
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -45,3 +71,9 @@ jobs:
             **/*.py
             **/*.yml
             **/*.md
+            composer.json
+            composer.lock
+            phpunit.xml
+            vendor/**
+            tests/**
+            .phpunit.cache/**
