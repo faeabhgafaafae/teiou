@@ -1,10 +1,15 @@
 """
 v3ロジスティック回帰 学習・検証スクリプト (design_v3_model_20260903.md §3.2)
-実行: python run_lr_v3.py lr_data_v3_full.csv [--php]
+実行: python run_lr_v3.py lr_data_v3_full.csv [--php] [--gate] [--grid] [--alpha X]
 
 - walk-forward 3-fold CV + ablation(特徴量群の段階追加)
 - 現行v2係数のベースライン評価(同一テストデータ・リーク修正済み特徴量)
-- --php: 全データ再fitした本番用PHP定数を出力(PredictV3用)
+- --gate : ROI-CVゲート(design_v3_improvement_20260913.md §2)。fold毎に
+           4戦略シミュレーションROIを計算し、ブートストラップCI付きで
+           v2比較(全戦略 P(>=v2)>=0.25 + 本命寄り度チェック)
+- --grid : 重み付き学習alphaのグリッドサーチ(0.3〜0.7)+各alphaのゲート判定
+- --alpha X : 勝者サンプルを枠番prior逆数^Xで重み付けして学習(改良版v3)
+- --php  : 全データ再fitした本番用PHP定数を出力(PredictV3用)。--alpha併用可
 """
 import sys
 import warnings
@@ -17,9 +22,17 @@ from sklearn.pipeline import Pipeline
 
 warnings.filterwarnings('ignore')
 
-CSV_PATH = sys.argv[1] if len(sys.argv) > 1 else 'lr_data_v3_full.csv'
+CSV_PATH = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith('--') else 'lr_data_v3_full.csv'
 SMOOTH_K = 10          # コース別成績のベイズ平滑化(CVで選択した値をここに固定)
 C_REG    = 1.0
+WEIGHT_CAP = 12.0      # 重み付き学習の上限(6号艇prior逆数≈32のクリップ)
+GRID_ALPHAS = [0.3, 0.4, 0.5, 0.6, 0.7]
+
+ALPHA = None           # --alpha X: 勝者サンプル重み (1/prior)^X
+if '--alpha' in sys.argv:
+    ALPHA = float(sys.argv[sys.argv.index('--alpha') + 1])
+if '--alphas' in sys.argv:  # グリッドの上書き (例: --alphas 0.45,0.55,0.65)
+    GRID_ALPHAS = [float(a) for a in sys.argv[sys.argv.index('--alphas') + 1].split(',')]
 
 df = pd.read_csv(CSV_PATH)
 print(f"rows={len(df)} races={df['race_id'].nunique()} ({df['date'].min()}..{df['date'].max()})")
@@ -86,6 +99,17 @@ def impute(train, *parts, features):
     med = train[features].median()
     return (train[features].fillna(med).values,
             *[p[features].fillna(med).values for p in parts])
+
+
+def longshot_weight(train, alpha, cap=WEIGHT_CAP):
+    """勝者サンプルを枠番prior勝率の逆数^alphaで重み付け(高配当的中の学習重視)。敗者=1
+    design_v3_improvement_20260913.md §3.1"""
+    prior1 = train.groupby('lane')['is_winner'].mean()
+    w = np.ones(len(train))
+    is_win = train['is_winner'].values == 1
+    pri = train['lane'].map(prior1).values
+    w[is_win] = np.minimum(cap, (1.0 / np.maximum(pri[is_win], 1e-3)) ** alpha)
+    return w
 
 
 def race_top1_acc(d, proba):
@@ -162,8 +186,61 @@ for name, vals in results.items():
     m = np.mean(vals, axis=0)
     print(f"  {name:24s}: AUC={m[0]:.4f}  top1的中={m[1]:.1f}%")
 
+# ─── ROI-CVゲート / alphaグリッドサーチ ──────────────────────
+# design_v3_improvement_20260913.md §2: 昇格候補は戦略別ROIゲートを通過必須
+if '--gate' in sys.argv or '--grid' in sys.argv:
+    from strategy_sim import load_market_data, build_race_table, evaluate_gate, print_gate_report
+
+    def collect_fold_preds(alpha):
+        """fold毎にS4を学習(alpha=Noneで現行v3相当)し、検証期間の予測を蓄積"""
+        frames = []
+        for _, val_from, val_to in FOLDS:
+            train = df[df['date'] < val_from].copy()
+            val   = df[(df['date'] >= val_from) & (df['date'] <= val_to)].copy()
+            train, val = add_smoothed_course(train, val)
+            X_tr, X_va = impute(train, val, features=SET_S4)
+            pipe = Pipeline([
+                ('scaler', StandardScaler()),
+                ('lr', LogisticRegression(C=C_REG, max_iter=2000, solver='lbfgs',
+                                          class_weight='balanced', random_state=42)),
+            ])
+            sw = longshot_weight(train, alpha) if alpha is not None else None
+            pipe.fit(X_tr, train[TARGET].values, lr__sample_weight=sw)
+            val = val.copy()
+            val['p_cand'] = pipe.predict_proba(X_va)[:, 1]
+            Xv2 = val[V2_FEATURES].fillna(val[V2_FEATURES].median()).values
+            val['p_v2'] = 1 / (1 + np.exp(-(V2_INTERCEPT + ((Xv2 - V2_MEANS) / V2_SCALES) @ V2_COEFS)))
+            frames.append(val[['race_id', 'lane', 'is_winner', 'p_cand', 'p_v2']])
+        return pd.concat(frames, ignore_index=True)
+
+    market = load_market_data('.')
+    candidates = [(None, '現行v3(重みなし)')] if '--gate' in sys.argv else []
+    if '--grid' in sys.argv:
+        candidates += [(a, f'v3w alpha={a}') for a in GRID_ALPHAS]
+
+    print(f"\n=== ROI-CVゲート (walk-forward検証期間, bootstrap 5000回) ===")
+    grid_summary = []
+    for alpha, label in candidates:
+        preds = collect_fold_preds(alpha)
+        race_df = build_race_table(preds, ['p_cand', 'p_v2'], market)
+        gate = evaluate_gate(race_df, 'p_cand', 'p_v2')
+        acc = race_top1_acc(preds, preds['p_cand'].values)
+        print_gate_report(gate, f"{label}  top1的中={acc:.1f}%")
+        grid_summary.append((alpha, label, acc, gate))
+
+    if '--grid' in sys.argv:
+        passed = [(a, l, acc) for a, l, acc, g in grid_summary if g['passed'] and a is not None]
+        print(f"\n=== グリッドサーチ結果 ===")
+        if passed:
+            best = max(passed, key=lambda t: t[2])
+            print(f"  ゲート通過: {', '.join(l for _, l, _ in passed)}")
+            print(f"  推奨alpha = {best[0]} (通過モデル中top1的中率最大 {best[2]:.1f}%)")
+        else:
+            print("  ゲート通過モデルなし。alphaレンジ・重み設計の見直しが必要")
+
 # ─── 最終モデル: S4を全データでfit ────────────────────────────
-print("\n=== 最終モデル(S4)を全データでfit ===")
+alpha_note = f" (重み付き alpha={ALPHA}, cap={WEIGHT_CAP})" if ALPHA is not None else ""
+print(f"\n=== 最終モデル(S4)を全データでfit{alpha_note} ===")
 full = df.copy()
 full, = add_smoothed_course(full)
 FINAL_FEATURES = SET_S4
@@ -173,7 +250,8 @@ final_pipe = Pipeline([
     ('lr', LogisticRegression(C=C_REG, max_iter=2000, solver='lbfgs',
                               class_weight='balanced', random_state=42)),
 ])
-final_pipe.fit(X_full, full[TARGET].values)
+final_sw = longshot_weight(full, ALPHA) if ALPHA is not None else None
+final_pipe.fit(X_full, full[TARGET].values, lr__sample_weight=final_sw)
 
 coefs = final_pipe.named_steps['lr'].coef_[0]
 coef_df = pd.DataFrame({'feature': FINAL_FEATURES, 'coef': coefs})
@@ -195,8 +273,10 @@ if '--php' in sys.argv:
         return '[' + ', '.join(fmt % v for v in vals) + ']'
 
     print("\n// ===== predict_v3_core.php 埋め込み用定数 =====")
-    print(f"// 学習日: {pd.Timestamp.now().strftime('%Y-%m-%d')}  データ: {df['date'].min()}~{df['date'].max()} ({df['race_id'].nunique()}R)")
-    print(f"// CV fold平均: v2現行 AUC={v2m[0]:.4f}/top1 {v2m[1]:.1f}% -> S4 AUC={np.mean(results['S4:+直近+級別(v3)'],axis=0)[0]:.4f}/top1 {np.mean(results['S4:+直近+級別(v3)'],axis=0)[1]:.1f}%")
+    print(f"// 学習日: {pd.Timestamp.now().strftime('%Y-%m-%d')}  データ: {df['date'].min()}~{df['date'].max()} ({df['race_id'].nunique()}R)"
+          + (f"  重み付き学習 alpha={ALPHA} cap={WEIGHT_CAP}" if ALPHA is not None else ""))
+    print(f"// CV fold平均: v2現行 AUC={v2m[0]:.4f}/top1 {v2m[1]:.1f}% -> S4 AUC={np.mean(results['S4:+直近+級別(v3)'],axis=0)[0]:.4f}/top1 {np.mean(results['S4:+直近+級別(v3)'],axis=0)[1]:.1f}%"
+          + (" (重みなしS4の参考値。重み付きモデルのCV/ゲート結果は --grid 出力を参照)" if ALPHA is not None else ""))
     print(f"// 特徴量順: {FINAL_FEATURES}")
     print(f"private const INTERCEPT = {lr.intercept_[0]:.6f};")
     print(f"private const MEANS  = {php_arr(scaler.mean_)};")
