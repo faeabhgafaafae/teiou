@@ -23,8 +23,13 @@ $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_U
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
 
 // ── v2/v3の集計はshadow_eval_v3.phpを再利用(重複実装を避ける) ──────────
-// v3シャドウテストは2026-09-04開始のため、それより前を含めて広めに取得する
-$shadow_from = '2026-09-01';
+// v3w(alpha=0.55)シャドウテストは2026-09-13開始。predictions_v2の
+// 2026-09-04〜09-12は旧v3(昇格見送り)の予測のため、混同を避けるべく
+// 集計開始日は必ずv3wシャドウ開始日以降にすること。
+$shadow_model_name = 'v3w (重み付き学習 alpha=0.55)';
+$shadow_start      = '2026-09-13';   // v3wシャドウ開始日
+$offline_estimate  = 55.4;           // オフライン推定top1的中率% (v3w055_training_output.txt)
+$shadow_from = $shadow_start;
 $shadow_to   = date('Y-m-d');
 $shadow_url  = 'https://2410049.moo.jp/shadow_eval_v3.php?api_key=' . urlencode(API_KEY)
     . '&from=' . urlencode($shadow_from) . '&to=' . urlencode($shadow_to);
@@ -90,6 +95,11 @@ $v3_total = $has_shadow ? $shadow['top1']['v3'] : ['races' => 0, 'hit_rate' => 0
 // 昇格基準①: シャドウ1着的中率がv2同期間実績を上回るか(自動判定できる部分のみ)
 $criterion1_pass = $has_shadow && $v3_total['races'] > 0 && $v2_total['races'] > 0
     && $v3_total['hit_rate'] > $v2_total['hit_rate'];
+
+// 昇格基準②: オフライン推定(55.4%)との乖離が±3pt以内か
+$criterion2_diff = ($has_shadow && $v3_total['races'] > 0)
+    ? $v3_total['hit_rate'] - $offline_estimate : null;
+$criterion2_pass = $criterion2_diff !== null && abs($criterion2_diff) <= 3.0;
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -141,11 +151,12 @@ tr:hover td { background: #fafbfc; }
 
   <main class="main-content">
   <div class="adm-wrap">
-  <h1>🔬 v2/v3 シャドウテスト比較</h1>
+  <h1>🔬 v2/v3w シャドウテスト比較</h1>
   <p class="note">
     v2 = 本番稼働中モデル(ロジスティック回帰、2026-08-27昇格) ／
-    v3 = シャドウテスト中モデル(特徴量拡張版、2026-09-04〜) ／
-    ベースライン = 1号艇決め打ち
+    v3w = シャドウテスト中モデル <strong><?= htmlspecialchars($shadow_model_name) ?></strong>(<?= htmlspecialchars($shadow_start) ?>〜) ／
+    ベースライン = 1号艇決め打ち<br>
+    ※ 初代v3(重みなし)は2026-09-13に昇格見送り。本ページの集計は<?= htmlspecialchars($shadow_start) ?>以降のv3w予測のみが対象。
   </p>
 
   <?php if (!$has_shadow): ?>
@@ -157,7 +168,7 @@ tr:hover td { background: #fafbfc; }
   <!-- サマリーカード -->
   <div class="summary-cards">
     <div class="scard v3">
-      <div class="scard-label">v3(シャドウ) 1着的中率</div>
+      <div class="scard-label">v3w(シャドウ) 1着的中率</div>
       <div class="scard-val"><?= $v3_total['races'] > 0 ? $v3_total['hit_rate'] . '%' : '-' ?></div>
       <div class="scard-sub"><?= $v3_total['races'] > 0 ? round($v3_total['hit_rate'] / 100 * $v3_total['races']) . '/' . $v3_total['races'] . ' レース' : 'データなし' ?></div>
     </div>
@@ -173,18 +184,24 @@ tr:hover td { background: #fafbfc; }
     </div>
   </div>
 
-  <!-- v3 昇格基準(design_v3_model_20260903.md §4.2) -->
+  <!-- v3w 昇格基準(design_v3_improvement_20260913.md、判定予定 2026-09-27頃) -->
   <div class="criteria-box">
-    <strong>📋 v3 昇格基準(3つすべて満たすこと)</strong>
+    <strong>📋 v3w 昇格基準(3つすべて満たすこと。2週間後 2026-09-27頃に判定)</strong>
     <ul>
       <li>
         ① シャドウ1着的中率がv2同期間実績を上回ること
         — <?php if (!$has_shadow || $v3_total['races'] === 0): ?><span class="pending">判定不可(データ不足)</span>
-           <?php elseif ($criterion1_pass): ?><span class="pass">達成(v3 <?= $v3_total['hit_rate'] ?>% &gt; v2 <?= $v2_total['hit_rate'] ?>%)</span>
-           <?php else: ?><span class="pending">未達成(v3 <?= $v3_total['hit_rate'] ?>% ≤ v2 <?= $v2_total['hit_rate'] ?>%)</span><?php endif; ?>
+           <?php elseif ($criterion1_pass): ?><span class="pass">達成(v3w <?= $v3_total['hit_rate'] ?>% &gt; v2 <?= $v2_total['hit_rate'] ?>%)</span>
+           <?php else: ?><span class="pending">未達成(v3w <?= $v3_total['hit_rate'] ?>% ≤ v2 <?= $v2_total['hit_rate'] ?>%)</span><?php endif; ?>
       </li>
-      <li>② シャドウ1着的中率がオフライン推定値の <strong>±3pt以内</strong> であること(乖離が大きい場合は実装バグ・リーク残りを疑う) — <span class="pending">要手動確認(run_lr_v3.pyのablationレポートと照合)</span></li>
-      <li>③ v3順位での戦略シミュレーション(4戦略)が現行実績を悪化させないこと — 下表「戦略KPI比較」参照</li>
+      <li>
+        ② シャドウ1着的中率がオフライン推定値 <strong><?= $offline_estimate ?>%の±3pt以内</strong> であること(乖離が大きい場合は実装バグ・リーク残りを疑う)
+        — <?php if ($criterion2_diff === null): ?><span class="pending">判定不可(データ不足)</span>
+           <?php elseif ($criterion2_pass): ?><span class="pass">達成(乖離 <?= sprintf('%+.1f', $criterion2_diff) ?>pt)</span>
+           <?php else: ?><span class="pending">未達成(乖離 <?= sprintf('%+.1f', $criterion2_diff) ?>pt)</span><?php endif; ?>
+      </li>
+      <li>③ v3w順位での戦略シミュレーション(4戦略)が現行実績を悪化させないこと — 下表「戦略KPI比較」参照。<br>
+        ※ 一撃重視はオフラインでsoft警告(-3.3pt)のため、悪化幅も含めて総合判断する</li>
     </ul>
   </div>
 
@@ -198,7 +215,14 @@ tr:hover td { background: #fafbfc; }
      [開発ログ 2026-09-04] v3シャドウテスト開始
        特徴量拡張(枠番one-hot・avg_st・コース別成績・直近10走・grade)。
        predictions_v2テーブルをv3シャドウ書き込み用に転用(v2のシャドウ運用は終了済み)。
-       1週間・約1,000レースで昇格判定予定(design_v3_model_20260903.md §4.2)。 -->
+       1週間・約1,000レースで昇格判定予定(design_v3_model_20260903.md §4.2)。
+
+     [開発ログ 2026-09-13] v3昇格見送り → v3w(alpha=0.55)シャドウテスト開始
+       9/4〜9/12の判定で基準③(4戦略ROI非悪化)未達成により初代v3は見送り
+       (一撃重視ROI -48.7pt。予測の過剰な本命寄り化が原因)。
+       重み付き学習(勝者を枠番prior逆数^0.55で重み付け)で本命寄りを緩和した
+       v3wへシャドウを差し替え。ROI-CVゲート合格(design_v3_improvement_20260913.md)。
+       2週間・9/27頃に昇格判定予定。predictions_v2の9/12以前は旧v3の予測。 -->
 
   <!-- 日別比較テーブル -->
   <h2 class="sub">日別 1着的中率比較</h2>
@@ -209,9 +233,9 @@ tr:hover td { background: #fafbfc; }
         <th>日付</th>
         <th>v2 レース数</th>
         <th>v2 1着的中率</th>
-        <th>v3 レース数</th>
-        <th>v3 1着的中率</th>
-        <th>差 (v3-v2)</th>
+        <th>v3w レース数</th>
+        <th>v3w 1着的中率</th>
+        <th>差 (v3w-v2)</th>
         <th>ベースライン</th>
       </tr>
     </thead>
@@ -250,14 +274,14 @@ tr:hover td { background: #fafbfc; }
   </div>
 
   <!-- 戦略KPI比較(昇格基準③) -->
-  <h2 class="sub">戦略KPI比較(v3順位シミュレーション vs v2本番実績、<?= htmlspecialchars($shadow_from) ?>〜<?= htmlspecialchars($shadow_to) ?>)</h2>
+  <h2 class="sub">戦略KPI比較(v3w順位シミュレーション vs v2本番実績、<?= htmlspecialchars($shadow_from) ?>〜<?= htmlspecialchars($shadow_to) ?>)</h2>
   <div class="table-wrap">
   <table>
     <thead>
       <tr>
         <th>戦略</th>
-        <th>v3シミュレーション 的中率</th>
-        <th>v3シミュレーション ROI</th>
+        <th>v3wシミュレーション 的中率</th>
+        <th>v3wシミュレーション ROI</th>
         <th>v2本番実績 的中率</th>
         <th>v2本番実績 ROI</th>
       </tr>
@@ -285,10 +309,11 @@ tr:hover td { background: #fafbfc; }
   </div>
 
   <p class="note">
-    ※ v2/v3の日別・戦略シミュレーション集計は shadow_eval_v3.php のロジックをそのまま利用しています。<br>
-    ※ v3の予測は毎晩の日次バッチ経由で predictions_v2 テーブル(シャドウ用に転用)に自動記録されます。<br>
+    ※ v2/v3wの日別・戦略シミュレーション集計は shadow_eval_v3.php のロジックをそのまま利用しています。<br>
+    ※ v3wの予測は毎晩の日次バッチ経由で predictions_v2 テーブル(シャドウ用に転用)に自動記録されます。<br>
+    ※ predictions_v2 の 2026-09-12 以前の行は旧v3(昇格見送り)の予測のため、本ページの集計には含めていません。<br>
     ※ 結果が未確定のレース(当日中など)は集計対象外になります。<br>
-    ※ v2レース数とv3レース数が異なる場合、シャドウバッチが一部スキップしたレースがあります。
+    ※ v2レース数とv3wレース数が異なる場合、シャドウバッチが一部スキップしたレースがあります。
   </p>
 
   <!-- 参考: v1(旧モデル)実績 -->

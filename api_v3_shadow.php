@@ -4,6 +4,10 @@
  * 指定日の全レースにv3シャドウ予測を一括生成し predictions_v2 テーブル(転用)に保存する。
  * boatrace.yml の fetch_results ジョブから呼ばれる(20:00=前日分 / 21:30=当日分)。
  *
+ * 2026-09-13: モデルを v3w(重み付き alpha=0.55, predict_v3_core.php) へ差し替え。
+ * predictions_v2 の 2026-09-04〜09-12 分は旧v3(重みなし・昇格見送り)の予測のため、
+ * v3wの評価は from=2026-09-13 以降で行うこと。
+ *
  * 本番の predictions / strategies / 画面表示には一切書き込まない(design §4.2)。
  * 集計系特徴量(当地・コース別・直近10走)はすべて「対象日より前」のresultsのみを
  * 使うため、レース後に実行しても予測時点で利用可能だった情報と等価になる。
@@ -216,7 +220,7 @@ foreach ($races_map as $race_id => $race_data) {
 
 echo json_encode([
     'date'         => $date,
-    'model'        => 'v3_lr_shadow',
+    'model'        => 'v3w055_lr_shadow',
     'races_total'  => count($races_map),
     'races_saved'  => $saved_races,
     'errors'       => count($errors),
