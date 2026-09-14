@@ -10,7 +10,17 @@ header('Access-Control-Allow-Origin: *');
 
 $pdo = get_db();
 
-$stmt = $pdo->query('
+// 期間フィルタ: ?from=YYYY-MM-DD (未指定/不正時は全期間)。
+// モデル・戦略ロジックの切替をまたぐ混在データを分離するためperformance.phpから渡す。
+$from = $_GET['from'] ?? null;
+$dateWhere = '';
+$params = [];
+if ($from !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
+    $dateWhere = ' WHERE r.date >= ?';
+    $params[] = $from;
+}
+
+$stmt = $pdo->prepare('
     SELECT
         s.strategy_type,
         COUNT(sr.id)                 AS total_races,
@@ -19,9 +29,11 @@ $stmt = $pdo->query('
         COALESCE(SUM(sr.payout), 0)  AS total_payout
     FROM strategies s
     JOIN strategy_results sr ON sr.strategy_id = s.id
+    JOIN races r ON r.id = sr.race_id' . $dateWhere . '
     GROUP BY s.strategy_type
     ORDER BY FIELD(s.strategy_type, \'的中特化\', \'バランス\', \'一撃重視\', \'絞り込み\')
 ');
+$stmt->execute($params);
 $rows = $stmt->fetchAll();
 
 $stats = [];
@@ -44,11 +56,12 @@ foreach ($rows as $row) {
     ];
 }
 
-$stmt2 = $pdo->query('
+$stmt2 = $pdo->prepare('
     SELECT MIN(r.date) AS min_date, MAX(r.date) AS max_date, COUNT(DISTINCT sr.race_id) AS race_count
     FROM strategy_results sr
-    JOIN races r ON r.id = sr.race_id
+    JOIN races r ON r.id = sr.race_id' . $dateWhere . '
 ');
+$stmt2->execute($params);
 $range = $stmt2->fetch();
 
 json_response([

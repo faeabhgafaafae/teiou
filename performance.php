@@ -21,6 +21,13 @@ $isPremium = ($plan === 'premium');
 .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px; }
 
 .note { font-size: 11px; color: #a0724b; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; line-height: 1.6; }
+
+/* 期間フィルタ(全体サマリー・日別推移・会場別内訳・戦略比較表に連動) */
+.period-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 16px; padding: 12px 14px; background: #f0f5ff; border: 1px solid #d6e4ff; border-radius: 10px; }
+.period-filter label { font-size: 12px; font-weight: 700; color: #0055a4; flex-shrink: 0; }
+.period-filter select { flex: 1 1 240px; min-width: 0; padding: 9px 12px; border: 1px solid #b3ccf5; border-radius: 8px; font-size: 14px; color: #222; background: #fff; }
+.period-desc { flex: 1 1 100%; font-size: 11px; color: #555; line-height: 1.6; margin: 0; }
+.period-desc.caution { color: #a0724b; font-weight: 600; }
 .loading { text-align: center; padding: 30px; color: #999; font-size: 13px; }
 .error-msg { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 14px; color: #dc2626; font-size: 13px; }
 
@@ -106,10 +113,20 @@ svg.trend-chart { width: 100%; height: auto; }
     <h2 class="section-title">成績・回収率</h2>
   </div>
 
+  <!-- 期間フィルタ: 全体サマリー/日別推移/会場別内訳/戦略比較表に連動 -->
+  <div class="period-filter">
+    <label for="periodSelect">集計期間</label>
+    <select id="periodSelect">
+      <option value="2026-09-09">現行設定(v2 + 傾斜配分、2026-09-09〜)</option>
+      <option value="2026-08-27">v2以降(1点100円時代を含む、2026-08-27〜)</option>
+      <option value="2026-06-29">全期間(v1手動スコア時代を含む、2026-06-29〜)</option>
+    </select>
+    <p class="period-desc" id="periodDesc"></p>
+  </div>
+
   <!-- 1. 全体サマリー(無料) -->
   <div class="card">
     <h2>全体サマリー</h2>
-    <div class="note">2026年9月9日のレースから、AIの予測確率に応じた賭け金の傾斜配分(1点平均600円)を導入しました。それ以前の成績は全買い目1点100円均等での実績です。回収率・的中率は期間をまたいで比較できます。</div>
     <div id="summaryResult"><div class="loading">読み込み中...</div></div>
   </div>
 
@@ -233,6 +250,30 @@ function formatDateJP(iso) {
   return parts[0] + '年' + Number(parts[1]) + '月' + Number(parts[2]) + '日';
 }
 
+// ============================================================
+// 期間フィルタ: セレクタの値(from日付)を各APIに渡し、4セクションを連動させる
+// ============================================================
+var PERIOD_DESC = {
+  '2026-09-09': { text: '現行設定(v2ロジスティック回帰 + 確率傾斜配分、1点平均600円)。的中特化のHarville再選定・絞り込み3点化も反映した最新ロジックです。運用開始から日が浅く対象レースが少ないため、回収率は大きく変動しやすい点にご留意ください。', caution: true },
+  '2026-08-27': { text: 'v2(ロジスティック回帰)切替以降。ただし9/8以前は全買い目1点100円均等、9/9以降は傾斜配分(1点平均600円)のため、投資額・払戻額の絶対値は期間内で不連続です。的中率・回収率(比率)は比較できます。', caution: false },
+  '2026-06-29': { text: '全期間。v1(手動スコア、〜8/26)やオッズ上限・艇プールの変更前を含むため、条件の異なるデータが混在します。長期の傾向把握用の参考値としてご覧ください。', caution: false }
+};
+function getPeriodFrom() {
+  var sel = document.getElementById('periodSelect');
+  return sel ? sel.value : '2026-09-09';
+}
+function withPeriod(url) {
+  var from = getPeriodFrom();
+  return url + (url.indexOf('?') === -1 ? '?' : '&') + 'from=' + encodeURIComponent(from);
+}
+function updatePeriodDesc() {
+  var el = document.getElementById('periodDesc');
+  if (!el) return;
+  var d = PERIOD_DESC[getPeriodFrom()] || { text: '', caution: false };
+  el.textContent = d.text;
+  el.className = 'period-desc' + (d.caution ? ' caution' : '');
+}
+
 function makeLoading(text) {
   var d = document.createElement('div');
   d.className = 'loading';
@@ -261,7 +302,7 @@ async function loadSummary() {
   el.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch('get_performance_summary.php');
+    var res = await fetch(withPeriod('get_performance_summary.php'));
     var data = await res.json();
     if (data.error) throw new Error(data.error);
 
@@ -269,8 +310,11 @@ async function loadSummary() {
 
     var note = document.createElement('div');
     note.className = 'note';
-    note.textContent = '集計期間: ' + formatDateJP(data.date_range.min_date) + ' 〜 ' + formatDateJP(data.date_range.max_date) +
-      '(対象 ' + data.date_range.race_count.toLocaleString() + 'レース)。運用開始から間もないため、サンプル数はまだ少ない点にご留意ください。';
+    var rc = (data.date_range && data.date_range.race_count) ? Number(data.date_range.race_count) : 0;
+    var rangeText = rc > 0
+      ? ('集計期間: ' + formatDateJP(data.date_range.min_date) + ' 〜 ' + formatDateJP(data.date_range.max_date) + '(対象 ' + rc.toLocaleString() + 'レース)。')
+      : 'この期間の対象レースはまだありません。';
+    note.textContent = rangeText + (rc > 0 && rc < 300 ? ' サンプル数が少ないため、数値は今後変動しやすい点にご留意ください。' : '');
     el.appendChild(note);
 
     if (!data.stats || data.stats.length === 0) {
@@ -323,7 +367,6 @@ async function loadSummary() {
     el.appendChild(makeError('データの取得に失敗しました'));
   }
 }
-loadSummary();
 
 // ============================================================
 // 2. 日別推移グラフ(SVG、premiumのみ)
@@ -405,7 +448,7 @@ async function loadDaily() {
   el.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch('get_performance_daily.php');
+    var res = await fetch(withPeriod('get_performance_daily.php'));
     var data = await res.json();
     if (data.error) throw new Error(data.message || data.error);
 
@@ -441,7 +484,6 @@ async function loadDaily() {
     el.appendChild(makeError('データの取得に失敗しました'));
   }
 }
-loadDaily();
 
 // ============================================================
 // 3. 会場別内訳(premium)
@@ -449,6 +491,7 @@ loadDaily();
 // フィルタロジックを移植したもの。
 // ============================================================
 var venueBreakdownAllRows = [];
+var venueFiltersInitialized = false;
 
 function renderVenueBreakdownTable() {
   var el = document.getElementById('venueResult');
@@ -510,27 +553,32 @@ async function loadVenue() {
   el.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch('get_performance_venue.php');
+    var res = await fetch(withPeriod('get_performance_venue.php'));
     var data = await res.json();
     if (data.error) throw new Error(data.message || data.error);
 
-    el.textContent = '';
     if (!data.by_venue || data.by_venue.length === 0) {
-      el.appendChild(makeError('データがありません'));
+      venueBreakdownAllRows = [];
+      el.textContent = '';
+      el.appendChild(makeError('この期間の対象データがありません'));
       return;
     }
     venueBreakdownAllRows = data.by_venue;
 
-    var venueSelEl = document.getElementById('venueBreakdownFilterVenue');
-    ALL_VENUES.forEach(function(v) {
-      var opt = document.createElement('option');
-      opt.value = v;
-      opt.textContent = venueDisplayName(v);
-      venueSelEl.appendChild(opt);
-    });
-    venueSelEl.addEventListener('change', renderVenueBreakdownTable);
-    document.getElementById('venueBreakdownFilterStrategy').addEventListener('change', renderVenueBreakdownTable);
-    document.getElementById('venueBreakdownFilterRow').style.display = 'flex';
+    // 会場プルダウンの生成とイベント登録は初回のみ(期間変更での再描画時は重複させない)
+    if (!venueFiltersInitialized) {
+      var venueSelEl = document.getElementById('venueBreakdownFilterVenue');
+      ALL_VENUES.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = venueDisplayName(v);
+        venueSelEl.appendChild(opt);
+      });
+      venueSelEl.addEventListener('change', renderVenueBreakdownTable);
+      document.getElementById('venueBreakdownFilterStrategy').addEventListener('change', renderVenueBreakdownTable);
+      document.getElementById('venueBreakdownFilterRow').style.display = 'flex';
+      venueFiltersInitialized = true;
+    }
 
     renderVenueBreakdownTable();
   } catch (e) {
@@ -538,7 +586,6 @@ async function loadVenue() {
     el.appendChild(makeError('データの取得に失敗しました'));
   }
 }
-loadVenue();
 
 // ============================================================
 // 4. 戦略比較表。セクション1と同じ get_performance_summary.php を流用し、追加APIコールを避ける
@@ -550,13 +597,13 @@ async function loadCompare() {
   el.appendChild(makeLoading('読み込み中...'));
 
   try {
-    var res = await fetch('get_performance_summary.php');
+    var res = await fetch(withPeriod('get_performance_summary.php'));
     var data = await res.json();
     if (data.error) throw new Error(data.error);
 
     el.textContent = '';
     if (!data.stats || data.stats.length === 0) {
-      el.appendChild(makeError('データがありません'));
+      el.appendChild(makeError('この期間の対象データがありません'));
       return;
     }
 
@@ -612,7 +659,19 @@ async function loadCompare() {
     el.appendChild(makeError('データの取得に失敗しました'));
   }
 }
-loadCompare();
+
+// ============================================================
+// 期間フィルタ連動: 初回ロード + セレクタ変更で4セクションを再取得
+// ============================================================
+function reloadPeriodSections() {
+  updatePeriodDesc();
+  loadSummary();
+  loadDaily();
+  loadVenue();
+  loadCompare();
+}
+document.getElementById('periodSelect').addEventListener('change', reloadPeriodSections);
+reloadPeriodSections();
 
 // ============================================================
 // 5. 会場横断比較(premium限定、旧premium_dashboard.phpから統合)

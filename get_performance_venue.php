@@ -15,7 +15,16 @@ if ($plan === 'free') {
 
 $pdo = get_db();
 
-$stmt = $pdo->query('
+// 期間フィルタ: ?from=YYYY-MM-DD (未指定/不正時は全期間)
+$from = $_GET['from'] ?? null;
+$dateWhere = '';
+$params = [];
+if ($from !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
+    $dateWhere = ' WHERE r.date >= ?';
+    $params[] = $from;
+}
+
+$stmt = $pdo->prepare('
     SELECT
         r.venue,
         s.strategy_type,
@@ -25,10 +34,11 @@ $stmt = $pdo->query('
         COALESCE(SUM(sr.payout), 0) AS total_payout
     FROM strategy_results sr
     JOIN strategies s ON s.id = sr.strategy_id
-    JOIN races r ON r.id = sr.race_id
+    JOIN races r ON r.id = sr.race_id' . $dateWhere . '
     GROUP BY r.venue, s.strategy_type
     ORDER BY r.venue
 ');
+$stmt->execute($params);
 $rows = $stmt->fetchAll();
 
 $byVenue = [];
