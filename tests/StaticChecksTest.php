@@ -13,7 +13,8 @@ use PHPUnit\Framework\TestCase;
 final class StaticChecksTest extends TestCase
 {
     private const ALLOWED_ABSOLUTE_FETCH_HOSTS = [
-        '2410049.moo.jp', // 外部の会場情報API(自ドメインではない正当な外部呼び出し)
+        '2410049.moo.jp',  // 外部の会場情報API(自ドメインではない正当な外部呼び出し)
+        'api.github.com',  // admin.phpのジョブ実行状況取得(GitHub Actions API・公開リポジトリ)
     ];
 
     // <html> / <!DOCTYPE> を出力する既存ページ。新規ページを追加したら忘れずにここにも足すこと。
