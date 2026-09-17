@@ -24,14 +24,14 @@ final class BuildStrategiesTest extends TestCase
         $this->assertSame(['的中特化', 'バランス', '一撃重視', '絞り込み'], array_keys($built));
     }
 
-    public function test_tekichu_uses_harville_top6_when_prob_ok(): void
+    public function test_tekichu_uses_harville_top9_when_prob_ok(): void
     {
         $prob = $this->probMap6();
         $built = build_strategies([1, 2, 3, 4, 5, 6], $prob, true, []);
 
-        $expected = _strat_top_harville($prob, [1, 2, 3, 4], 6);
+        $expected = _strat_top_harville($prob, [1, 2, 3, 4], 9);
         $this->assertSame($expected, $built['的中特化']['combinations']);
-        $this->assertCount(6, $built['的中特化']['combinations']);
+        $this->assertCount(9, $built['的中特化']['combinations']);
         // 上位4艇(1-4)のみから構成される
         foreach ($built['的中特化']['combinations'] as $combo) {
             foreach (explode('-', $combo) as $lane) {

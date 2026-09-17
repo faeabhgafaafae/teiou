@@ -3,7 +3,7 @@
  * 戦略別買い目生成
  * predict.php から require_once して使う。単独呼び出し（?race_id=xxx）も可。
  *
- * 的中特化: 上位4艇の3連単24通りからHarville確率上位6点
+ * 的中特化: 上位4艇の3連単24通りからHarville確率上位9点
  *           (v2確率が取れない場合は従来の上位3艇全順列にフォールバック)
  * バランス: 上位2艇を1着に各固定 × 上位4艇の2,3着総流し（最大12点）
  *           オッズ上限フィルタあり: BALANCE_MAX_ODDS 超の組み合わせは除外
@@ -17,6 +17,8 @@
  *   絞り込み 1点→3点: 的中率 8.5%→16.1% / 回収率 83.0%→84.1%
  *   的中特化 box6→HV6: 的中率 21.4%→25.9% / 回収率 77.0%→79.5%
  * v2確率は predictions.score_total (v2昇格後は win_probability×100) を使用。
+ *
+ * 2026-09-17: 的中特化をHV6点→HV9点に拡大(design_v3_improvement_20260917.md参照)。
  *
  * 2026-09-09: 賭け金傾斜配分を導入(STAKE_SCHEME/STAKE_UNIT参照)。
  * 各買い目の金額を strategies.stakes (JSON、combinationsと同順) に保存し、
@@ -172,10 +174,10 @@ function build_strategies(array $lanes, array $prob_map, bool $prob_ok, array $o
 
     $strats = [];
 
-    // 的中特化: 上位4艇の3連単24通りからHarville確率上位6点（オッズフィルタなし）
+    // 的中特化: 上位4艇の3連単24通りからHarville確率上位9点（オッズフィルタなし）
     // v2確率が使えない場合は従来の上位3艇全順列（最大6点）
     if ($prob_ok && $n >= 4) {
-        $strats['的中特化'] = _strat_top_harville($prob_map, array_slice($lanes, 0, 4), 6);
+        $strats['的中特化'] = _strat_top_harville($prob_map, array_slice($lanes, 0, 4), 9);
     } else {
         $strats['的中特化'] = _strat_permutations(array_slice($lanes, 0, 3));
     }

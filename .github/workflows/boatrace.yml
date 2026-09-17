@@ -241,6 +241,8 @@ jobs:
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -296,6 +298,45 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           curl -s --max-time 170 "https://2410049.moo.jp/api_v3_shadow.php?api_key=${API_KEY}&date=${TARGET}"
+
+      # [2026-09-17] strategy_sim.py / sim_stake_allocation.py 用データエクスポート。
+      # 本番DBに直接繋げないローカル検証環境向けに、確定済みのオッズ・払戻・着順・
+      # 特徴量をdata/配下へCSV化してリポジトリにコミットする(読み取り専用APIのみ使用)。
+      - name: 戦略シミュレーション用CSVをエクスポート
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          mkdir -p data
+          BASE="https://2410049.moo.jp"
+          for mode in odds payouts finish; do
+            curl -s --max-time 170 -o "data/${mode}_${TARGET}.csv" \
+              "${BASE}/export_odds_payouts_v3.php?api_key=${API_KEY}&from=${TARGET}&to=${TARGET}&mode=${mode}"
+          done
+          curl -s --max-time 170 -o "data/lr_v3_${TARGET}.csv" \
+            "${BASE}/export_lr_data_v3.php?api_key=${API_KEY}&from=${TARGET}&to=${TARGET}"
+
+          # レース未確定等でJSONエラー応答/空応答が返った場合はコミット対象から外す
+          for f in "data/odds_${TARGET}.csv" "data/payouts_${TARGET}.csv" "data/finish_${TARGET}.csv" "data/lr_v3_${TARGET}.csv"; do
+            if [ -f "$f" ] && { [ ! -s "$f" ] || head -c 1 "$f" | grep -q '{'; }; then
+              echo "警告: ${f} は不正な応答のため破棄します"
+              cat "$f"
+              rm -f "$f"
+            fi
+          done
+
+      - name: 差分があればdata/CSVをコミット・push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          for f in "data/odds_${TARGET}.csv" "data/payouts_${TARGET}.csv" "data/finish_${TARGET}.csv" "data/lr_v3_${TARGET}.csv"; do
+            [ -f "$f" ] && git add "$f"
+          done
+          if git diff --cached --quiet; then
+            echo "差分なし。コミットをスキップします。"
+          else
+            git commit -m "data: ${TARGET}分の戦略シミュレーション用CSVを追加"
+            git push
+          fi
 
   # ─── 毎夜21:30: 当日のbeforeinfo補完 ───────────────────
   # live.ymlの発火頻度不足(GitHub Actions throttling)で
