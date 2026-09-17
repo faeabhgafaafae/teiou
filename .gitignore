@@ -20,3 +20,12 @@ __pycache__/
 /vendor/
 composer.lock
 .phpunit.cache/
+
+# ルート直下の作業用一時ファイル(data/配下の正規CSVは除外しない)
+/*.bak
+/finish_*.csv
+/lr_v3_*.csv
+/odds_*.csv
+/payouts_*.csv
+/lr_data_v3_full.csv
+/v3_training_output.txt
