@@ -289,3 +289,16 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- ----------------------------
+-- Migration: 2026-09-18  strategy_results.stake_scheme
+-- ----------------------------
+-- 清算時に strategies.stake_scheme(賭け金配分方式)を strategy_results 側へ転記して
+-- 記録するための列。既存行は NULL 許容。stakes=NULL の過去分は従来どおり
+-- 1点100円均等で清算される(import_results.php / calc_settlement)ため後方互換を維持する。
+-- 本番の予測・買い目生成ロジックには影響しない(記録用メタデータ列の追加のみ)。
+-- ※ MySQL 8 は ADD COLUMN IF NOT EXISTS 非対応。適用済みDBでは import_results.php の
+--   実行時 ALTER(error 1060=既存 を許容)で冪等に処理されるため、二重適用時はスキップ可。
+ALTER TABLE `strategy_results`
+  ADD COLUMN `stake_scheme` varchar(10) DEFAULT NULL
+  COMMENT '清算時の賭け金配分方式(strategies.stake_schemeを転記)。NULL=傾斜なし/過去分';

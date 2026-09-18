@@ -69,22 +69,39 @@ $stmt_result = $pdo->prepare('
         course       = VALUES(course)
 ');
 
-// stakes カラム(傾斜配分、2026-09-09導入)の有無を確認して照会SQLを切り替え
+// stakes/stake_scheme カラム(傾斜配分、2026-09-09導入)の有無を確認して照会SQLを切り替え。
+// 両列は generate_strategies.php で同時に追加されるため、まとめて存在確認する。
 $has_stakes = true;
 try {
-    $pdo->query('SELECT stakes FROM strategies LIMIT 1');
+    $pdo->query('SELECT stakes, stake_scheme FROM strategies LIMIT 1');
 } catch (PDOException $e) {
     $has_stakes = false;
 }
 $stmt_strats = $has_stakes
-    ? $pdo->prepare('SELECT id, strategy_type, combinations, stakes FROM strategies WHERE race_id = ?')
+    ? $pdo->prepare('SELECT id, strategy_type, combinations, stakes, stake_scheme FROM strategies WHERE race_id = ?')
     : $pdo->prepare('SELECT id, strategy_type, combinations FROM strategies WHERE race_id = ?');
 $stmt_odds   = $pdo->prepare('SELECT odds FROM odds_3t WHERE race_id = ? AND combo = ? LIMIT 1');
-$stmt_sr     = $pdo->prepare('
-    INSERT INTO strategy_results (strategy_id, race_id, is_hit, payout, cost)
-    VALUES (?, ?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE is_hit = VALUES(is_hit), payout = VALUES(payout), cost = VALUES(cost)
-');
+
+// strategy_results.stake_scheme カラムの存在確認・追加(2026-09-18。generate_strategies.php
+// と同方式。error 1060 = カラム既存 は正常ケース)。清算時に strategies.stake_scheme を転記する。
+$has_sr_scheme = true;
+try {
+    $pdo->exec("ALTER TABLE strategy_results ADD COLUMN stake_scheme VARCHAR(10) DEFAULT NULL");
+} catch (PDOException $e) {
+    $has_sr_scheme = ((int)$e->errorInfo[1] === 1060);
+}
+$stmt_sr = $has_sr_scheme
+    ? $pdo->prepare('
+        INSERT INTO strategy_results (strategy_id, race_id, is_hit, payout, cost, stake_scheme)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE is_hit = VALUES(is_hit), payout = VALUES(payout),
+                                cost = VALUES(cost), stake_scheme = VALUES(stake_scheme)
+    ')
+    : $pdo->prepare('
+        INSERT INTO strategy_results (strategy_id, race_id, is_hit, payout, cost)
+        VALUES (?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE is_hit = VALUES(is_hit), payout = VALUES(payout), cost = VALUES(cost)
+    ');
 
 foreach ($race_groups as $race_records) {
     $r0      = $race_records[0];
@@ -153,7 +170,15 @@ foreach ($race_groups as $race_records) {
             }
         }
         $settlement = calc_settlement($combos, $stakes, $winning_combo, $winning_odds);
-        $stmt_sr->execute([(int)$s['id'], $race_id, $settlement['is_hit'], $settlement['payout'], $settlement['cost']]);
+        // strategies 側の stake_scheme をそのまま転記(過去分・フォールバックは NULL)
+        $scheme = ($has_stakes && isset($s['stake_scheme'])) ? $s['stake_scheme'] : null;
+        if ($has_sr_scheme) {
+            $stmt_sr->execute([(int)$s['id'], $race_id, $settlement['is_hit'],
+                               $settlement['payout'], $settlement['cost'], $scheme]);
+        } else {
+            $stmt_sr->execute([(int)$s['id'], $race_id, $settlement['is_hit'],
+                               $settlement['payout'], $settlement['cost']]);
+        }
     }
 }
 
