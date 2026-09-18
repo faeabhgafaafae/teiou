@@ -189,7 +189,7 @@ svg.trend-chart { width: 100%; height: auto; }
   <div class="card">
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
       <h2 style="margin-bottom:0;">記録済み買い目</h2>
-      <a class="btn-export" href="https://2410049.moo.jp/export_user_picks.php" target="_blank" rel="noopener">&#11015; CSVダウンロード</a>
+      <a class="btn-export" href="export_user_picks.php" target="_blank" rel="noopener">&#11015; CSVダウンロード</a>
     </div>
     <div class="filter-row">
       <label>賭式:</label>

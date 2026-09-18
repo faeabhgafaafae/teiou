@@ -5,7 +5,7 @@
   var today = _now.getFullYear() + '-' + String(_now.getMonth()+1).padStart(2,'0') + '-' + String(_now.getDate()).padStart(2,'0');
   var currentDate = (window.PAGE_DATE && window.PAGE_DATE <= today) ? window.PAGE_DATE : today;
   var isToday = (currentDate === today);
-  var API_HOST = 'https://2410049.moo.jp';
+  var API_HOST = '';  // 同一オリジン。ルート相対パスで叩く
 
   function getDiffMs(scheduledTime) {
     if (!scheduledTime) return 999999999;

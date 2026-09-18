@@ -235,8 +235,8 @@ document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R 直�
   if (_headerLogoEl) _headerLogoEl.addEventListener('click', function() { location.href = 'index.php'; });
 })();
 
-// ホスト名を文字列結合にするのはCSPスキャナによる直書き検出を避けるため
-var API_BASE = 'https://' + '2410049.moo.jp';
+// 同一オリジンなのでルート相対パスで叩く(以前は自ドメイン絶対URLだった)
+var API_BASE = '';
 
 function formatName(n) { return n.replace(/[\s　]+/g, ''); }
 function fmtVal(v, decimals) {
