@@ -186,7 +186,7 @@ function renderVenueGrid() {
 async function loadVenues() {
   var grid = document.getElementById('venueGrid');
   try {
-    var res = await fetch('https://2410049.moo.jp/venues.php?date=' + window.PAGE_DATE);
+    var res = await fetch('venues.php?date=' + window.PAGE_DATE);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
 
