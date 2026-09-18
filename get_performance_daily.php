@@ -24,9 +24,19 @@ if ($from !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
     $params[] = $from;
 }
 
+// 集計単位: ?bucket=daily(既定) | weekly。長い期間で日次の折れ線が密集して
+// 読みにくいため週次(ISO週=月曜起点)への丸め込みを選べる。週次でも hit_rate/roi は
+// 週内の生カウント(hits/cost/payout)を合算してから算出するので加重平均になる。
+$bucket = (($_GET['bucket'] ?? 'daily') === 'weekly') ? 'weekly' : 'daily';
+// 日付グルーピング式(内部固定文字列。ユーザー入力は含めない)。
+// WEEKDAY: 月曜=0 なので、その日から WEEKDAY 日引くとその週の月曜になる。
+$dateExpr = $bucket === 'weekly'
+    ? 'DATE_SUB(r.date, INTERVAL WEEKDAY(r.date) DAY)'
+    : 'r.date';
+
 $stmt = $pdo->prepare('
     SELECT
-        r.date,
+        ' . $dateExpr . '           AS bucket_date,
         s.strategy_type,
         COUNT(sr.id)                AS total_races,
         COALESCE(SUM(sr.is_hit), 0) AS hits,
@@ -35,8 +45,8 @@ $stmt = $pdo->prepare('
     FROM strategy_results sr
     JOIN strategies s ON s.id = sr.strategy_id
     JOIN races r ON r.id = sr.race_id' . $dateWhere . '
-    GROUP BY r.date, s.strategy_type
-    ORDER BY r.date ASC
+    GROUP BY ' . $dateExpr . ', s.strategy_type
+    ORDER BY bucket_date ASC
 ');
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
@@ -50,7 +60,7 @@ foreach ($rows as $row) {
     $profit = $payout - $cost;
 
     $daily[] = [
-        'date'          => $row['date'],
+        'date'          => $row['bucket_date'],   // 週次は週の月曜(YYYY-MM-DD)
         'strategy_type' => $row['strategy_type'],
         'total_races'   => $total,
         'hit_rate'      => $total > 0 ? round($hits / $total * 100, 1) : 0,
@@ -58,4 +68,4 @@ foreach ($rows as $row) {
     ];
 }
 
-json_response(['daily' => $daily]);
+json_response(['bucket' => $bucket, 'daily' => $daily]);

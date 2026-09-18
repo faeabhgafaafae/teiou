@@ -132,8 +132,15 @@ svg.trend-chart { width: 100%; height: auto; }
 
   <!-- 2. 日別推移グラフ(premium) -->
   <div class="card">
-    <h2>日別推移(的中率・回収率)</h2>
+    <h2>戦略別 成績の推移(的中率・回収率)</h2>
     <?php if ($isStandardPlus): ?>
+      <div class="filter-row">
+        <label for="dailyBucketSelect">集計単位:</label>
+        <select id="dailyBucketSelect">
+          <option value="daily">日次</option>
+          <option value="weekly">週次(月曜起点)</option>
+        </select>
+      </div>
       <div id="dailyResult"><div class="loading">読み込み中...</div></div>
     <?php else: ?>
       <div class="premium-lock">
@@ -441,14 +448,20 @@ function buildLegend(types) {
   return legend;
 }
 
+function getDailyBucket() {
+  var s = document.getElementById('dailyBucketSelect');
+  return (s && s.value === 'weekly') ? 'weekly' : 'daily';
+}
+
 async function loadDaily() {
   if (!IS_STANDARD_PLUS) return;
   var el = document.getElementById('dailyResult');
   el.textContent = '';
   el.appendChild(makeLoading('読み込み中...'));
 
+  var bucket = getDailyBucket();
   try {
-    var res = await fetch(withPeriod('get_performance_daily.php'));
+    var res = await fetch(withPeriod('get_performance_daily.php') + '&bucket=' + bucket);
     var data = await res.json();
     if (data.error) throw new Error(data.message || data.error);
 
@@ -463,7 +476,9 @@ async function loadDaily() {
 
     var note = document.createElement('div');
     note.className = 'note';
-    note.textContent = '運用開始から日が浅いため、日別の変動が大きく出る場合があります。';
+    note.textContent = bucket === 'weekly'
+      ? '各週(月曜起点)の合算値で集計しています。x軸のラベルはその週の月曜日の日付です。'
+      : '運用開始から日が浅いため、日別の変動が大きく出る場合があります。長期の傾向は「週次」表示が見やすくなります。';
     el.appendChild(note);
 
     var titleR1 = document.createElement('div');
@@ -671,6 +686,8 @@ function reloadPeriodSections() {
   loadCompare();
 }
 document.getElementById('periodSelect').addEventListener('change', reloadPeriodSections);
+var dailyBucketSel = document.getElementById('dailyBucketSelect');
+if (dailyBucketSel) dailyBucketSel.addEventListener('change', loadDaily);
 reloadPeriodSections();
 
 // ============================================================
