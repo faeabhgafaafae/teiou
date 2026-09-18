@@ -31,6 +31,19 @@ SOFT_WARN_PT = 3.0    # soft warning: ROI点推定の悪化幅
 STRATS = ['tokka', 'balance', 'ichigeki', 'shibori']
 NAMES  = {'tokka': '的中特化', 'balance': 'バランス', 'ichigeki': '一撃重視', 'shibori': '絞り込み'}
 
+TOKKA_POINTS = 9   # 的中特化のデフォルト点数(本番generate_strategies.phpと一致)
+
+
+def harville(probs, a, b, c):
+    """3連単 a-b-c のHarville近似確率。sim_stake_allocation.py と同一実装。
+    probs: {枠番: 確率}(レース内で正規化済みを想定)"""
+    pa, pb, pc = probs[a], probs[b], probs[c]
+    d1 = 1.0 - pa
+    d2 = 1.0 - pa - pb
+    if d1 <= 1e-9 or d2 <= 1e-9:
+        return 0.0
+    return pa * (pb / d1) * (pc / d2)
+
 
 def load_market_data(data_dir='.'):
     """オッズ・払戻・着順CSVを読み込み {odds_map, pay_map, finish_map} を返す"""
@@ -59,10 +72,19 @@ def payout_for(market, rid, combo):
     return int(o * 100) if o is not None else 0
 
 
-def strategies_for(lanes, odds_r):
-    """現行本番ロジック(generate_strategies.php)の再現。lanes=予測順位順の枠番リスト"""
+def strategies_for(lanes, odds_r, probs=None, n_tokka=TOKKA_POINTS):
+    """現行本番ロジック(generate_strategies.php)の再現。lanes=予測順位順の枠番リスト
+
+    tokka(的中特化)は本番と同じく、probsが与えられ4艇以上あれば
+    上位4艇の3連単24通りをHarville確率降順で上位 n_tokka 点。
+    probsが無い/4艇未満なら従来の上位3艇全順列(6点)にフォールバック。
+    probs: {枠番: 確率}(レース内で正規化済みを想定)"""
     s = {}
-    s['tokka'] = ['-'.join(map(str, p)) for p in permutations(lanes[:3])]
+    if probs is not None and len(lanes) >= 4:
+        perms = sorted(permutations(lanes[:4], 3), key=lambda p: -harville(probs, *p))
+        s['tokka'] = ['-'.join(map(str, p)) for p in perms[:n_tokka]]
+    else:
+        s['tokka'] = ['-'.join(map(str, p)) for p in permutations(lanes[:3])]
     top4 = lanes[:4]
     bal = []
     for first in top4[:2]:
@@ -90,10 +112,11 @@ def strategies_for(lanes, odds_r):
     return s
 
 
-def build_race_table(preds, model_cols, market):
+def build_race_table(preds, model_cols, market, n_tokka=TOKKA_POINTS):
     """レース単位の戦略別cost/payout + rank1枠番 + 勝者枠番のテーブルを構築。
 
     preds: race_id, lane, 確率列(model_cols)を持つDataFrame(1行=1艇)
+    n_tokka: 的中特化のHarville上位点数(デフォルト9=本番と一致)
     返り値: 1行=1レースのDataFrame
     """
     rows = []
@@ -104,9 +127,15 @@ def build_race_table(preds, model_cols, market):
         odds_r = market['odds'].get(rid, {})
         rec = {'race_id': rid, 'win_lane': int(actual.split('-')[0])}
         for m in model_cols:
-            lanes = grp.sort_values(m, ascending=False)['lane'].astype(int).tolist()
+            g = grp.sort_values(m, ascending=False)
+            lanes = g['lane'].astype(int).tolist()
+            # Harville用にレース内で確率を正規化 {枠番: 確率}
+            vals = g[m].astype(float).to_numpy()
+            tot = vals.sum()
+            probs = {int(l): (v / tot if tot > 0 else 0.0)
+                     for l, v in zip(lanes, vals)}
             rec[f'{m}_rank1'] = lanes[0]
-            for s, combos in strategies_for(lanes, odds_r).items():
+            for s, combos in strategies_for(lanes, odds_r, probs, n_tokka).items():
                 rec[f'{m}_{s}_cost'] = len(combos) * 100
                 rec[f'{m}_{s}_pay']  = payout_for(market, rid, actual) if actual in combos else 0
         rows.append(rec)
