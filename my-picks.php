@@ -137,6 +137,13 @@ svg.trend-chart { width: 100%; height: auto; }
     <div id="chartsArea"><div class="loading">読み込み中...</div></div>
   </div>
 
+  <!-- 戦略通りに買っていたら(実際との比較) -->
+  <div class="card">
+    <h2>戦略通りに買っていたら(実際との比較)</h2>
+    <div class="note">あなたが購入した「結果確定済み」のレースについて、4戦略それぞれの推奨買い目で購入していた場合の収支を、実際の収支と並べて比較します。</div>
+    <div id="strategyCompareArea"><div class="loading">読み込み中...</div></div>
+  </div>
+
   <!-- 買い目記録フォーム -->
   <div class="card">
     <h2>買い目を記録する</h2>
@@ -425,9 +432,118 @@ async function loadPicks() {
     renderCharts(allPicks);
     updateVenueFilter();
     renderPicksList();
+    loadStrategyCompare();
   } catch (e) {
     document.getElementById('picksListArea').innerHTML = '<div class="error-msg">' + e.message + '</div>';
   }
+}
+
+// ===== 戦略通りに買っていたら(実際との比較) =====
+function compareCell(text, color) {
+  var td = document.createElement('td');
+  td.style.padding = '8px 6px';
+  td.style.borderBottom = '1px solid #f0f0f0';
+  td.style.textAlign = 'center';
+  td.style.whiteSpace = 'nowrap';
+  if (color) { td.style.color = color; td.style.fontWeight = '700'; }
+  td.textContent = text;
+  return td;
+}
+function fmtYen(n) { return (n || 0).toLocaleString() + '円'; }
+function fmtSignedYen(n) { return (n > 0 ? '+' : '') + (n || 0).toLocaleString() + '円'; }
+function pnlColor(n) { return n > 0 ? '#16a34a' : (n < 0 ? '#dc2626' : ''); }
+
+function compareRow(label, perf, isActual) {
+  var tr = document.createElement('tr');
+  if (isActual) { tr.style.background = '#f0f5ff'; }
+  var tdLabel = compareCell(label);
+  tdLabel.style.fontWeight = '700';
+  tdLabel.style.textAlign = 'left';
+  tr.appendChild(tdLabel);
+  tr.appendChild(compareCell(perf.total_races + '件'));
+  tr.appendChild(compareCell(perf.hit_rate === null ? '-' : perf.hit_rate.toFixed(1) + '%'));
+  tr.appendChild(compareCell(fmtYen(perf.total_cost)));
+  tr.appendChild(compareCell(fmtYen(perf.total_payout)));
+  tr.appendChild(compareCell(fmtSignedYen(perf.profit), pnlColor(perf.profit)));
+  // 回収率 = roi(損益率) + 100
+  var recovery = perf.roi === null ? '-' : (perf.roi + 100).toFixed(1) + '%';
+  tr.appendChild(compareCell(recovery, perf.roi === null ? '' : pnlColor(perf.roi)));
+  return tr;
+}
+
+async function loadStrategyCompare() {
+  var el = document.getElementById('strategyCompareArea');
+  if (!el) return;
+  el.textContent = '';
+  el.appendChild(makeLoadingDiv());
+  try {
+    var res = await fetch('get_user_picks_strategy_compare.php');
+    if (!res.ok) throw new Error('取得に失敗しました');
+    var data = await res.json();
+    if (data.error) throw new Error(data.message || data.error);
+
+    el.textContent = '';
+    if (!data.total_races || data.total_races === 0) {
+      var empty = document.createElement('div');
+      empty.style.color = '#999';
+      empty.style.fontSize = '13px';
+      empty.textContent = '結果が確定した購入レースがまだありません。レース結果が確定すると比較が表示されます。';
+      el.appendChild(empty);
+      return;
+    }
+
+    var scroll = document.createElement('div');
+    scroll.style.overflowX = 'auto';
+    var table = document.createElement('table');
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
+    table.style.fontSize = '13px';
+
+    var thead = document.createElement('thead');
+    var hrow = document.createElement('tr');
+    ['区分', '対象レース', '的中率', '投資額', '払戻額', '収支', '回収率'].forEach(function(h, i) {
+      var th = document.createElement('th');
+      th.textContent = h;
+      th.style.padding = '8px 6px';
+      th.style.borderBottom = '2px solid #e0e3e8';
+      th.style.fontSize = '11px';
+      th.style.color = '#999';
+      th.style.whiteSpace = 'nowrap';
+      th.style.textAlign = i === 0 ? 'left' : 'center';
+      hrow.appendChild(th);
+    });
+    thead.appendChild(hrow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    tbody.appendChild(compareRow('実際の購入', data.actual, true));
+    data.strategies.forEach(function(s) {
+      tbody.appendChild(compareRow(s.strategy_type, s, false));
+    });
+    table.appendChild(tbody);
+    scroll.appendChild(table);
+    el.appendChild(scroll);
+
+    var note = document.createElement('div');
+    note.style.marginTop = '8px';
+    note.style.fontSize = '11px';
+    note.style.color = '#aaa';
+    note.textContent = '対象は結果確定済みの購入レース ' + data.total_races + '件（うち戦略買い目が生成されていたのは ' + data.strategy_coverage + '件）。戦略側は各戦略の推奨全点購入時の収支です。';
+    el.appendChild(note);
+  } catch (e) {
+    el.textContent = '';
+    var err = document.createElement('div');
+    err.className = 'error-msg';
+    err.textContent = 'データの取得に失敗しました';
+    el.appendChild(err);
+  }
+}
+
+function makeLoadingDiv() {
+  var d = document.createElement('div');
+  d.className = 'loading';
+  d.textContent = '読み込み中...';
+  return d;
 }
 
 function renderSummary(s) {
