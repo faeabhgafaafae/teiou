@@ -302,3 +302,19 @@ CREATE TABLE `users` (
 ALTER TABLE `strategy_results`
   ADD COLUMN `stake_scheme` varchar(10) DEFAULT NULL
   COMMENT '清算時の賭け金配分方式(strategies.stake_schemeを転記)。NULL=傾斜なし/過去分';
+
+-- ----------------------------
+-- Migration: 2026-09-23  model_ref (ハイブリッド構成の参照モデル記録)
+-- ----------------------------
+-- 戦略ごとに参照した予測モデル(v2=predictions / v3w=predictions_v2)を記録する列。
+-- generate_strategies.php の STRATEGY_MODEL_MAP に基づき strategies に保存し、
+-- import_results.php が清算時に strategy_results へ転記する。
+-- 現行は全戦略 'v2' のため既存挙動は不変(記録用メタデータ列の追加のみ)。既存行は NULL 許容。
+-- ※ MySQL 8 は ADD COLUMN IF NOT EXISTS 非対応。適用済みDBでは generate_strategies.php /
+--   import_results.php の実行時 ALTER(error 1060=既存 を許容)で冪等に処理される。
+ALTER TABLE `strategies`
+  ADD COLUMN `model_ref` varchar(10) DEFAULT NULL
+  COMMENT '買い目生成に使用した予測モデル(v2/v3w)。NULL=記録前の過去分';
+ALTER TABLE `strategy_results`
+  ADD COLUMN `model_ref` varchar(10) DEFAULT NULL
+  COMMENT '清算時に strategies.model_ref を転記。NULL=記録前の過去分';

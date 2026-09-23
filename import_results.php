@@ -69,39 +69,43 @@ $stmt_result = $pdo->prepare('
         course       = VALUES(course)
 ');
 
-// stakes/stake_scheme カラム(傾斜配分、2026-09-09導入)の有無を確認して照会SQLを切り替え。
-// 両列は generate_strategies.php で同時に追加されるため、まとめて存在確認する。
-$has_stakes = true;
-try {
-    $pdo->query('SELECT stakes, stake_scheme FROM strategies LIMIT 1');
-} catch (PDOException $e) {
-    $has_stakes = false;
-}
-$stmt_strats = $has_stakes
-    ? $pdo->prepare('SELECT id, strategy_type, combinations, stakes, stake_scheme FROM strategies WHERE race_id = ?')
-    : $pdo->prepare('SELECT id, strategy_type, combinations FROM strategies WHERE race_id = ?');
+// strategies 側の任意列の有無を確認して照会SQLを動的に組み立てる。
+//   stakes/stake_scheme: 傾斜配分(2026-09-09導入。両列は同時に追加される)
+//   model_ref          : ハイブリッド構成の参照モデル(2026-09-23導入)
+$strat_has = ['stakes' => false, 'model_ref' => false];
+try { $pdo->query('SELECT stakes, stake_scheme FROM strategies LIMIT 1'); $strat_has['stakes'] = true; } catch (PDOException $e) {}
+try { $pdo->query('SELECT model_ref FROM strategies LIMIT 1');            $strat_has['model_ref'] = true; } catch (PDOException $e) {}
+$has_stakes    = $strat_has['stakes'];
+$has_model_ref = $strat_has['model_ref'];
+
+$sel_cols = ['id', 'strategy_type', 'combinations'];
+if ($has_stakes)    { $sel_cols[] = 'stakes'; $sel_cols[] = 'stake_scheme'; }
+if ($has_model_ref) { $sel_cols[] = 'model_ref'; }
+$stmt_strats = $pdo->prepare('SELECT ' . implode(', ', $sel_cols) . ' FROM strategies WHERE race_id = ?');
 $stmt_odds   = $pdo->prepare('SELECT odds FROM odds_3t WHERE race_id = ? AND combo = ? LIMIT 1');
 
-// strategy_results.stake_scheme カラムの存在確認・追加(2026-09-18。generate_strategies.php
-// と同方式。error 1060 = カラム既存 は正常ケース)。清算時に strategies.stake_scheme を転記する。
-$has_sr_scheme = true;
-try {
-    $pdo->exec("ALTER TABLE strategy_results ADD COLUMN stake_scheme VARCHAR(10) DEFAULT NULL");
-} catch (PDOException $e) {
-    $has_sr_scheme = ((int)$e->errorInfo[1] === 1060);
+// strategy_results の記録用メタデータ列を存在確認・追加(generate_strategies.php と同方式。
+// error 1060 = カラム既存 は正常ケース)。清算時に strategies 側の値をそのまま転記する。
+$add_sr_col = function(string $col) use ($pdo): bool {
+    try { $pdo->exec("ALTER TABLE strategy_results ADD COLUMN {$col} VARCHAR(10) DEFAULT NULL"); return true; }
+    catch (PDOException $e) { return ((int)$e->errorInfo[1] === 1060); }
+};
+$sr_has = [
+    'stake_scheme' => $add_sr_col('stake_scheme'),
+    'model_ref'    => $add_sr_col('model_ref'),
+];
+$ins_cols = ['strategy_id', 'race_id', 'is_hit', 'payout', 'cost'];
+if ($sr_has['stake_scheme']) $ins_cols[] = 'stake_scheme';
+if ($sr_has['model_ref'])    $ins_cols[] = 'model_ref';
+$ins_upd = [];
+foreach ($ins_cols as $c) {
+    if ($c !== 'strategy_id' && $c !== 'race_id') $ins_upd[] = "$c = VALUES($c)";
 }
-$stmt_sr = $has_sr_scheme
-    ? $pdo->prepare('
-        INSERT INTO strategy_results (strategy_id, race_id, is_hit, payout, cost, stake_scheme)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE is_hit = VALUES(is_hit), payout = VALUES(payout),
-                                cost = VALUES(cost), stake_scheme = VALUES(stake_scheme)
-    ')
-    : $pdo->prepare('
-        INSERT INTO strategy_results (strategy_id, race_id, is_hit, payout, cost)
-        VALUES (?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE is_hit = VALUES(is_hit), payout = VALUES(payout), cost = VALUES(cost)
-    ');
+$stmt_sr = $pdo->prepare(
+    'INSERT INTO strategy_results (' . implode(', ', $ins_cols) . ')' .
+    ' VALUES (' . implode(', ', array_fill(0, count($ins_cols), '?')) . ')' .
+    ' ON DUPLICATE KEY UPDATE ' . implode(', ', $ins_upd)
+);
 
 foreach ($race_groups as $race_records) {
     $r0      = $race_records[0];
@@ -170,15 +174,13 @@ foreach ($race_groups as $race_records) {
             }
         }
         $settlement = calc_settlement($combos, $stakes, $winning_combo, $winning_odds);
-        // strategies 側の stake_scheme をそのまま転記(過去分・フォールバックは NULL)
-        $scheme = ($has_stakes && isset($s['stake_scheme'])) ? $s['stake_scheme'] : null;
-        if ($has_sr_scheme) {
-            $stmt_sr->execute([(int)$s['id'], $race_id, $settlement['is_hit'],
-                               $settlement['payout'], $settlement['cost'], $scheme]);
-        } else {
-            $stmt_sr->execute([(int)$s['id'], $race_id, $settlement['is_hit'],
-                               $settlement['payout'], $settlement['cost']]);
-        }
+        // strategies 側の stake_scheme / model_ref をそのまま転記(過去分・欠損は NULL)
+        $scheme    = ($has_stakes    && isset($s['stake_scheme'])) ? $s['stake_scheme'] : null;
+        $model_ref = ($has_model_ref && isset($s['model_ref']))    ? $s['model_ref']    : null;
+        $vals = [(int)$s['id'], $race_id, $settlement['is_hit'], $settlement['payout'], $settlement['cost']];
+        if ($sr_has['stake_scheme']) $vals[] = $scheme;
+        if ($sr_has['model_ref'])    $vals[] = $model_ref;
+        $stmt_sr->execute($vals);
     }
 }
 

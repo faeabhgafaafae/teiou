@@ -42,6 +42,23 @@ const STAKE_SCHEME = 'prob';
 const STAKE_UNIT   = 600;   // 1点あたり予算(円)。シムで600円前後から改善が頭打ち
 const STAKE_MIN    = 100;   // 全買い目への最低保証(円)。的中率を落とさないため
 
+// ── ハイブリッド構成: 戦略ごとの参照予測モデル ──────────────────────────
+// 'v2'  = predictions テーブル(本番ロジスティック回帰。api_predict.php が書き込み)
+// 'v3w' = predictions_v2 テーブル(重み付き学習 v3w シャドウ。api_v3_shadow.php が書き込み)
+//
+// 2026-09-27 の v3w 昇格判定に向けた事前準備(design_shibori_diagnosis_20260919.md の総括)。
+// 現時点は全戦略 'v2' で、参照テーブル・買い目・傾斜配分とも現行から一切変わらない。
+// 判定後に「的中特化だけを v3w へ切り替える」場合は、下の '的中特化' の値を 'v3w' に
+// 変更するだけでよい(この定数1行の変更のみで参照先が切り替わる)。
+// 指定モデルの予測が存在しないレースは自動的に STRATEGY_MODEL_FALLBACK へフォールバックする。
+const STRATEGY_MODEL_FALLBACK = 'v2';
+const STRATEGY_MODEL_MAP = [
+    '的中特化' => 'v2',
+    'バランス' => 'v2',
+    '一撃重視' => 'v2',
+    '絞り込み' => 'v2',
+];
+
 /**
  * 3連単 a-b-c のHarville近似確率。
  * $prob は lane => 1着確率(レース内合計≒1)のマップ。
@@ -261,9 +278,93 @@ function build_strategies(array $lanes, array $prob_map, bool $prob_ok, array $o
     return $result;
 }
 
-function generate_and_save_strategies(PDO $pdo, int $race_id): array {
-    // score_total は v2昇格(2026-08-27)後は win_probability×100 が入る
-    // (api_predict.php参照)。model_version='v2_lr' で判別する。
+/**
+ * ハイブリッド構成: 戦略ごとに異なる予測モデルを参照してビルドする。
+ *
+ * 内部では参照モデルごとに build_strategies() を1回だけ呼び(結果をキャッシュ)、
+ * $model_map の割り当てに従って戦略を選び取る。よって全戦略が同一モデルを指す
+ * 現行設定では build_strategies() 単独呼び出しと combinations/stakes が完全に一致し、
+ * 差分は各戦略への 'model_ref'(実際に使用したモデル名)キーの付与のみ。
+ *
+ * 指定モデルの予測データ($models[$m])が無い/不足するレースでは $fallback のモデルへ
+ * 自動フォールバックする(移行期に v3w 予測が未生成のレースでも戦略を落とさない)。
+ *
+ * @param array  $models    model名 => ['lanes'=>, 'prob_map'=>, 'prob_ok'=>] (nullや未設定=データ無し)
+ * @param array  $odds_map  combo('a-b-c') => 3連単オッズ
+ * @param array  $model_map strategy_type => 参照モデル名(既定 STRATEGY_MODEL_MAP)
+ * @param string $fallback  参照モデル欠損時のフォールバック先(既定 STRATEGY_MODEL_FALLBACK)
+ * @return array strategy_type => ['combinations'=>, 'stakes'=>, 'stake_scheme'=>, 'total_cost'=>, 'model_ref'=>]
+ */
+function build_strategies_hybrid(array $models, array $odds_map,
+                                 array $model_map = STRATEGY_MODEL_MAP,
+                                 string $fallback = STRATEGY_MODEL_FALLBACK): array {
+    $cache = [];
+    $build_for = function(string $m) use (&$cache, $models, $odds_map) {
+        if (array_key_exists($m, $cache)) return $cache[$m];
+        if (!isset($models[$m]) || $models[$m] === null) return $cache[$m] = null;
+        $d = $models[$m];
+        return $cache[$m] = build_strategies($d['lanes'], $d['prob_map'], $d['prob_ok'], $odds_map);
+    };
+
+    $result = [];
+    foreach ($model_map as $type => $m) {
+        $built = $build_for($m);
+        $used  = $m;
+        if ($built === null || !isset($built[$type])) {   // 指定モデル欠損 → フォールバック
+            $built = $build_for($fallback);
+            $used  = $fallback;
+        }
+        if ($built === null || !isset($built[$type])) continue;
+        $entry = $built[$type];
+        $entry['model_ref'] = $used;
+        $result[$type] = $entry;
+    }
+    return $result;
+}
+
+/**
+ * 指定モデルの予測を読み込み ['lanes'=>, 'prob_map'=>, 'prob_ok'=>] を返す。
+ * 予測が無い(3艇未満)場合や参照テーブルが存在しない場合は null。
+ *
+ * 'v2'  : predictions テーブル。score_total は v2昇格(2026-08-27)後 win_probability×100。
+ *         全艇 model_version='v2_lr' かつ確率合計≒1 のときのみ prob_ok=true。
+ * 'v3w' : predictions_v2 テーブル(シャドウ)。win_probability は 0〜1 で保存済み。
+ */
+function _load_model_predictions(PDO $pdo, int $race_id, string $model): ?array {
+    if ($model === 'v3w') {
+        try {
+            $stmt = $pdo->prepare('
+                SELECT p.predicted_rank, MIN(e.lane) AS lane,
+                       MAX(p.win_probability) AS win_probability
+                FROM predictions_v2 p
+                JOIN entries e ON e.race_id = p.race_id AND e.player_id = p.player_id
+                WHERE p.race_id = ?
+                GROUP BY p.player_id, p.predicted_rank
+                ORDER BY p.predicted_rank ASC
+            ');
+            $stmt->execute([$race_id]);
+        } catch (PDOException $e) {
+            return null; // predictions_v2 未存在など
+        }
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (count($rows) < 3) return null;
+
+        $lanes    = array_map('intval', array_column($rows, 'lane'));
+        $n        = count($lanes);
+        $prob_map = [];
+        $prob_ok  = true;
+        foreach ($rows as $row) {
+            if ($row['win_probability'] === null) { $prob_ok = false; break; }
+            $prob_map[(int)$row['lane']] = (float)$row['win_probability'];
+        }
+        if ($prob_ok) {
+            $psum    = array_sum($prob_map);
+            $prob_ok = count($prob_map) === $n && $psum > 0.8 && $psum < 1.2;
+        }
+        return ['lanes' => $lanes, 'prob_map' => $prob_map, 'prob_ok' => $prob_ok];
+    }
+
+    // 'v2' (既定): 本番 predictions テーブル
     try {
         $stmt = $pdo->prepare('
             SELECT p.predicted_rank, MIN(e.lane) as lane,
@@ -291,14 +392,10 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
         $stmt->execute([$race_id]);
     }
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (count($rows) < 3) return null;
 
-    if (count($rows) < 3) return [];
-
-    $lanes = array_map('intval', array_column($rows, 'lane'));
-    $n     = count($lanes);
-
-    // v2の1着確率マップ(lane => probability)。全艇がv2予測で、確率の
-    // 合計がほぼ1のときのみ有効(v1スコアが混在した場合はフォールバック)。
+    $lanes    = array_map('intval', array_column($rows, 'lane'));
+    $n        = count($lanes);
     $prob_map = [];
     $prob_ok  = true;
     foreach ($rows as $row) {
@@ -309,9 +406,24 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
         $prob_map[(int)$row['lane']] = (float)$row['score_total'] / 100.0;
     }
     if ($prob_ok) {
-        $psum = array_sum($prob_map);
+        $psum    = array_sum($prob_map);
         $prob_ok = count($prob_map) === $n && $psum > 0.8 && $psum < 1.2;
     }
+    return ['lanes' => $lanes, 'prob_map' => $prob_map, 'prob_ok' => $prob_ok];
+}
+
+function generate_and_save_strategies(PDO $pdo, int $race_id): array {
+    // STRATEGY_MODEL_MAP が参照する全モデル(+フォールバック)の予測をロードする。
+    // 現行は全戦略 'v2' のため predictions のみを1回読む(predictions_v2 は参照しない)。
+    $referenced = array_values(array_unique(
+        array_merge(array_values(STRATEGY_MODEL_MAP), [STRATEGY_MODEL_FALLBACK])
+    ));
+    $models = [];
+    foreach ($referenced as $m) {
+        $models[$m] = _load_model_predictions($pdo, $race_id, $m);
+    }
+    // フォールバックモデルの予測すら無ければ生成不可(現行同様に空返し)
+    if (($models[STRATEGY_MODEL_FALLBACK] ?? null) === null) return [];
 
     // 3連単オッズを取得（フィルタ用。未取得の場合はフィルタをスキップ）
     $odds_map = [];
@@ -323,62 +435,55 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
         }
     } catch (PDOException $e) { /* odds未取得時は全組み合わせを許容 */ }
 
-    $built = build_strategies($lanes, $prob_map, $prob_ok, $odds_map);
+    $built = build_strategies_hybrid($models, $odds_map);
 
-    // stakes/stake_scheme カラムの存在確認・追加 (api_predict.phpと同方式。
-    // error 1060 = カラム既存 は正常ケース)
-    $has_stake_cols = true;
-    try {
-        $pdo->exec("ALTER TABLE strategies ADD COLUMN stakes JSON DEFAULT NULL");
-    } catch (PDOException $e) {
-        $has_stake_cols = ((int)$e->errorInfo[1] === 1060);
-    }
-    if ($has_stake_cols) {
-        try {
-            $pdo->exec("ALTER TABLE strategies ADD COLUMN stake_scheme VARCHAR(10) DEFAULT NULL");
-        } catch (PDOException $e) {
-            $has_stake_cols = ((int)$e->errorInfo[1] === 1060);
-        }
-    }
+    // stakes/stake_scheme/model_ref カラムの存在確認・追加 (api_predict.phpと同方式。
+    // error 1060 = カラム既存 は正常ケース)。利用可能なカラムのみを動的に保存する。
+    $add_col = function(string $ddl) use ($pdo): bool {
+        try { $pdo->exec($ddl); return true; }
+        catch (PDOException $e) { return ((int)$e->errorInfo[1] === 1060); }
+    };
+    $has_stakes     = $add_col("ALTER TABLE strategies ADD COLUMN stakes JSON DEFAULT NULL");
+    $has_stake_cols = $has_stakes && $add_col("ALTER TABLE strategies ADD COLUMN stake_scheme VARCHAR(10) DEFAULT NULL");
+    $has_model_col  = $add_col("ALTER TABLE strategies ADD COLUMN model_ref VARCHAR(10) DEFAULT NULL");
 
-    // DB保存（ON DUPLICATE KEY UPDATE で冪等）
-    if ($has_stake_cols) {
-        $upsert = $pdo->prepare('
-            INSERT INTO strategies (race_id, strategy_type, combinations, stakes, stake_scheme)
-            VALUES (?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                combinations = VALUES(combinations),
-                stakes       = VALUES(stakes),
-                stake_scheme = VALUES(stake_scheme)
-        ');
-    } else {
-        $upsert = $pdo->prepare('
-            INSERT INTO strategies (race_id, strategy_type, combinations)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE combinations = VALUES(combinations)
-        ');
+    // 保存カラムを動的に組み立て(ON DUPLICATE KEY UPDATE で冪等)
+    $cols = ['race_id', 'strategy_type', 'combinations'];
+    if ($has_stake_cols) { $cols[] = 'stakes'; $cols[] = 'stake_scheme'; }
+    if ($has_model_col)  { $cols[] = 'model_ref'; }
+    $ph  = implode(', ', array_fill(0, count($cols), '?'));
+    $upd = [];
+    foreach ($cols as $c) {
+        if ($c !== 'race_id' && $c !== 'strategy_type') $upd[] = "$c = VALUES($c)";
     }
+    $upsert = $pdo->prepare(
+        'INSERT INTO strategies (' . implode(', ', $cols) . ') VALUES (' . $ph . ')' .
+        ' ON DUPLICATE KEY UPDATE ' . implode(', ', $upd)
+    );
 
     $saved = [];
     foreach ($built as $type => $b) {
-        $combos = $b['combinations'];
-        $stakes = $b['stakes'];
+        $combos    = $b['combinations'];
+        $stakes    = $b['stakes'];
+        $model_ref = $b['model_ref'] ?? STRATEGY_MODEL_FALLBACK;
+
+        $vals = [$race_id, $type, json_encode($combos, JSON_UNESCAPED_UNICODE)];
         if ($has_stake_cols) {
-            $upsert->execute([
-                $race_id, $type,
-                json_encode($combos, JSON_UNESCAPED_UNICODE),
-                $stakes !== null ? json_encode($stakes) : null,
-                $b['stake_scheme'],
-            ]);
-        } else {
-            $upsert->execute([$race_id, $type, json_encode($combos, JSON_UNESCAPED_UNICODE)]);
+            $vals[] = $stakes !== null ? json_encode($stakes) : null;
+            $vals[] = $b['stake_scheme'];
         }
+        if ($has_model_col) {
+            $vals[] = $model_ref;
+        }
+        $upsert->execute($vals);
+
         $saved[] = [
             'strategy_type' => $type,
             'combo_count'   => count($combos),
             'combinations'  => $combos,
             'stakes'        => $stakes,
             'stake_scheme'  => $b['stake_scheme'],
+            'model_ref'     => $model_ref,
             'total_cost'    => $b['total_cost'],
         ];
     }
