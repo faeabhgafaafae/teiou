@@ -26,6 +26,8 @@
  * stakes=NULL の行(過去分・フォールバック時)は従来の1点100円均等として扱う。
  */
 
+require_once __DIR__ . '/prediction_guard_lib.php';
+
 // オッズフィルタ閾値（必要に応じて調整）
 // 2026-09-03: バランス上限を25→100倍に変更。25倍上限はv2順位の中穴的中(25-100倍帯)を
 // 捨てて回収率を毀損していた(balance_simulation_report_20260903.md参照。
@@ -413,6 +415,11 @@ function _load_model_predictions(PDO $pdo, int $race_id, string $model): ?array 
 }
 
 function generate_and_save_strategies(PDO $pdo, int $race_id): array {
+    // 結果確定済みレースの買い目は再生成しない(空返し・書き込みなし)。
+    // 再生成→import_results.php の再清算で strategy_results まで上書きされるのを防ぐ
+    // (api_predict.php 経由・単独エンドポイント経由の両方に効かせるためここで判定)。
+    if (race_is_settled($pdo, $race_id)) return [];
+
     // STRATEGY_MODEL_MAP が参照する全モデル(+フォールバック)の予測をロードする。
     // 現行は全戦略 'v2' のため predictions のみを1回読む(predictions_v2 は参照しない)。
     $referenced = array_values(array_unique(

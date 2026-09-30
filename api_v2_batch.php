@@ -116,7 +116,8 @@ foreach ($period_stmt->fetchAll() as $row) {
 }
 
 // ── Step3: 当地2年間の成績を一括取得 ─────────────────────────
-$cutoff = date('Y-m-d', strtotime('-2 years'));
+// 当地成績は対象日より前の2年分のみ(2026-09-30: 上限なしで結果取込後の実行時に当日着順が混入していた)
+$cutoff = date('Y-m-d', strtotime($date . ' -2 years'));
 
 // player_id + venue の組み合わせを収集
 $venue_map = [];
@@ -132,10 +133,10 @@ $local_stmt = $pdo->prepare("
     FROM results res
     JOIN races rc ON res.race_id = rc.id
     WHERE res.player_id IN ($ph)
-      AND rc.date >= ?
+      AND rc.date >= ? AND rc.date < ?
     GROUP BY res.player_id, rc.venue
 ");
-$local_stmt->execute(array_merge($player_ids, [$cutoff]));
+$local_stmt->execute(array_merge($player_ids, [$cutoff, $date]));
 $local_stats = [];
 foreach ($local_stmt->fetchAll() as $row) {
     $pid   = (int)$row['player_id'];

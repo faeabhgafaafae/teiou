@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/prediction_guard_lib.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -80,14 +81,8 @@ if ($isPremium && !empty($predictions)) {
         $playerId = (int)$pred['player_id'];
         $lane     = (int)$pred['lane'];
 
-        $stmtL = $pdo->prepare('
-            SELECT COUNT(*) as total,
-                   SUM(CASE WHEN r2.actual_rank = 1 THEN 1 ELSE 0 END) as rank1
-            FROM results r2 JOIN races rc ON r2.race_id = rc.id
-            WHERE r2.player_id = ? AND rc.venue = ? AND rc.date >= DATE_SUB(?, INTERVAL 2 YEAR)
-        ');
-        $stmtL->execute([$playerId, $venue, $date]);
-        $local = $stmtL->fetch();
+        // 当地・コース別成績はレース日より前のみ(prediction_guard_lib.php。先読みリーク防止)
+        $local = fetch_local_stats($pdo, $playerId, $venue, $date);
         $winRateNational = (float)($pred['win_rate'] ?? 0);
         $winRateLocal    = (int)$local['total'] > 0
             ? (float)$local['rank1'] / (float)$local['total'] * 100
@@ -95,16 +90,7 @@ if ($isPremium && !empty($predictions)) {
         $winRateWeighted = $winRateNational * 0.4 + $winRateLocal * 0.6;
         $scoreAbilityRaw = min(40, $winRateWeighted / 10 * 40);
 
-        $stmtC = $pdo->prepare('
-            SELECT COUNT(*) as total,
-                   SUM(CASE WHEN r2.actual_rank = 1 THEN 1 ELSE 0 END) as rank1,
-                   SUM(CASE WHEN r2.actual_rank <= 2 THEN 1 ELSE 0 END) as rank2,
-                   SUM(CASE WHEN r2.actual_rank <= 3 THEN 1 ELSE 0 END) as rank3
-            FROM results r2 JOIN races rc ON r2.race_id = rc.id
-            WHERE r2.player_id = ? AND r2.lane = ? AND rc.date >= DATE_SUB(?, INTERVAL 2 YEAR)
-        ');
-        $stmtC->execute([$playerId, $lane, $date]);
-        $courseRes = $stmtC->fetch();
+        $courseRes = fetch_course_stats($pdo, $playerId, $lane, $date);
         if ((int)$courseRes['total'] > 0) {
             $r1 = (float)$courseRes['rank1'] / (float)$courseRes['total'];
             $r2 = (float)$courseRes['rank2'] / (float)$courseRes['total'];

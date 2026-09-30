@@ -33,11 +33,11 @@ try {
                (SELECT ROUND(SUM(r2.actual_rank = 1) / NULLIF(COUNT(*), 0) * 100, 2)
                 FROM results r2 JOIN races rc2 ON r2.race_id = rc2.id
                 WHERE r2.player_id = e.player_id AND rc2.venue = ?
-                  AND rc2.date >= ?) AS win_rate_local,
+                  AND rc2.date >= ? AND rc2.date < ?) AS win_rate_local,
                (SELECT ROUND(SUM(r2.actual_rank <= 2) / NULLIF(COUNT(*), 0) * 100, 2)
                 FROM results r2 JOIN races rc2 ON r2.race_id = rc2.id
                 WHERE r2.player_id = e.player_id AND rc2.venue = ?
-                  AND rc2.date >= ?) AS fukusho_local
+                  AND rc2.date >= ? AND rc2.date < ?) AS fukusho_local
         FROM entries e
         LEFT JOIN players pl ON pl.id = e.player_id
         LEFT JOIN player_periods pp
@@ -51,7 +51,8 @@ try {
         WHERE e.race_id = ?
         ORDER BY e.lane ASC
     ');
-    $stmt->execute([$venue, $two_years_ago, $venue, $two_years_ago, $race['id']]);
+    // 当地成績はレース日より前のみ(過去レースの出走表に当該レース以降の着順を混ぜない)
+    $stmt->execute([$venue, $two_years_ago, $date, $venue, $two_years_ago, $date, $race['id']]);
     $entries = $stmt->fetchAll();
 
     $stmt2 = $pdo->prepare('SELECT scheduled_time, wind_speed, wind_dir, wave_height FROM races WHERE id = ?');

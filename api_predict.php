@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/generate_strategies.php';
+require_once __DIR__ . '/prediction_guard_lib.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -96,17 +97,8 @@ foreach ($entries as $e) {
     $fukusho_rate_national = (float)($period['fukusho_rate'] ?? 0);
     $race_count            = $period['race_count'] ?? 0;
 
-    $stmt2 = $pdo->prepare("
-        SELECT COUNT(*) as total,
-               SUM(CASE WHEN r2.actual_rank = 1 THEN 1 ELSE 0 END) as rank1,
-               SUM(CASE WHEN r2.actual_rank <= 2 THEN 1 ELSE 0 END) as rank2
-        FROM results r2
-        JOIN races rc ON r2.race_id = rc.id
-        WHERE r2.player_id = ? AND rc.venue = ?
-        AND rc.date >= DATE_SUB(?, INTERVAL 2 YEAR)
-    ");
-    $stmt2->execute([$player_id, $venue, $date]);
-    $local = $stmt2->fetch(PDO::FETCH_ASSOC);
+    // 当地・コース別成績はレース日より前のみ(prediction_guard_lib.php。先読みリーク防止)
+    $local = fetch_local_stats($pdo, (int)$player_id, $venue, $date);
     $win_rate_local       = ($local['total'] > 0) ? ($local['rank1'] / $local['total'] * 100) : $win_rate_national;
     $local_win_rate_ratio = $local['total'] > 0 ? $local['rank1'] / $local['total'] : null;
     $local_2rate_ratio    = $local['total'] > 0 ? $local['rank2'] / $local['total'] : null;
@@ -115,18 +107,7 @@ foreach ($entries as $e) {
     $win_rate_weighted = $win_rate_national * 0.4 + $win_rate_local * 0.6;
     $score_ability_raw = min(40, $win_rate_weighted / 10 * 40);
 
-    $stmt2 = $pdo->prepare("
-        SELECT COUNT(*) as total,
-               SUM(CASE WHEN r2.actual_rank = 1 THEN 1 ELSE 0 END) as rank1,
-               SUM(CASE WHEN r2.actual_rank <= 2 THEN 1 ELSE 0 END) as rank2,
-               SUM(CASE WHEN r2.actual_rank <= 3 THEN 1 ELSE 0 END) as rank3
-        FROM results r2
-        JOIN races rc ON r2.race_id = rc.id
-        WHERE r2.player_id = ? AND r2.lane = ?
-        AND rc.date >= DATE_SUB(?, INTERVAL 2 YEAR)
-    ");
-    $stmt2->execute([$player_id, $lane, $date]);
-    $course = $stmt2->fetch(PDO::FETCH_ASSOC);
+    $course = fetch_course_stats($pdo, (int)$player_id, (int)$lane, $date);
 
     // コース補正の配点は35点満点(旧20点満点から変更。2026-07シミュレーションでコース優位性が
     // 過小評価されていたことが判明したため引き上げ。他要素との合算は正規化して100点満点を維持する)
@@ -261,76 +242,18 @@ usort($scores, function($a, $b) {
     return $a['lane'] <=> $b['lane'];
 });
 
-// model_version カラムの存在確認・追加。
-// ALTER TABLE が権限エラー等で失敗した場合は model_version なしでINSERTする。
-// (error 1060 = カラム既存 は正常ケース)
-$has_model_version = true;
-try {
-    $pdo->exec("ALTER TABLE predictions ADD COLUMN model_version VARCHAR(10) DEFAULT NULL");
-} catch (PDOException $e) {
-    $has_model_version = ((int)$e->errorInfo[1] === 1060);
-}
-
-// 予測結果をDBに保存
-if ($has_model_version) {
-    $stmt = $pdo->prepare("
-        INSERT INTO predictions
-            (race_id, player_id, predicted_rank, score_total,
-             score_ability, score_course, score_today, score_weather, model_version, created_at)
-        VALUES
-            (:race_id, :player_id, :predicted_rank, :score_total,
-             :score_ability, :score_course, :score_today, :score_weather, :model_version, NOW())
-        ON DUPLICATE KEY UPDATE
-            predicted_rank=VALUES(predicted_rank),
-            score_total=VALUES(score_total),
-            score_ability=VALUES(score_ability),
-            score_course=VALUES(score_course),
-            score_today=VALUES(score_today),
-            score_weather=VALUES(score_weather),
-            model_version=VALUES(model_version),
-            created_at=NOW()
-    ");
-} else {
-    $stmt = $pdo->prepare("
-        INSERT INTO predictions
-            (race_id, player_id, predicted_rank, score_total,
-             score_ability, score_course, score_today, score_weather, created_at)
-        VALUES
-            (:race_id, :player_id, :predicted_rank, :score_total,
-             :score_ability, :score_course, :score_today, :score_weather, NOW())
-        ON DUPLICATE KEY UPDATE
-            predicted_rank=VALUES(predicted_rank),
-            score_total=VALUES(score_total),
-            score_ability=VALUES(score_ability),
-            score_course=VALUES(score_course),
-            score_today=VALUES(score_today),
-            score_weather=VALUES(score_weather),
-            created_at=NOW()
-    ");
-}
-
-for ($i = 0; $i < count($scores); $i++) {
-    $params = [
-        ':race_id'        => $race_id,
-        ':player_id'      => $scores[$i]['player_id'],
-        ':predicted_rank' => $scores[$i]['predicted_rank'],
-        ':score_total'    => $scores[$i]['score_total'],
-        ':score_ability'  => $scores[$i]['score_ability'],
-        ':score_course'   => $scores[$i]['score_course'],
-        ':score_today'    => $scores[$i]['score_today'],
-        ':score_weather'  => $scores[$i]['score_weather'],
-    ];
-    if ($has_model_version) {
-        $params[':model_version'] = 'v2_lr';
+// 予測結果をDBに保存し、戦略買い目を自動生成する。
+// 結果確定済みレースは保存も買い目再生成もしない(prediction_guard_lib.php)。
+// 翌日バッチや過去レース閲覧での再実行が、レース前に記録した予測・買い目・清算を
+// 上書きしないため。表示はレース前に保存された予測に揃える。
+if (persist_predictions($pdo, (int)$race_id, $scores)) {
+    try {
+        generate_and_save_strategies($pdo, (int)$race_id);
+    } catch (Exception $e) {
+        // strategies テーブル未作成時など非致命的エラーは無視
     }
-    $stmt->execute($params);
-}
-
-// 予測生成のタイミングで戦略買い目を自動生成
-try {
-    generate_and_save_strategies($pdo, $race_id);
-} catch (Exception $e) {
-    // strategies テーブル未作成時など非致命的エラーは無視
+} else {
+    $scores = overlay_stored_predictions($scores, fetch_stored_predictions($pdo, (int)$race_id));
 }
 
 // このAPIは直前情報(exhibit_time等)を無料機能(直前情報タブ・出走表フォールバック等)が
