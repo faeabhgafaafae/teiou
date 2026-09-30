@@ -77,4 +77,5 @@ jobs:
             phpunit.xml
             vendor/**
             tests/**
+            tools/**
             .phpunit.cache/**
