@@ -2,6 +2,8 @@
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/generate_strategies.php';
 require_once __DIR__ . '/prediction_guard_lib.php';
+require_once __DIR__ . '/predict_v3_lib.php';
+require_once __DIR__ . '/model_switch.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -242,19 +244,51 @@ usort($scores, function($a, $b) {
     return $a['lane'] <=> $b['lane'];
 });
 
+// ── v3w(重み付き学習)で同じレースを予測 (2026-10-01 本番化) ──────────────
+// 戦略・画面表示の参照モデルは model_switch.php で切り替える。v2 / v3w とも常に両方を保存し、
+// 定数を戻すだけで切り替え前に戻せるようにしている。
+$v3_results = [];
+try {
+    $v3_results = PredictV3::score_race(
+        build_v3_inputs($pdo, $entries, $date, $venue),
+        ['wind_speed' => $race['wind_speed'], 'wave_height' => $race['wave_height']]
+    );
+} catch (Exception $e) {
+    $v3_results = []; // v3w が計算できなくても v2 の予測・戦略(フォールバック)は継続
+}
+
 // 予測結果をDBに保存し、戦略買い目を自動生成する。
 // 結果確定済みレースは保存も買い目再生成もしない(prediction_guard_lib.php)。
 // 翌日バッチや過去レース閲覧での再実行が、レース前に記録した予測・買い目・清算を
 // 上書きしないため。表示はレース前に保存された予測に揃える。
 if (persist_predictions($pdo, (int)$race_id, $scores)) {
     try {
+        persist_v3_predictions($pdo, (int)$race_id, $v3_results);
+    } catch (Exception $e) {
+        // predictions_v2 保存失敗時は戦略が v2 にフォールバックする(model_ref='v2' で記録される)
+    }
+    try {
         generate_and_save_strategies($pdo, (int)$race_id);
     } catch (Exception $e) {
         // strategies テーブル未作成時など非致命的エラーは無視
     }
+    $display_model = 'v2';
+    $display       = [];
+    if (PREDICTION_DISPLAY_MODEL === 'v3w' && $date >= V3W_PREDICTIONS_FROM && count($v3_results) === count($scores)) {
+        $display_model = 'v3w';
+        foreach ($v3_results as $pid => $r) {
+            $display[(int)$pid] = [
+                'predicted_rank' => (int)$r['predicted_rank'],
+                'score_total'    => round($r['probability'] * 100, 2),
+            ];
+        }
+    }
 } else {
-    $scores = overlay_stored_predictions($scores, fetch_stored_predictions($pdo, (int)$race_id));
+    $scores  = overlay_stored_predictions($scores, fetch_stored_predictions($pdo, (int)$race_id));
+    $display = load_display_predictions($pdo, (int)$race_id, $date, $display_model);
 }
+// 予測順位・スコア(=1着確率×100)を表示モデルの値にする(v2 のときは $display が空で何もしない)
+$scores = apply_display_ranks($scores, $display);
 
 // このAPIは直前情報(exhibit_time等)を無料機能(直前情報タブ・出走表フォールバック等)が
 // 参照するため誰でも呼び出せる状態を維持しつつ、AI予測由来のフィールド
@@ -289,6 +323,7 @@ echo json_encode([
     'race_no'     => $race_no,
     'race_id'     => $race_id,
     'entry_count' => count($entries),
+    'model'       => $display_model,
     'ai_locked'   => !$isPaid,
     'weather'     => [
         'wind_speed'        => $race['wind_speed'],

@@ -8,7 +8,10 @@
  * predictions_v2 の 2026-09-04〜09-12 分は旧v3(重みなし・昇格見送り)の予測のため、
  * v3wの評価は from=2026-09-13 以降で行うこと。
  *
- * 本番の predictions / strategies / 画面表示には一切書き込まない(design §4.2)。
+ * 2026-10-01: v3w を本番化(design_v3w_switch_20261001.md)。predictions_v2 は戦略・画面表示の
+ * 参照先になったため、結果確定済みレースには書き込まない(predictions と同じ方針)。本番の予測は
+ * api_predict.php が1レースずつ保存しており、本バッチは結果取込み前に未生成レースを補完する役割。
+ * predictions / strategies には書き込まない。
  * 集計系特徴量(当地・コース別・直近10走)はすべて「対象日より前」のresultsのみを
  * 使うため、レース後に実行しても予測時点で利用可能だった情報と等価になる。
  *
@@ -30,7 +33,7 @@ set_exception_handler(function(Throwable $e) {
 set_time_limit(180);
 
 require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/predict_v3_core.php';
+require_once __DIR__ . '/predict_v3_lib.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -157,27 +160,10 @@ foreach ($stmt->fetchAll() as $row) {
     ];
 }
 
-function recent10_stats(array $hist, int $pid): array {
-    $rows = $hist[$pid] ?? [];
-    $n = count($rows);
-    if ($n < 3) return [null, null, null]; // 3走未満は信頼性不足(学習時と同一基準)
-    $slice = array_slice($rows, max(0, $n - 10));
-    $cnt = count($slice);
-    $sum_rank = 0; $wins = 0; $st_sum = 0.0; $st_cnt = 0;
-    foreach ($slice as [$rank, $st]) {
-        $sum_rank += $rank;
-        if ($rank === 1) $wins++;
-        if ($st !== null) { $st_sum += $st; $st_cnt++; }
-    }
-    return [
-        round($sum_rank / $cnt, 4),
-        round($wins / $cnt, 4),
-        $st_cnt > 0 ? round($st_sum / $st_cnt, 4) : null,
-    ];
-}
 
 // ── Step6: レースごとにv3予測を計算・保存 ────────────────────────────
-$saved_races = 0;
+$saved_races     = 0;
+$skipped_settled = 0; // 結果確定済みのため保存しなかったレース
 $errors      = [];
 
 foreach ($races_map as $race_id => $race_data) {
@@ -188,7 +174,7 @@ foreach ($races_map as $race_id => $race_data) {
         $venue = $e['venue'];
         $pp    = $periods[$pid] ?? null;
         [$c_total, $c_r1, $c_r2] = $course_stats[$pid][$lane] ?? [0, 0, 0];
-        [$r10_rank, $r10_win, $r10_st] = recent10_stats($hist, $pid);
+        [$r10_rank, $r10_win, $r10_st] = v3_recent10_stats($hist[$pid] ?? []);
 
         $v3_entries[] = [
             'lane'              => $lane,
@@ -211,8 +197,11 @@ foreach ($races_map as $race_id => $race_data) {
 
     try {
         $v3_results = PredictV3::score_race($v3_entries, $race_data['weather']);
-        PredictV3::save_shadow_predictions($pdo, $race_id, $v3_results);
-        $saved_races++;
+        if (persist_v3_predictions($pdo, (int)$race_id, $v3_results)) {
+            $saved_races++;
+        } else {
+            $skipped_settled++;
+        }
     } catch (Exception $ex) {
         $errors[] = "race_id=$race_id: " . $ex->getMessage();
     }
@@ -223,6 +212,7 @@ echo json_encode([
     'model'        => 'v3w055_lr_shadow',
     'races_total'  => count($races_map),
     'races_saved'  => $saved_races,
+    'races_skipped_settled' => $skipped_settled,
     'errors'       => count($errors),
     'error_detail' => array_slice($errors, 0, 5),
 ], JSON_UNESCAPED_UNICODE);

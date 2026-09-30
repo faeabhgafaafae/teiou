@@ -3,9 +3,9 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * ハイブリッド構成(戦略ごとの参照モデル切り替え)のテスト。
- *  - STRATEGY_MODEL_MAP の既定は全戦略 'v2'(現行と同一挙動)
+ *  - STRATEGY_MODEL_MAP(model_switch.php)は4戦略を既知モデルに割り当てる(2026-10-01〜全v3w)
  *  - build_strategies_hybrid() が map に従って参照モデルを切り替える
- *  - 現行設定(全v2)では build_strategies() 単独呼び出しと combinations/stakes が一致
+ *  - v2 の予測しか無いレースでは build_strategies() 単独呼び出しと combinations/stakes が一致
  *  - 参照モデル欠損時はフォールバックする
  * DB非依存の純粋ロジックのみを検証する(保存/清算はDBが要るため対象外)。
  */
@@ -33,22 +33,27 @@ final class HybridStrategyMapTest extends TestCase
 
     // ── 既定マップ ──────────────────────────────────────
 
-    public function test_default_map_is_all_v2(): void
+    /**
+     * 既定マップ(model_switch.php)は4戦略すべてを既知モデルに割り当てていること。
+     * 2026-10-01 に全戦略 v3w へ切り替えたが、'v2' へ戻す(ロールバック)だけでも
+     * CI(=デプロイの前提)が通るよう、値そのものは固定しない。
+     */
+    public function test_default_map_assigns_known_models(): void
     {
-        $this->assertSame(
-            ['的中特化' => 'v2', 'バランス' => 'v2', '一撃重視' => 'v2', '絞り込み' => 'v2'],
-            STRATEGY_MODEL_MAP
-        );
-        $this->assertSame('v2', STRATEGY_MODEL_FALLBACK);
+        $this->assertSame(['的中特化', 'バランス', '一撃重視', '絞り込み'], array_keys(STRATEGY_MODEL_MAP));
+        foreach (STRATEGY_MODEL_MAP as $type => $model) {
+            $this->assertContains($model, ['v2', 'v3w'], "{$type}: 未知のモデル");
+        }
+        $this->assertSame('v2', STRATEGY_MODEL_FALLBACK, 'フォールバックは常に保存される v2');
     }
 
-    // ── 現行設定(全v2)で build_strategies と一致 ──────────
+    // ── v2 の予測しか無いとき build_strategies と一致 ──────
 
     public function test_all_v2_matches_single_build_strategies(): void
     {
         $v2  = $this->v2Model();
         $ref = build_strategies($v2['lanes'], $v2['prob_map'], $v2['prob_ok'], []);
-        // 既定マップ(全v2)。v3w は渡さない = 現行の generate_and_save_strategies と同じ状況
+        // 既定マップのまま v3w を渡さない = v3w 未生成レース。全戦略が v2 で生成される
         $hyb = build_strategies_hybrid(['v2' => $v2], []);
 
         $this->assertSame(array_keys($ref), array_keys($hyb), '戦略の並び順が一致');

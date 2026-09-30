@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/model_switch.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -27,8 +28,23 @@ if ($type === 'personal') {
 
 $pdo = get_db();
 
+// 予測順位・スコアは表示モデル(model_switch.php)に合わせる。解説文は順位に依存するため、
+// キャッシュも表示モデルのテーブル(v3w=predictions_v2 / v2=predictions)に分けて保存する。
+$stmtD = $pdo->prepare('SELECT date FROM races WHERE id = ?');
+$stmtD->execute([(int)$race_id]);
+$raceDate     = (string)($stmtD->fetchColumn() ?: '');
+$displayModel = 'v2';
+$display      = load_display_predictions($pdo, (int)$race_id, $raceDate, $displayModel);
+$expTable     = prediction_table($displayModel);
+if ($expTable === 'predictions_v2') {
+    foreach (['explanation', 'explanation_personal'] as $col) {
+        try { $pdo->exec("ALTER TABLE predictions_v2 ADD COLUMN {$col} TEXT DEFAULT NULL"); }
+        catch (PDOException $e) { /* 1060 = カラム既存 */ }
+    }
+}
+
 // ── 選手データ取得（共通） ──
-function fetch_players(PDO $pdo, int $race_id): array {
+function fetch_players(PDO $pdo, int $race_id, array $display): array {
     $stmt = $pdo->prepare('
         SELECT p.player_id, p.predicted_rank, p.score_total,
                p.score_ability, p.score_course, p.score_today, p.score_weather,
@@ -40,7 +56,7 @@ function fetch_players(PDO $pdo, int $race_id): array {
         ORDER BY p.predicted_rank ASC
     ');
     $stmt->execute([$race_id]);
-    $rows = $stmt->fetchAll();
+    $rows = apply_display_ranks($stmt->fetchAll(), $display);
     $players = [];
     foreach ($rows as $r) {
         $players[] = [
@@ -111,18 +127,18 @@ function call_groq(string $prompt): string {
 // ══════════════════════════════════════════
 if ($type === 'personal') {
     // キャッシュ確認
-    $stmt = $pdo->prepare('SELECT explanation_personal FROM predictions WHERE race_id = ? AND explanation_personal IS NOT NULL LIMIT 1');
+    $stmt = $pdo->prepare("SELECT explanation_personal FROM {$expTable} WHERE race_id = ? AND explanation_personal IS NOT NULL LIMIT 1");
     $stmt->execute([(int)$race_id]);
     $cached = $stmt->fetch();
 
     if ($cached) {
-        $stmt = $pdo->prepare('
+        $stmt = $pdo->prepare("
             SELECT p.player_id, pl.name, p.explanation_personal
-            FROM predictions p
+            FROM {$expTable} p
             JOIN players pl ON pl.id = p.player_id
             WHERE p.race_id = ?
             ORDER BY p.predicted_rank ASC
-        ');
+        ");
         $stmt->execute([(int)$race_id]);
         $personals = [];
         foreach ($stmt->fetchAll() as $r) {
@@ -135,7 +151,7 @@ if ($type === 'personal') {
         json_response(['personals' => $personals, 'cached' => true]);
     }
 
-    $players = fetch_players($pdo, (int)$race_id);
+    $players = fetch_players($pdo, (int)$race_id, $display);
     if (empty($players)) {
         json_response(['error' => '予想データが見つかりません'], 404);
     }
@@ -170,7 +186,7 @@ if ($type === 'personal') {
     }
 
     // DB保存
-    $stmt = $pdo->prepare('UPDATE predictions SET explanation_personal = ? WHERE race_id = ? AND player_id = ?');
+    $stmt = $pdo->prepare("UPDATE {$expTable} SET explanation_personal = ? WHERE race_id = ? AND player_id = ?");
     foreach ($personals as $p) {
         $pid = (int)($p['player_id'] ?? 0);
         $exp = $p['explanation'] ?? '';
@@ -180,13 +196,13 @@ if ($type === 'personal') {
     }
 
     // 保存後に全選手分を返す
-    $stmt2 = $pdo->prepare('
+    $stmt2 = $pdo->prepare("
         SELECT p.player_id, pl.name, p.explanation_personal
-        FROM predictions p
+        FROM {$expTable} p
         JOIN players pl ON pl.id = p.player_id
         WHERE p.race_id = ?
         ORDER BY p.predicted_rank ASC
-    ');
+    ");
     $stmt2->execute([(int)$race_id]);
     $result = [];
     foreach ($stmt2->fetchAll() as $r) {
@@ -202,7 +218,7 @@ if ($type === 'personal') {
 // ══════════════════════════════════════════
 // type=overall: 全体解説（既存）
 // ══════════════════════════════════════════
-$stmt = $pdo->prepare('SELECT explanation FROM predictions WHERE race_id = ? LIMIT 1');
+$stmt = $pdo->prepare("SELECT explanation FROM {$expTable} WHERE race_id = ? LIMIT 1");
 $stmt->execute([(int)$race_id]);
 $row = $stmt->fetch();
 
@@ -214,7 +230,7 @@ if ($row['explanation'] !== null) {
     json_response(['explanation' => $row['explanation'], 'cached' => true]);
 }
 
-$players = fetch_players($pdo, (int)$race_id);
+$players = fetch_players($pdo, (int)$race_id, $display);
 if (empty($players)) {
     json_response(['error' => '予想データが見つかりません'], 404);
 }
@@ -245,7 +261,7 @@ $prompt = "ボートレースのAI予想結果を以下に示します。\n"
 
 $text = call_groq($prompt);
 
-$stmt = $pdo->prepare('UPDATE predictions SET explanation = ? WHERE race_id = ?');
+$stmt = $pdo->prepare("UPDATE {$expTable} SET explanation = ? WHERE race_id = ?");
 $stmt->execute([$text, (int)$race_id]);
 
 json_response(['explanation' => $text]);

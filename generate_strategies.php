@@ -27,6 +27,7 @@
  */
 
 require_once __DIR__ . '/prediction_guard_lib.php';
+require_once __DIR__ . '/model_switch.php';
 
 // オッズフィルタ閾値（必要に応じて調整）
 // 2026-09-03: バランス上限を25→100倍に変更。25倍上限はv2順位の中穴的中(25-100倍帯)を
@@ -45,21 +46,8 @@ const STAKE_UNIT   = 600;   // 1点あたり予算(円)。シムで600円前後�
 const STAKE_MIN    = 100;   // 全買い目への最低保証(円)。的中率を落とさないため
 
 // ── ハイブリッド構成: 戦略ごとの参照予測モデル ──────────────────────────
-// 'v2'  = predictions テーブル(本番ロジスティック回帰。api_predict.php が書き込み)
-// 'v3w' = predictions_v2 テーブル(重み付き学習 v3w シャドウ。api_v3_shadow.php が書き込み)
-//
-// 2026-09-27 の v3w 昇格判定に向けた事前準備(design_shibori_diagnosis_20260919.md の総括)。
-// 現時点は全戦略 'v2' で、参照テーブル・買い目・傾斜配分とも現行から一切変わらない。
-// 判定後に「的中特化だけを v3w へ切り替える」場合は、下の '的中特化' の値を 'v3w' に
-// 変更するだけでよい(この定数1行の変更のみで参照先が切り替わる)。
+// STRATEGY_MODEL_MAP / STRATEGY_MODEL_FALLBACK は model_switch.php に移動(2026-10-01、全戦略 v3w)。
 // 指定モデルの予測が存在しないレースは自動的に STRATEGY_MODEL_FALLBACK へフォールバックする。
-const STRATEGY_MODEL_FALLBACK = 'v2';
-const STRATEGY_MODEL_MAP = [
-    '的中特化' => 'v2',
-    'バランス' => 'v2',
-    '一撃重視' => 'v2',
-    '絞り込み' => 'v2',
-];
 
 /**
  * 3連単 a-b-c のHarville近似確率。
@@ -421,7 +409,7 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
     if (race_is_settled($pdo, $race_id)) return [];
 
     // STRATEGY_MODEL_MAP が参照する全モデル(+フォールバック)の予測をロードする。
-    // 現行は全戦略 'v2' のため predictions のみを1回読む(predictions_v2 は参照しない)。
+    // 全戦略 v3w なら predictions_v2(v3w) と predictions(フォールバック用 v2) の2つを読む。
     $referenced = array_values(array_unique(
         array_merge(array_values(STRATEGY_MODEL_MAP), [STRATEGY_MODEL_FALLBACK])
     ));

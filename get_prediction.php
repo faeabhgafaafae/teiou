@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/prediction_guard_lib.php';
+require_once __DIR__ . '/model_switch.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -60,6 +61,12 @@ try {
     ');
     $stmt->execute([$raceId]);
     $predictions = $stmt->fetchAll();
+    // 予測順位・スコア(1着確率×100)は表示モデル(model_switch.php)の値に差し替える。
+    // スコア内訳(score_ability 等)と選手情報は predictions(v1内訳)のまま。
+    $displayModel = 'v2';
+    $predictions  = apply_display_ranks(
+        $predictions, load_display_predictions($pdo, $raceId, $date, $displayModel)
+    );
 } catch (PDOException $e) {
     json_response(['error' => 'データベースエラーが発生しました'], 500);
 }
@@ -163,5 +170,6 @@ json_response([
     'race_no'     => (int)$race_no,
     'plan'        => $plan,
     'is_premium'  => $isPremium,
+    'model'       => $displayModel,
     'predictions' => $predictions,
 ]);
