@@ -122,6 +122,7 @@ svg.trend-chart { width: 100%; height: auto; }
       <option value="2026-06-29">全期間(v1手動スコア時代を含む、2026-06-29〜)</option>
     </select>
     <p class="period-desc" id="periodDesc"></p>
+    <p class="period-desc caution" id="periodGapNote" hidden></p>
   </div>
 
   <!-- 1. 全体サマリー(無料) -->
@@ -265,6 +266,12 @@ var PERIOD_DESC = {
   '2026-08-27': { text: 'v2(ロジスティック回帰)切替以降。ただし9/8以前は全買い目1点100円均等、9/9以降は傾斜配分(1点平均600円)のため、投資額・払戻額の絶対値は期間内で不連続です。的中率・回収率(比率)は比較できます。', caution: false },
   '2026-06-29': { text: '全期間。v1(手動スコア、〜8/26)やオッズ上限・艇プールの変更前を含むため、条件の異なるデータが混在します。長期の傾向把握用の参考値としてご覧ください。', caution: false }
 };
+// 集計対象に含まれない日(欠損)。期間がこの日を含むときに注記する。
+// 結果確定後の予測・買い目の後追い生成は、結果を知った状態での選定になり得るため行わない
+// (design_leak_fix_20260930.md / design_v3w_switch_20261001.md §2.2)。
+var DATA_GAPS = [
+  { date: '2026-10-05', text: '2026-10-05 は集計バッチの障害で予測・買い目が生成されなかったため、この日のレース(144R)は成績に含まれていません。結果確定後に買い目を後から作ると結果を知った状態での選定になり得るため、補完は行っていません。' }
+];
 function getPeriodFrom() {
   var sel = document.getElementById('periodSelect');
   return sel ? sel.value : '2026-09-09';
@@ -279,6 +286,14 @@ function updatePeriodDesc() {
   var d = PERIOD_DESC[getPeriodFrom()] || { text: '', caution: false };
   el.textContent = d.text;
   el.className = 'period-desc' + (d.caution ? ' caution' : '');
+
+  var gapEl = document.getElementById('periodGapNote');
+  if (!gapEl) return;
+  var from  = getPeriodFrom();
+  var notes = DATA_GAPS.filter(function(g) { return g.date >= from; })
+                       .map(function(g) { return '※ ' + g.text; });
+  gapEl.textContent = notes.join(' ');
+  gapEl.hidden = notes.length === 0;
 }
 
 function makeLoading(text) {
