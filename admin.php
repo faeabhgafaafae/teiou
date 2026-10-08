@@ -92,6 +92,8 @@ function rate_class($pct) {
     if ($pct === null) return 'na';
     return $pct >= 95 ? 'ok' : ($pct >= 80 ? 'warn' : 'danger');
 }
+// 割合の表示(小数1桁固定。null は '-')
+function pct($p) { return $p !== null ? sprintf('%.1f%%', $p) : '-'; }
 function hhmm($ts) { return $ts ? date('H:i', strtotime($ts)) : '-'; }
 function strat_kpi(array $rows, string $type): array {
     $r = $rows[$type] ?? null;
@@ -254,12 +256,12 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
     </div>
     <div class="dcard <?= rate_class($exhibit_pct) ?>">
       <div class="dcard-label">直前情報(展示タイム)取得率</div>
-      <div class="dcard-val"><?= $exhibit_pct !== null ? $exhibit_pct . '%' : '-' ?></div>
+      <div class="dcard-val"><?= pct($exhibit_pct) ?></div>
       <div class="dcard-sub"><?= $data['exhibit_filled'] ?>/<?= $data['exhibit_total'] ?>艇 ・ 最終 <?= hhmm($data['before_last']) ?></div>
     </div>
     <div class="dcard <?= rate_class($odds_pct) ?>">
       <div class="dcard-label">オッズ取得率</div>
-      <div class="dcard-val"><?= $odds_pct !== null ? $odds_pct . '%' : '-' ?></div>
+      <div class="dcard-val"><?= pct($odds_pct) ?></div>
       <div class="dcard-sub"><?= $data['odds_races'] ?>/<?= $data['races'] ?>レース ・ 最終 <?= hhmm($data['odds_last']) ?></div>
     </div>
   </div>
@@ -310,12 +312,12 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
   <div class="dash-grid">
     <div class="dcard v3">
       <div class="dcard-label">v3w 1着的中率(<?= htmlspecialchars(V3W_PRODUCTION_FROM) ?>〜累計)</div>
-      <div class="dcard-val"><?= $v3w_pct !== null ? $v3w_pct . '%' : '-' ?></div>
+      <div class="dcard-val"><?= pct($v3w_pct) ?></div>
       <div class="dcard-sub"><?= $top1_sum['v3w_hits'] ?>/<?= $top1_sum['races'] ?>レース(結果確定分)</div>
     </div>
     <div class="dcard">
       <div class="dcard-label">1号艇決め打ち(同レース)</div>
-      <div class="dcard-val"><?= $lane1_pct !== null ? $lane1_pct . '%' : '-' ?></div>
+      <div class="dcard-val"><?= pct($lane1_pct) ?></div>
       <div class="dcard-sub">
         <?php if ($v3w_pct !== null && $lane1_pct !== null): ?>
           v3w との差 <span class="<?= signed_class($v3w_pct, $lane1_pct) ?>"><?= sprintf('%+.1f', $v3w_pct - $lane1_pct) ?>pt</span>
@@ -324,7 +326,7 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
     </div>
     <div class="dcard">
       <div class="dcard-label">v2(並行保存・同レース)</div>
-      <div class="dcard-val"><?= $v2_pct !== null ? $v2_pct . '%' : '-' ?></div>
+      <div class="dcard-val"><?= pct($v2_pct) ?></div>
       <div class="dcard-sub">
         <?php if ($v3w_pct !== null && $v2_pct !== null): ?>
           v3w との差 <span class="<?= signed_class($v3w_pct, $v2_pct) ?>"><?= sprintf('%+.1f', $v3w_pct - $v2_pct) ?>pt</span>
@@ -348,11 +350,11 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
         <tr class="total-row">
           <td>累計</td>
           <td><?= $top1_sum['races'] ?></td>
-          <td><?= $v3w_pct ?>%</td>
-          <td><?= $v2_pct ?>%</td>
-          <td><?= $lane1_pct ?>%</td>
+          <td><?= pct($v3w_pct) ?></td>
+          <td><?= pct($v2_pct) ?></td>
+          <td><?= pct($lane1_pct) ?></td>
           <td class="<?= signed_class($v3w_pct, $lane1_pct) ?>"><?= sprintf('%+.1f', $v3w_pct - $lane1_pct) ?></td>
-          <td><?= $l1rank_pct ?>%</td>
+          <td><?= pct($l1rank_pct) ?></td>
         </tr>
       <?php endif; ?>
       <?php foreach ($top1_rows as $row): ?>
@@ -369,11 +371,11 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
         <tr>
           <td><?= htmlspecialchars($row['date']) ?></td>
           <td><?= $t['races'] ?></td>
-          <td><?= $v3 ?>%</td>
-          <td><?= rate_pct($t['v2_hits'], $t['races']) ?>%</td>
-          <td><?= $l1 ?>%</td>
+          <td><?= pct($v3) ?></td>
+          <td><?= pct(rate_pct($t['v2_hits'], $t['races'])) ?></td>
+          <td><?= pct($l1) ?></td>
           <td class="<?= signed_class($v3, $l1) ?>"><?= sprintf('%+.1f', $v3 - $l1) ?></td>
-          <td><?= rate_pct($t['v3w_lane1_rank1'], $t['races']) ?>%</td>
+          <td><?= pct(rate_pct($t['v3w_lane1_rank1'], $t['races'])) ?></td>
         </tr>
         <?php endif; ?>
       <?php endforeach; ?>
@@ -407,9 +409,9 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
             <?php if (!$refs7): ?><span class="no-data">-</span><?php endif; ?>
             <?php foreach ($refs7 as $ref => $k): ?><?= model_badge($ref) ?> <?= $k['n'] ?>R<br><?php endforeach; ?>
           </td>
-          <td><?= $s7['hit'] !== null ? $s7['hit'] . '%' : '<span class="no-data">-</span>' ?></td>
-          <td><?= $s7['roi'] !== null ? $s7['roi'] . '%' : '<span class="no-data">-</span>' ?></td>
-          <td><?= $sa['roi'] !== null ? $sa['roi'] . '%' : '<span class="no-data">-</span>' ?></td>
+          <td><?= $s7['hit'] !== null ? pct($s7['hit']) : '<span class="no-data">-</span>' ?></td>
+          <td><?= $s7['roi'] !== null ? pct($s7['roi']) : '<span class="no-data">-</span>' ?></td>
+          <td><?= $sa['roi'] !== null ? pct($sa['roi']) : '<span class="no-data">-</span>' ?></td>
           <td class="<?= $diff !== null ? ($diff > 0 ? 'better' : ($diff < 0 ? 'worse' : '')) : '' ?>">
             <?= $diff !== null ? sprintf('%+.1f pt', $diff) : '<span class="no-data">-</span>' ?>
           </td>
