@@ -5,6 +5,19 @@ $plan = $user['plan'] ?? 'free';
 // isStandardPlus: Standard以上(セクション1-3対象)。isPremium: Premium専用(セクション4-6対象)
 $isStandardPlus = ($plan === 'standard' || $plan === 'premium');
 $isPremium = ($plan === 'premium');
+
+// 集計期間の選択肢(value=from日付)。各期間に該当する欠損日の注記は data_quality.php の
+// 共通定数・判定(admin.php のデータ品質欄と同じ)でサーバー側で決める。
+require_once __DIR__ . '/data_quality.php';
+$PERIOD_OPTIONS = [
+    '2026-09-09' => '現行設定(傾斜配分、2026-09-09〜 / 09-30〜v3w)',
+    '2026-08-27' => 'v2以降(1点100円時代を含む、2026-08-27〜)',
+    '2026-06-29' => '全期間(v1手動スコア時代を含む、2026-06-29〜)',
+];
+$period_gap_notes = [];
+foreach (array_keys($PERIOD_OPTIONS) as $from) {
+    $period_gap_notes[$from] = array_column(data_quality_issues($from, date('Y-m-d'), ['gap']), 'text');
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -117,9 +130,9 @@ svg.trend-chart { width: 100%; height: auto; }
   <div class="period-filter">
     <label for="periodSelect">集計期間</label>
     <select id="periodSelect">
-      <option value="2026-09-09">現行設定(傾斜配分、2026-09-09〜 / 09-30〜v3w)</option>
-      <option value="2026-08-27">v2以降(1点100円時代を含む、2026-08-27〜)</option>
-      <option value="2026-06-29">全期間(v1手動スコア時代を含む、2026-06-29〜)</option>
+      <?php foreach ($PERIOD_OPTIONS as $value => $label): ?>
+      <option value="<?= htmlspecialchars($value) ?>"><?= htmlspecialchars($label) ?></option>
+      <?php endforeach; ?>
     </select>
     <p class="period-desc" id="periodDesc"></p>
     <p class="period-desc caution" id="periodGapNote" hidden></p>
@@ -266,12 +279,8 @@ var PERIOD_DESC = {
   '2026-08-27': { text: 'v2(ロジスティック回帰)切替以降。ただし9/8以前は全買い目1点100円均等、9/9以降は傾斜配分(1点平均600円)のため、投資額・払戻額の絶対値は期間内で不連続です。的中率・回収率(比率)は比較できます。', caution: false },
   '2026-06-29': { text: '全期間。v1(手動スコア、〜8/26)やオッズ上限・艇プールの変更前を含むため、条件の異なるデータが混在します。長期の傾向把握用の参考値としてご覧ください。', caution: false }
 };
-// 集計対象に含まれない日(欠損)。期間がこの日を含むときに注記する。
-// 結果確定後の予測・買い目の後追い生成は、結果を知った状態での選定になり得るため行わない
-// (design_leak_fix_20260930.md / design_v3w_switch_20261001.md §2.2)。
-var DATA_GAPS = [
-  { date: '2026-10-05', text: '2026-10-05 は集計バッチの障害で予測・買い目が生成されなかったため、この日のレース(144R)は成績に含まれていません。結果確定後に買い目を後から作ると結果を知った状態での選定になり得るため、補完は行っていません。' }
-];
+// 期間ごとの欠損日の注記(data_quality.php の DATA_QUALITY_ISSUES から期間該当分をサーバー側で判定)
+var PERIOD_GAP_NOTES = <?= json_encode($period_gap_notes, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 function getPeriodFrom() {
   var sel = document.getElementById('periodSelect');
   return sel ? sel.value : '2026-09-09';
@@ -289,9 +298,7 @@ function updatePeriodDesc() {
 
   var gapEl = document.getElementById('periodGapNote');
   if (!gapEl) return;
-  var from  = getPeriodFrom();
-  var notes = DATA_GAPS.filter(function(g) { return g.date >= from; })
-                       .map(function(g) { return '※ ' + g.text; });
+  var notes = (PERIOD_GAP_NOTES[getPeriodFrom()] || []).map(function(t) { return '※ ' + t; });
   gapEl.textContent = notes.join(' ');
   gapEl.hidden = notes.length === 0;
 }
