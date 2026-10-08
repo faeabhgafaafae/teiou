@@ -14,7 +14,7 @@
 const STRATEGY_MODEL_MAP = [
     '的中特化' => 'v3w',
     'バランス' => 'v3w',
-    '一撃重視' => 'v3w',
+    '一撃重視' => 'v2',   // 2026-10-08 v2 に戻した(design_v3w_postswitch_20261008.md §6)
     '絞り込み' => 'v3w',
 ];
 // 指定モデルの予測が無いレースはこちらで生成する(strategies.model_ref に実際の参照先が残る)

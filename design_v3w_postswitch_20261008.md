@@ -121,3 +121,19 @@
 - 本番集計: `model_switch_status.php?from=2026-09-13&to=2026-10-07`(今回、保存済み予測の1着的中と清算の投資額・払戻額を追加)
 - 再現: `php tools/score_models_cli.php OUT.csv "data\finish_*.csv" data/lr_v3_<09-13〜10-07、10-05除く>.csv`
   → `python sim_v3w_postswitch.py OUT.csv STATUS.json`
+
+## 6. 追記: 一撃重視のみ v2 に戻した(2026-10-08)
+
+| 項目 | 内容 |
+|---|---|
+| 変更 | `model_switch.php` の `STRATEGY_MODEL_MAP['一撃重視']` を `'v3w'` → `'v2'`(ユーザー判断) |
+| 維持 | 的中特化・バランス・絞り込みは `'v3w'`、`PREDICTION_DISPLAY_MODEL` は `'v3w'`(予測順位・確率・AI解説は v3w のまま) |
+| 本番反映 | 2026-10-08 のデプロイ時点(下記コミット) |
+| 適用されるレース | デプロイ時点で結果未確定のレース。**2026-10-08 のレース**は当日21:30の事前生成(結果取込み前)で一撃重視の買い目が v2 で作り直されるため、実質 10-08 のレースから。10-07 以前の一撃重視は model_ref='v3w' のまま残る |
+| 集計上の区別 | strategies / strategy_results の model_ref で区別できる(10-07 まで v3w、10-08 から v2)。期間をまたぐ一撃重視の成績は2つのモデルの混在になる |
+| 戻し方 | 同じ行を `'v3w'` に戻して commit → push(テストは値を固定していないので通る) |
+
+- 一撃重視の買い目は1着を参照モデルの本命に固定するため、10-08 以降は「表示の AI 予想1位(v3w)」と
+  「一撃重視の1着軸(v2)」が異なるレースがある。
+- 監視は `model_switch_status.php` の strategies / strategy_results で、一撃重視が model_ref='v2'、
+  他3戦略が 'v3w' になっていることを確認する。

@@ -10,7 +10,7 @@
 
 | 定数 | 切り替え後 | 切り替え前 | 役割 |
 |---|---|---|---|
-| `STRATEGY_MODEL_MAP` | 4戦略すべて `'v3w'` | すべて `'v2'` | 買い目生成に使う予測 |
+| `STRATEGY_MODEL_MAP` | 4戦略すべて `'v3w'`(**2026-10-08 から一撃重視のみ `'v2'`**、`design_v3w_postswitch_20261008.md` §6) | すべて `'v2'` | 買い目生成に使う予測 |
 | `STRATEGY_MODEL_FALLBACK` | `'v2'` | `'v2'` | v3w 予測が無いレースの代替(model_ref='v2' で記録) |
 | `PREDICTION_DISPLAY_MODEL` | `'v3w'` | (新設。旧挙動= `'v2'`) | 予測順位・確率・AI解説の表示に使う予測 |
 | `V3W_PREDICTIONS_FROM` | `2026-09-13` | ─ | predictions_v2 がv3wを持つ最初の日。より前は旧v3・旧v2シャドウなので表示は v2 |
