@@ -14,7 +14,7 @@
 | `api_predict.php` 地元成績・コース別成績 | 期間下限(2年前)のみ。結果取込後の実行で当該レースと同日以降の着順が混入 | `prediction_guard_lib.php` の `fetch_local_stats` / `fetch_course_stats` に置換。窓は **[レース日−2年, レース日)**(`api_v3_shadow.php`・`export_lr_data_v3.php` と同じ境界) |
 | `api_predict.php` 保存 | 結果確定済みでも predictions を upsert、続けて strategies を再生成 | `persist_predictions()` が確定済みレースでは保存せず false。その場合は買い目も再生成せず、応答はレース前の保存済み予測で表示(`overlay_stored_predictions`) |
 | `generate_strategies.php` `generate_and_save_strategies()` | 確定済みレースでも strategies を upsert(単独エンドポイント `?race_id=` からも) | 冒頭で `race_is_settled()` なら何も書かず `[]` を返す |
-| `boatrace.yml` 20:00前日バッチ | 前日分の `generate_strategies_for_date.py` が結果取込後に全レースを再実行 | **20:00スケジュールでは事前生成ステップをスキップ**(前日分は21:30当日バッチで結果取込前に生成済み)。手動実行(リカバリ)は従来どおり。結果取込み・v3シャドウ・CSV出力は変更なし |
+| `boatrace.yml` 20:00前日バッチ | 前日分の `generate_strategies_for_date.py` が結果取込後に全レースを再実行 | **20:00スケジュールでは事前生成ステップをスキップ**(前日分は21:30当日バッチで結果取込前に生成済み)。手動実行(リカバリ)は従来どおり。結果取込み・v3シャドウ・CSV出力は変更なし <br>**2026-10-08 撤回**: スキップすると21:30バッチ失敗日の補完経路が無くなる(10-05で全144Rが買い目なし)。api_predict.php のガードで確定済みレースは書き換わらないため、20:00でも事前生成を実行する形に戻した(`design_v3w_switch_20261001.md` §2.2) |
 | `get_prediction.php`(Premiumスコア内訳) | 同種の上限なしクエリ | 同じヘルパーに置換 |
 | `get_racelist.php`(出走表の当地勝率・2連率) | 同種の上限なしクエリ | `rc2.date < レース日` を追加 |
 | `api_v2_batch.php`(旧v2シャドウ、現在未使用) | 下限のみ+下限が「実行日−2年」 | [対象日−2年, 対象日) に修正。※現在は呼ばれていないが、呼ばれると v3wシャドウの predictions_v2 を上書きする点に注意 |
