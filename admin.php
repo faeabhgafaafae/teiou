@@ -461,9 +461,9 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
       <strong>バランス戦略シミュレーター</strong>
       <span>オッズ上限/バンド/EVフィルタの比較</span>
     </a>
-    <a class="tool-link" href="simulate_ichigeki.php?days=30">
+    <a class="tool-link" href="simulate_ichigeki.php?days=14">
       <strong>一撃重視戦略シミュレーター</strong>
-      <span>オッズ閾値・選定プールの比較</span>
+      <span>オッズ閾値・選定プールの比較(days=30 以上はデータ量で HTTP 500 になるため既定14日。21日までは動作確認済み)</span>
     </a>
   </div>
 

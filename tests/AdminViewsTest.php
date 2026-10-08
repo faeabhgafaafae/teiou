@@ -165,6 +165,22 @@ final class AdminViewsTest extends TestCase
         ]));
     }
 
+    public function test_audit_warns_only_outside_known_leak_period(): void
+    {
+        $day = fn($rw) => ['settled_races' => 150, 'races_with_predictions' => 150, 'rewritten_races' => $rw,
+            'rewritten_strategies' => $rw * 4, 'rewritten_strategy_results' => $rw * 4, 'top1_hits_rewritten' => 0,
+            'top1_hits_clean' => 70, 'clean_races' => 150 - $rw, 'first_rewrite_at' => null, 'last_rewrite_at' => null];
+        $totals = ['settled_races' => 300, 'races_with_predictions' => 300, 'rewritten_races' => 150, 'rewritten_strategies' => 600,
+                   'rewritten_strategy_results' => 600, 'top1_rate_rewritten' => 60.0, 'top1_rate_clean' => 48.8];
+        $known = $this->text(av_view_audit_leak_rewrites(['totals' => $totals,
+            'daily' => ['2026-09-28' => $day(150), '2026-09-29' => $day(0)]]));
+        $this->assertStringNotContainsString('要確認', $known, '既知のリーク期間内だけなら警告しない');
+        $this->assertStringContainsString('既知のリーク期間', $known);
+        $bad = $this->text(av_view_audit_leak_rewrites(['totals' => $totals,
+            'daily' => ['2026-09-28' => $day(0), '2026-10-01' => $day(150)]]));
+        $this->assertStringContainsString('要確認', $bad, '修正後の日付に書き換えがあれば警告');
+    }
+
     // ── 3. 静的チェック ───────────────────────────────────────
 
     public function test_tool_pages_use_av_output_and_keep_admin_guard(): void

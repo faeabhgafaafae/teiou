@@ -272,15 +272,29 @@ function av_view_model_switch_status(array $d): string {
 
 function av_view_audit_leak_rewrites(array $d): string {
     $t = $d['totals'];
-    $warn = ((int)($t['rewritten_races'] ?? 0)) > 0
-        ? '<p class="av-warn">期間内に結果取込み後の書き換えが ' . av_int($t['rewritten_races']) . 'R あります。'
-          . '2026-09-29 以降に発生していれば api_predict.php のガードが効いていない可能性があります。</p>'
-        : '<p class="av-note">期間内の書き換えは 0 件です。</p>';
+    // 既知のリーク期間(data_quality.php)内の書き換えは想定内。期間外に1件でもあれば異常として警告する
+    $known = 0; $unexpected = 0;
+    foreach ($d['daily'] as $date => $v) {
+        $rw = (int)($v['rewritten_races'] ?? 0);
+        if (data_quality_issue_on($date, ['leak'])) { $known += $rw; } else { $unexpected += $rw; }
+    }
+    $warn = '';
+    if ($unexpected > 0) {
+        $warn .= '<p class="av-warn"><b>要確認:</b> 既知のリーク期間外に、結果取込み後の書き換えが ' . av_int($unexpected)
+            . 'R あります(赤い行)。api_predict.php / generate_strategies.php の結果確定済みガードが効いていない可能性があります。</p>';
+    }
+    if ($known > 0) {
+        $warn .= '<p class="av-note">既知のリーク期間(2026-08-19〜09-28)内の書き換え ' . av_int($known) . 'R は修正前のもので、未復元のまま残っています(灰色の行)。</p>';
+    }
+    if ($known + $unexpected === 0) {
+        $warn .= '<p class="av-note">期間内の書き換えは 0 件です。</p>';
+    }
     $rows = [];
     foreach ($d['daily'] as $date => $v) {
         $rw = (int)($v['rewritten_races'] ?? 0);
         $cl = (int)($v['clean_races'] ?? 0);
-        $rows[] = ['class' => $rw > 0 ? 'alert' : '', 'cells' => [
+        $class = $rw > 0 ? (data_quality_issue_on($date, ['leak']) ? 'muted' : 'alert') : '';
+        $rows[] = ['class' => $class, 'cells' => [
             av_e($date), av_int($v['settled_races']), av_int($v['races_with_predictions'] ?? 0), av_int($rw),
             av_rate($rw, (int)($v['races_with_predictions'] ?? 0)), av_int($v['rewritten_strategies'] ?? 0),
             av_int($v['rewritten_strategy_results'] ?? 0),
@@ -305,6 +319,10 @@ function av_view_simulate_balance(array $d): string {
         . '日間)/ v2切り替え日: ' . av_e($d['v2_cutover']) . '。DB書き込みなし。払戻は確定払戻を優先(なければ直前オッズ×100円)。</p>';
     $rows = [];
     foreach ($d['part1_diagnosis'] as $era => $x) {
+        if ((int)$x['races'] === 0) {
+            $rows[] = ['class' => 'muted', 'cells' => [av_e($era) . ':対象期間にレースなし(days を増やすと表示されます)']];
+            continue;
+        }
         foreach (['nofilter' => 'フィルタなし12点', 'cap25' => 'オッズ上限25倍'] as $k => $label) {
             $rows[] = [av_e($era), av_e($label), av_int($x['races']), av_int($x[$k]['hits']), av_pct($x[$k]['hit_rate']),
                        av_yen($x[$k]['cost']), av_yen($x[$k]['payout']), av_pct($x[$k]['roi']), av_yen($x['avg_hit_payout_' . $k])];
