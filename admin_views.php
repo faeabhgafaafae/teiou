@@ -6,7 +6,7 @@
  *   - ?format=json のときだけ、従来と同一の JSON(json_encode の引数も各ツールの従来値)を返す
  *   - それ以外は HTML(見出し・目的の説明・「JSONで見る」リンク・日本語の表)
  * 表示関数 av_view_*() はデータ配列だけを受け取る純粋関数(DB非依存。tests/AdminViewsTest.php で検証)。
- * WAF 制約: CSS はページ内 <style> のみ、JS は使わない(テンプレートリテラル不可)。
+ * WAF 制約: CSS はページ内 <style> のみ。JS はヘッダーの日付表示だけ(admin.php と同じ。テンプレートリテラル不可)。
  */
 require_once __DIR__ . '/model_status_lib.php';
 require_once __DIR__ . '/data_quality.php';
@@ -100,6 +100,17 @@ table.av tr.alert td { background: #fef2f2; }
   </div>
   </main>
 </div>
+<script>
+// app.js を読み込まないページなので #headerDate・#headerLogo をここで設定する(admin.php と同じ)
+window.addEventListener('DOMContentLoaded', function() {
+  var d = new Date();
+  var days = ['日','月','火','水','木','金','土'];
+  var el = document.getElementById('headerDate');
+  if (el) el.textContent = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 (' + days[d.getDay()] + ')';
+  var logo = document.getElementById('headerLogo');
+  if (logo) logo.addEventListener('click', function() { location.href = 'index.php'; });
+});
+</script>
 </body>
 </html>
 <?php
@@ -429,7 +440,7 @@ function av_view_backfill_list_run(array $d): string {
     return av_section('欠損の概況', '展示タイム(exhibit_time)・展示ST(start_timing)が入っていない出走エントリーの件数。', $sum)
         . av_section('バックフィル対象レース(' . av_int($d['race_count']) . 'R)',
             '発走予定時刻を過ぎていて、展示タイムまたはSTが欠損しているエントリーを含むレース。backfill_beforeinfo.py の対象。',
-            av_table([['日付', 'l'], ['会場', 'l'], ['レース', 'c'], ['発走予定', 'c'], ['race_id']], $rows, true));
+            av_table([['日付', 'l'], ['会場', 'l'], ['レース', 'c'], ['発走予定', 'c'], ['レースID']], $rows, true));
 }
 
 // ═══════════ shadow_eval_v3.php ═══════════════════════════════════════

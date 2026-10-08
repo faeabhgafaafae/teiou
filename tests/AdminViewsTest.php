@@ -15,7 +15,7 @@ final class AdminViewsTest extends TestCase
     private const RAW_KEYS = [
         'races_with_v2', 'races_with_v3w', 'races_settled', 'hit_rate', 'total_cost', 'total_payout',
         'v3w_lane1_rank1', 'lane1_wins', 'rewritten_races', 'entry_rate_pct',
-        'hit_rate_active', 'avg_hit_payout', 'races_matched', 'exhibit_null', 'return_rate', 'roi',
+        'hit_rate_active', 'avg_hit_payout', 'races_matched', 'exhibit_null', 'return_rate', 'roi', 'race_id',
     ];
 
     protected function tearDown(): void
