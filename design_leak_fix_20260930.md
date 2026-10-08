@@ -176,5 +176,5 @@ strategy_results を作り直す。
 - 修正: `prediction_guard_lib.php`(新規)、`api_predict.php`、`generate_strategies.php`、
   `get_prediction.php`、`get_racelist.php`、`api_v2_batch.php`、`.github/workflows/boatrace.yml`
 - テスト: `tests/LeakGuardTest.php`(CIの setup-php に `pdo_sqlite` を明示)
-- 監査: `audit_leak_rewrites.php?api_key=...&from=...&to=...`(読み取り専用)、
+- 監査: `audit_leak_rewrites.php?api_key=...&from=...&to=...&format=json`(2026-10-08〜 format なしはHTML表示)(読み取り専用)、
   生データ `audit_leak_rewrites_20260930.json`(2026-09-30 修正デプロイ後に取得)

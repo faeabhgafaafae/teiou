@@ -14,6 +14,9 @@
  */
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin_views.php';
+// 既定はHTML表示、?format=json で従来どおりのJSON(admin_views.php、2026-10-08)
+$AV_PAGE = ['title' => 'リーク書き換え監査', 'purpose' => '結果取込み後に予測・買い目が書き換えられた(先読みリーク)レースが無いかを確認する画面。2026-09-30 の修正以降は0件であることが正常。2026-08-19〜09-28 の書き換えは既知(未復元)。from/to で期間を指定。'];
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -75,7 +78,7 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
 }
 $rate = fn($h, $n) => $n > 0 ? round($h / $n * 100, 1) : null;
 
-echo json_encode([
+av_output([
     'from'   => $from,
     'to'     => $to,
     'note'   => '読み取り専用。rewritten = predictions最終書き込みがresults初回取込みより後のレース',
@@ -84,4 +87,4 @@ echo json_encode([
         'top1_rate_clean'     => $rate($totals['top1_hits_clean'] ?? 0, $totals['clean_races'] ?? 0),
     ],
     'daily'  => $daily,
-], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT, 'audit_leak_rewrites', $AV_PAGE);

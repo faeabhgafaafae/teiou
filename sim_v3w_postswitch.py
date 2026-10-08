@@ -5,7 +5,7 @@ sim_v3w_postswitch.py — v3w 本番切り替え後(2026-09-30〜、10-05 欠損
 
 入力:
   SCORED   : tools/score_models_cli.php の出力(09-13〜POST_END、本番と同じ PredictV2/PredictV3 をリークなし特徴量で実行)
-  STATUS   : (任意)model_switch_status.php?from=2026-09-13&to=POST_END の出力(本番の保存済み予測・清算実績。
+  STATUS   : (任意)model_switch_status.php?from=2026-09-13&to=POST_END&format=json の出力(本番の保存済み予測・清算実績。
              api_key が必要。無い環境では "-" を渡すと再現値のみで集計する)
   POST_END : 切り替え後期間の最終日(既定 2026-10-07)
 本番値(STATUS)があれば主、ローカル再現(SCORED)を信頼区間と期間比較に使う。

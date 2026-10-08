@@ -10,6 +10,9 @@
  */
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin_views.php';
+// 既定はHTML表示、?format=json で従来どおりのJSON(admin_views.php、2026-10-08)
+$AV_PAGE = ['title' => 'モデル切り替え監視', 'purpose' => '本番モデル(v3w / v2)の切り替えが意図どおり動いているかを確認する画面。現在の設定、保存済み予測の1着的中率、4戦略の清算実績(参照モデル別)、予測・買い目の保存状況を日別に表示する。from/to で期間を指定。'];
 require_once __DIR__ . '/model_switch.php';
 require_once __DIR__ . '/model_status_lib.php';
 
@@ -42,7 +45,7 @@ foreach (ms_top1_daily($pdo, $from, $to) as $d => $row) {
     $daily[$d]['top1'] = $row;
 }
 
-echo json_encode([
+av_output([
     'from'   => $from,
     'to'     => $to,
     'config' => [
@@ -51,4 +54,4 @@ echo json_encode([
         'PREDICTION_DISPLAY_MODEL' => PREDICTION_DISPLAY_MODEL,
     ],
     'daily'  => $daily,
-], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT, 'model_switch_status', $AV_PAGE);

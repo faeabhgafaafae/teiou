@@ -1,6 +1,9 @@
 <?php
 // 一撃重視戦略の詳細分析スクリプト（一時利用）
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin_views.php';
+// 既定はHTML表示、?format=json で従来どおりのJSON(admin_views.php、2026-10-08)
+$AV_PAGE = ['title' => '一撃重視 詳細分析(一時分析)', 'purpose' => '一撃重視の清算実績を週・会場・日・オッズ帯・期間で分けて見る画面。2026-08〜09 の不振調査用で、現在は参照用。'];
 
 header('Content-Type: application/json; charset=utf-8');
 require_admin_json();
@@ -61,7 +64,7 @@ if ($mode === 'weekly') {
             'return_rate' => $cost > 0 ? round($payout / $cost * 100, 1) : 0,
         ];
     }
-    echo json_encode(['mode' => 'weekly', 'data' => $result], JSON_UNESCAPED_UNICODE);
+    av_output(['mode' => 'weekly', 'data' => $result], JSON_UNESCAPED_UNICODE, 'analyze_ichigeki', $AV_PAGE);
 }
 
 // 2) 会場別（8/28以降）
@@ -102,7 +105,7 @@ elseif ($mode === 'venue') {
             'return_rate' => $cost > 0 ? round($payout / $cost * 100, 1) : 0,
         ];
     }
-    echo json_encode(['mode' => 'venue', 'start' => $start, 'end' => $end, 'data' => $result], JSON_UNESCAPED_UNICODE);
+    av_output(['mode' => 'venue', 'start' => $start, 'end' => $end, 'data' => $result], JSON_UNESCAPED_UNICODE, 'analyze_ichigeki', $AV_PAGE);
 }
 
 // 3) 日別（9/1以降）
@@ -143,7 +146,7 @@ elseif ($mode === 'daily') {
             'return_rate' => $cost > 0 ? round($payout / $cost * 100, 1) : 0,
         ];
     }
-    echo json_encode(['mode' => 'daily', 'start' => $start, 'end' => $end, 'data' => $result], JSON_UNESCAPED_UNICODE);
+    av_output(['mode' => 'daily', 'start' => $start, 'end' => $end, 'data' => $result], JSON_UNESCAPED_UNICODE, 'analyze_ichigeki', $AV_PAGE);
 }
 
 // 4) 的中したオッズ分布（8/28以降、一撃重視）
@@ -173,7 +176,7 @@ elseif ($mode === 'odds_dist') {
     ");
     $stmt->execute([$start, $end]);
     $rows = $stmt->fetchAll();
-    echo json_encode(['mode' => 'odds_dist', 'start' => $start, 'end' => $end, 'data' => $rows], JSON_UNESCAPED_UNICODE);
+    av_output(['mode' => 'odds_dist', 'start' => $start, 'end' => $end, 'data' => $rows], JSON_UNESCAPED_UNICODE, 'analyze_ichigeki', $AV_PAGE);
 }
 
 // 5) 的中時の平均払戻額（8/28以降 vs 9/4以降）
@@ -214,7 +217,7 @@ elseif ($mode === 'payout_compare') {
             'max_hit_payout'  => $row['max_hit_payout'] ? (int)$row['max_hit_payout'] : null,
         ];
     }
-    echo json_encode(['mode' => 'payout_compare', 'data' => $result], JSON_UNESCAPED_UNICODE);
+    av_output(['mode' => 'payout_compare', 'data' => $result], JSON_UNESCAPED_UNICODE, 'analyze_ichigeki', $AV_PAGE);
 }
 
 else {

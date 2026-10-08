@@ -12,6 +12,9 @@
  */
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin_views.php';
+// 既定はHTML表示、?format=json で従来どおりのJSON(admin_views.php、2026-10-08)
+$AV_PAGE = ['title' => 'バランス戦略シミュレーター', 'purpose' => 'バランス戦略のオッズ上限・下限・期待値フィルタを変えた場合の成績を、過去の結果で比較する画面(読み取り専用)。days で対象日数を指定。'];
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -318,7 +321,7 @@ foreach ($sim as $name => $s) {
     ];
 }
 
-echo json_encode([
+av_output([
     'simulation_days' => $days,
     'date_from'       => date('Y-m-d', strtotime("-{$days} days")),
     'date_to'         => date('Y-m-d'),
@@ -326,4 +329,4 @@ echo json_encode([
     'note'            => 'DB書き込みなし / 読み取り専用。Part1=実運用予測での25倍上限診断(期間比較)、Part2=v2順位での代替フィルタ比較。払戻はrace_payouts優先(なければ直前オッズ×100)',
     'part1_diagnosis' => $diag,
     'part2_variants'  => ['v2_races' => $v2_races, 'results' => $variant_out],
-], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT, 'simulate_balance', $AV_PAGE);

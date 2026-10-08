@@ -13,6 +13,9 @@
  */
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin_views.php';
+// 既定はHTML表示、?format=json で従来どおりのJSON(admin_views.php、2026-10-08)
+$AV_PAGE = ['title' => 'v3wシャドウ評価(旧)', 'purpose' => 'v3w シャドウテスト期間(2026-09-13〜09-29)の1着的中率と戦略シミュレーションを確認する画面。昇格判定は完了しており参照用。from/to で期間を指定。'];
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -211,7 +214,7 @@ foreach ($strat as $s => $a) {
 }
 ksort($daily);
 
-echo json_encode([
+av_output([
     'from' => $from, 'to' => $to,
     'note' => '読み取り専用。v3=predictions_v2(シャドウ)、v2=predictions(本番)。戦略シムは現行本番設定(バランス100倍/一撃15倍)',
     'top1' => [
@@ -221,4 +224,4 @@ echo json_encode([
     'daily' => $daily,
     'strategy_sim_v3' => $strat_out,
     'strategy_prod_v2' => $prod,
-], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT, 'shadow_eval_v3', $AV_PAGE);

@@ -21,6 +21,9 @@
  */
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin_views.php';
+// 既定はHTML表示、?format=json で従来どおりのJSON(admin_views.php、2026-10-08)
+$AV_PAGE = ['title' => 'v3学習用データの検品', 'purpose' => '学習用CSV(export_lr_data_v3.php)を出力する前に、指定期間の日×会場ごとに出力対象になるレースがそろっているかを確認する画面(stats=1)。'];
 
 require_admin_or_api_key($_GET['api_key'] ?? '');
 
@@ -83,7 +86,7 @@ if (($_GET['stats'] ?? '') === '1') {
             'races_matched' => $matched[$key] ?? 0,
         ];
     }
-    echo json_encode(['from' => $from, 'to' => $to, 'stats' => $out], JSON_UNESCAPED_UNICODE);
+    av_output(['from' => $from, 'to' => $to, 'stats' => $out], JSON_UNESCAPED_UNICODE, 'export_lr_stats', $AV_PAGE);
     exit;
 }
 

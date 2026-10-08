@@ -4,6 +4,9 @@
  * GET /backfill_list_run.php
  */
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin_views.php';
+// 既定はHTML表示、?format=json で従来どおりのJSON(admin_views.php、2026-10-08)
+$AV_PAGE = ['title' => '直前情報バックフィル対象一覧', 'purpose' => '発走時刻を過ぎても展示タイム・展示STが入っていないレースを確認する画面。ここに出るレースが直前情報のバックフィル対象。'];
 
 header('Content-Type: application/json; charset=utf-8');
 require_admin_json();
@@ -57,12 +60,12 @@ try {
     ');
     $summary_week = $stmt3->fetch();
 
-    echo json_encode([
+    av_output([
         'race_count' => count($races),
         'races'      => $races,
         'entries_summary' => $summary,
         'entries_summary_week_0715_0722' => $summary_week,
-    ], JSON_UNESCAPED_UNICODE);
+    ], JSON_UNESCAPED_UNICODE, 'backfill_list_run', $AV_PAGE);
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);

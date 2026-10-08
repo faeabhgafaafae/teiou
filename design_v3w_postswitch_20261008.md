@@ -118,7 +118,7 @@
 
 ## 付録
 
-- 本番集計: `model_switch_status.php?from=2026-09-13&to=2026-10-07`(今回、保存済み予測の1着的中と清算の投資額・払戻額を追加)
+- 本番集計: `model_switch_status.php?from=2026-09-13&to=2026-10-07&format=json`(2026-10-08〜 既定はHTML表示)(今回、保存済み予測の1着的中と清算の投資額・払戻額を追加)
 - 再現: `php tools/score_models_cli.php OUT.csv "data\finish_*.csv" data/lr_v3_<09-13〜10-07、10-05除く>.csv`
   → `python sim_v3w_postswitch.py OUT.csv STATUS.json`
 

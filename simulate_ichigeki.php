@@ -10,6 +10,9 @@
  */
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin_views.php';
+// 既定はHTML表示、?format=json で従来どおりのJSON(admin_views.php、2026-10-08)
+$AV_PAGE = ['title' => '一撃重視戦略シミュレーター', 'purpose' => '一撃重視戦略の2・3着の選定プールとオッズ下限を変えた場合の成績を、過去の結果で比較する画面(読み取り専用)。days で対象日数を指定。'];
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -239,11 +242,11 @@ usort($results_out, function($a, $b) {
     return $a['min_odds'] - $b['min_odds'];
 });
 
-echo json_encode([
+av_output([
     'simulation_days'    => $days,
     'race_count_total'   => $race_count_total,
     'date_from'          => date('Y-m-d', strtotime("-{$days} days")),
     'date_to'            => date('Y-m-d'),
     'note'               => 'DB書き込みなし / 読み取り専用シミュレーション。的中率(active)=コンボが残ったレースのみ分母。ROI=回収率(%)',
     'results'            => $results_out,
-], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT, 'simulate_ichigeki', $AV_PAGE);

@@ -32,7 +32,8 @@ $offline_estimate  = 55.4;           // オフライン推定top1的中率% (v3w
 $shadow_from = $shadow_start;
 $shadow_to   = date('Y-m-d');
 $shadow_url  = 'https://2410049.moo.jp/shadow_eval_v3.php?api_key=' . urlencode(API_KEY)
-    . '&from=' . urlencode($shadow_from) . '&to=' . urlencode($shadow_to);
+    . '&from=' . urlencode($shadow_from) . '&to=' . urlencode($shadow_to)
+    . '&format=json';  // 2026-10-08〜 既定はHTML表示のため、JSONを明示する
 
 $ch = curl_init($shadow_url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

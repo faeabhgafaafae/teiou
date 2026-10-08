@@ -41,7 +41,7 @@
 
 ### 1.4 監視
 
-`model_switch_status.php?api_key=...&from=...&to=...`(読み取り専用): 日別の v2 / v3w 予測保存レース数、
+`model_switch_status.php?api_key=...&from=...&to=...&format=json`(2026-10-08〜 format なしはHTML表示)(読み取り専用): 日別の v2 / v3w 予測保存レース数、
 strategies と strategy_results の model_ref 別件数・的中率・回収率、現在の切り替え定数。
 
 ## 2. 切り替え後の確認結果
