@@ -1020,7 +1020,7 @@ async function loadRaceDetails() {
     }
     var note = document.createElement('div');
     note.className = 'note';
-    note.textContent = '直近30件の戦略買い目を表示しています。「スコア内訳を見る」でAIがその予測に至った根拠(選手能力・コース補正・当日情報・気象)を確認できます。';
+    note.textContent = '直近30件の戦略買い目を表示しています。「スコア内訳を見る」で予想スコアの内訳(選手能力・コース補正・当日情報・気象)を確認できます。';
     el.appendChild(note);
 
     data.races.forEach(function(race) {

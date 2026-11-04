@@ -13,11 +13,11 @@ if (!$venue || !$date || !$race_no) {
     exit;
 }
 
-// AI予測由来の買い目候補の閲覧はStandard/Premium限定
+// 予想(統計モデル)由来の買い目候補の閲覧はStandard/Premium限定
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
 if (!$user || $plan === 'free') {
-    json_response(['error' => 'premium_required', 'message' => 'AI予測はStandard/Premium会員限定です'], 403);
+    json_response(['error' => 'premium_required', 'message' => '予想・買い目はStandard/Premium会員限定です'], 403);
 }
 
 try {

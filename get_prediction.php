@@ -14,7 +14,7 @@ if (!$date || !$venue || !$race_no) {
     json_response(['error' => 'date, venue, race_no は必須です'], 400);
 }
 
-// AI予測(スコア・順位)はFree以上で公開。詳細スコア内訳はPremium限定。
+// 予想(スコア・順位)はFree以上で公開(プラン表 plan-features.js との食い違いは design_site_audit_20261105.md #3)。詳細スコア内訳はPremium限定。
 $user = current_user();
 $plan = $user['plan'] ?? 'free';
 $isPremium = ($plan === 'premium');

@@ -164,6 +164,24 @@ final class AdminOpsTest extends TestCase
         $this->assertSame(10, $pts['2026-11-05']['バランス']['max']);
     }
 
+    public function test_strategy_timing_counts_before_and_after_deadline(): void
+    {
+        $pdo = $this->db();
+        $pdo->exec('ALTER TABLE races ADD COLUMN scheduled_time TEXT');
+        $pdo->exec('ALTER TABLE strategies ADD COLUMN created_at TEXT');
+        $pdo->exec("INSERT INTO races VALUES (1, '2026-11-05', '10:30'), (2, '2026-11-05', '10:30'), (3, '2026-11-05', NULL)");
+        $pdo->exec("INSERT INTO strategies (id, race_id, strategy_type, model_ref, created_at) VALUES
+            (1, 1, '的中特化', 'v3w', '2026-11-05 10:05:00'),
+            (2, 1, 'バランス', 'v3w', '2026-11-06 03:00:00'),
+            (3, 2, '的中特化', 'v3w', '2026-11-06 03:00:00'),
+            (4, 3, '的中特化', 'v3w', '2026-11-05 09:00:00')");
+        $t = ms_strategy_timing($pdo, '2026-11-05', '2026-11-05')['2026-11-05'];
+        // レース1は最も早い生成(10:05)が締切前、レース2は締切後、レース3は締切不明
+        $this->assertSame(['races' => 3, 'before_deadline' => 1, 'after_deadline' => 1, 'unknown' => 1], $t);
+        $this->assertSame('2026-11-05 09:05:00', race_deadline('2026-11-05', '9:05'));
+        $this->assertNull(race_deadline('2026-11-05', null));
+    }
+
     public function test_prediction_coverage(): void
     {
         $pdo = $this->db();
@@ -220,7 +238,7 @@ final class AdminOpsTest extends TestCase
     {
         foreach (['get_performance_summary.php', 'get_performance_daily.php', 'get_performance_venue.php',
                   'get_performance_races.php', 'get_dashboard_comparison.php', 'strategy_stats.php',
-                  'get_user_picks_strategy_compare.php'] as $f) {
+                  'get_user_picks_strategy_compare.php', 'get_hits.php'] as $f) {
             $src = file_get_contents($this->root() . '/' . $f);
             $this->assertStringContainsString("require_once __DIR__ . '/data_quality.php'", $src, $f);
             $this->assertStringContainsString('public_exclusion_sql(', $src, "$f はリーク込み期間を集計から除外する");

@@ -972,14 +972,39 @@ function loadPersonalExplain(playerId) {
   });
 }
 
+// AI解説はログインが必要(gemini_explain.php)。未ログインはログイン・新規登録へ誘導する
+function showExplainLoginPrompt(body) {
+  body.textContent = '';
+  body.appendChild(document.createTextNode('🔒 AI解説はログインすると読めます(無料の会員登録で利用できます)。 '));
+  var login = document.createElement('a');
+  login.href = 'login.html';
+  login.textContent = 'ログイン';
+  login.style.cssText = 'color:#2563eb; font-weight:700; margin-right:8px;';
+  var reg = document.createElement('a');
+  reg.href = 'register.html';
+  reg.textContent = '新規登録';
+  reg.style.cssText = 'color:#2563eb; font-weight:700;';
+  body.appendChild(login);
+  body.appendChild(reg);
+}
+
 async function loadExplain(raceId) {
   var section = document.getElementById('aiExplainSection');
   var body = document.getElementById('aiExplainBody');
   section.style.display = '';
+  var me = await window.getMe();  // sidebar.php(ページ内で1回だけ取得)
+  if (!me || !me.user) {
+    showExplainLoginPrompt(body);
+    return;
+  }
   body.textContent = '解説を生成中...';
   try {
     var url = 'gemini_explain.php?race_id=' + raceId;
     var res = await fetch(url);
+    if (res.status === 401) {
+      showExplainLoginPrompt(body);
+      return;
+    }
     if (!res.ok) {
       body.textContent = '解説を取得できませんでした';
       return;
@@ -1250,7 +1275,7 @@ function renderStrategySection(strat, def, statRow, ctx) {
   if (strat.stake_scheme === 'prob') {
     var tiltNote = document.createElement('div');
     tiltNote.style.cssText = 'font-size:11px;color:#1e40af;background:#eff6ff;padding:5px 14px;border-bottom:1px solid #bfdbfe;';
-    tiltNote.textContent = 'AIの予測確率に応じて賭け金を配分しています';
+    tiltNote.textContent = '予測確率(統計モデル)に応じて賭け金を配分しています';
     body.appendChild(tiltNote);
   }
 
@@ -1641,11 +1666,8 @@ async function loadStrategyTab() {
 
 async function init() {
   try {
-    var meRes = await fetch('me.php');
-    if (meRes.ok) {
-      var meData = await meRes.json();
-      if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
-    }
+    var meData = await window.getMe();  // sidebar.php(ページ内で1回だけ取得)
+    if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
   } catch (e) {}
 
   loadData();

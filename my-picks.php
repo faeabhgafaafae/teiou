@@ -3,7 +3,7 @@ require_once __DIR__ . '/auth.php';
 $user = current_user();
 
 if (!$user) {
-    header('Location: login.php');
+    header('Location: login.html');  // login.php は POST 専用(GET だと 405 の JSON が表示されていた)
     exit;
 }
 

@@ -291,7 +291,8 @@
       _hitsShown = 0;
 
       if (_hitsAll.length === 0) {
-        var _emptyMsg = isToday ? '本日の的中はまだありません' : 'この日の的中はまだありません';
+        var _emptyMsg = data.excluded ? 'この期間の的中は表示していません'
+          : (isToday ? '本日の的中はまだありません' : 'この日の的中はまだありません');
         container.innerHTML = '<div style="text-align:center; color:#999; font-size:12px; padding:20px 0;">' + _emptyMsg + '</div>';
         return;
       }

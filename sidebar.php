@@ -4,25 +4,25 @@
     <a href="index.php" class="nav-item" id="menuHome" data-nav="home"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> ホーム</a>
     <a href="mypage.php" class="nav-item" id="menuMypage" data-nav="mypage"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> マイページ</a>
     <a href="predictions.php" class="nav-item" data-nav="predictions"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> 予測レース</a>
-    <a href="performance.php" class="nav-item" data-nav="performance"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> 成績・回収率 <span class="nav-standard-badge">STANDARD+</span></a>
-    <a href="analysis.php" class="nav-item" data-nav="analysis"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg> データ分析 <span class="nav-standard-badge">STANDARD+</span></a>
+    <a href="performance.php" class="nav-item" data-nav="performance"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> 成績・回収率 <span class="nav-standard-badge" title="全体サマリーは無料。日別推移・会場別などは Standard 以上">一部STANDARD+</span></a>
+    <a href="analysis.php" class="nav-item" data-nav="analysis"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg> データ分析 <span class="nav-standard-badge" title="一部は無料。全件表示・高度検索などは Standard / Premium">一部STANDARD+</span></a>
     <a href="admin.php" class="nav-item" id="menuAdmin" data-nav="admin" style="display:none;"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg> 管理画面</a>
   </nav>
 
   <div class="premium-box">
-    <h3>プレミアム会員になると予測の精度がさらにアップ！</h3>
+    <h3>プレミアム会員ならもっと詳しく分析できます</h3>
     <ul>
-      <li><i class="fas fa-check"></i> 全レースのAI予想紐解き</li>
-      <li><i class="fas fa-check"></i> AI分析</li>
-      <li><i class="fas fa-check"></i> 回収率ランキング</li>
-      <li><i class="fas fa-check"></i> 広告非表示</li>
+      <li><i class="fas fa-check"></i> 予想スコアの内訳を全公開</li>
+      <li><i class="fas fa-check"></i> 4戦略の比較ビュー</li>
+      <li><i class="fas fa-check"></i> マイ的中トラッカー</li>
+      <li><i class="fas fa-check"></i> 過去レースの高度検索</li>
     </ul>
     <a href="mypage.php#planCardPremium" id="sidebarPromoBtn" class="btn-primary" style="display: block; text-align: center; text-decoration: none; line-height: 1.4;">詳しく見る</a>
   </div>
 
   <div class="stats-box">
     <div class="stats-title">本日のレース数</div>
-    <div class="stats-badge" id="statsBadge">--場 開催中 / 全24場</div>
+    <div class="stats-badge" id="statsBadge">集計中…</div>
     <button class="btn-refresh" onclick="location.reload();">更新する</button>
   </div>
 
@@ -96,11 +96,34 @@ function showComingSoon(e) {
   });
 })();
 
+// ログイン状態(me.php)の取得はページ内で1回だけにし、各スクリプトで結果を共有する。
+// sidebar.php は各ページで他のスクリプトより先に読み込まれる。未ログインは {user: null}。
+window.getMe = function() {
+  if (!window.__mePromise) {
+    window.__mePromise = fetch('me.php')
+      .then(function(r) { return r.ok ? r.json() : { user: null }; })
+      .catch(function() { return { user: null }; });
+  }
+  return window.__mePromise;
+};
+
+// 「本日のレース数」: どのページでも当日(サーバーの日付)の開催場数を表示する。0場なら「本日の開催はありません」
+(function() {
+  var sb = document.getElementById('statsBadge');
+  if (!sb) return;
+  fetch('venues.php')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(d) {
+      if (!d || !d.venues) { sb.textContent = '開催状況を取得できませんでした'; return; }
+      sb.textContent = d.venues.length > 0 ? (d.venues.length + '場 開催中 / 全24場') : '本日の開催はありません';
+    })
+    .catch(function() { sb.textContent = '開催状況を取得できませんでした'; });
+})();
+
 (async function() {
   try {
-    var res = await fetch('me.php');
-    if (res.ok) {
-      var data = await res.json();
+    var data = await window.getMe();
+    if (data && data.user) {
       var user = data.user;
       var promoBtn = document.getElementById('sidebarPromoBtn');
       var adminBtn = document.getElementById('menuAdmin');

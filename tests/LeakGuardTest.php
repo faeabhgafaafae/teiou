@@ -246,6 +246,72 @@ final class LeakGuardTest extends TestCase
         $this->assertSame([], $this->strategyRows(1));
     }
 
+    // ── 2b. 締切後の凍結(2026-11-05〜): 締切前に作った予測・買い目を上書きしない ─────────
+
+    private function setDeadline(int $race_id, string $date, string $hhmm): void
+    {
+        try { $this->pdo->exec('ALTER TABLE races ADD COLUMN scheduled_time TEXT'); } catch (PDOException $e) {}
+        $this->pdo->prepare('UPDATE races SET date = ?, scheduled_time = ? WHERE id = ?')->execute([$date, $hhmm, $race_id]);
+    }
+
+    public function test_race_deadline_passed(): void
+    {
+        $this->addRace(1, '2026-11-05');
+        $this->assertFalse(race_deadline_passed($this->pdo, 1, '2026-11-05 12:00:00'), '締切時刻の列なし(未設定)は締切前扱い');
+        $this->setDeadline(1, '2026-11-05', '10:30');
+        $this->assertFalse(race_deadline_passed($this->pdo, 1, '2026-11-05 10:30:00'), '締切時刻ちょうどは締切前');
+        $this->assertTrue(race_deadline_passed($this->pdo, 1, '2026-11-05 10:30:01'));
+        $this->assertTrue(race_deadline_passed($this->pdo, 1, '2026-11-06 00:00:00'));
+        $this->assertFalse(race_deadline_passed($this->pdo, 1, '2026-11-05 09:00:00'));
+        $this->assertFalse(race_deadline_passed($this->pdo, 999, '2026-11-06 00:00:00'), '存在しないレース');
+    }
+
+    public function test_predictions_and_strategies_frozen_after_deadline(): void
+    {
+        // 締切前(締切が未来)に作った予測・買い目
+        $this->prepareRaceForStrategies(1);
+        $this->setDeadline(1, '2999-01-01', '10:30');
+        $this->assertCount(4, generate_and_save_strategies($this->pdo, 1));
+        $this->pdo->exec("UPDATE predictions SET created_at = '2000-01-01 00:00:00'");
+        $this->pdo->exec("UPDATE strategies SET created_at = '2000-01-01 00:00:00'");
+        $predBefore = $this->pdo->query('SELECT * FROM predictions ORDER BY player_id')->fetchAll(PDO::FETCH_ASSOC);
+        $stratBefore = $this->strategyRows(1);
+
+        // 締切を過ぎた後(結果は未取込み)の再実行: 予測も買い目も書き換えない
+        $this->setDeadline(1, '2000-01-01', '10:30');
+        $this->assertTrue(race_frozen_after_deadline($this->pdo, 1, 'predictions'));
+        $this->assertTrue(race_frozen_after_deadline($this->pdo, 1, 'strategies'));
+        $probs = [1 => 0.40, 2 => 0.20, 3 => 0.15, 4 => 0.12, 5 => 0.08, 6 => 0.05];
+        $this->assertFalse(persist_predictions($this->pdo, 1, $this->scores([2, 1, 3, 4, 5, 6], $probs)));
+        $this->pdo->exec('UPDATE predictions SET predicted_rank = 7 - predicted_rank WHERE race_id = 1');
+        $predChanged = $this->pdo->query('SELECT * FROM predictions ORDER BY player_id')->fetchAll(PDO::FETCH_ASSOC);
+        $this->assertSame([], generate_and_save_strategies($this->pdo, 1));
+        $this->assertSame($stratBefore, $this->strategyRows(1), '締切後は買い目を上書きしない');
+        $this->assertNotSame($predBefore, $predChanged);
+    }
+
+    public function test_strategies_backfilled_after_deadline_when_missing(): void
+    {
+        // 締切前に1件も作られなかったレースは、締切後(結果取込み前)の夜バッチで補完する
+        $this->prepareRaceForStrategies(1);
+        $this->setDeadline(1, '2000-01-01', '10:30');
+        $this->assertFalse(race_frozen_after_deadline($this->pdo, 1, 'strategies'));
+        $this->assertCount(4, generate_and_save_strategies($this->pdo, 1));
+        // 一度補完されたら、それ以降は上書きしない
+        $this->assertTrue(race_frozen_after_deadline($this->pdo, 1, 'strategies'));
+        $this->assertSame([], generate_and_save_strategies($this->pdo, 1));
+    }
+
+    public function test_predictions_inserted_after_deadline_when_missing(): void
+    {
+        $this->addRace(1, self::RACE_DATE);
+        $this->setDeadline(1, '2000-01-01', '10:30');
+        $probs = [1 => 0.40, 2 => 0.20, 3 => 0.15, 4 => 0.12, 5 => 0.08, 6 => 0.05];
+        $this->assertTrue(persist_predictions($this->pdo, 1, $this->scores([1, 2, 3, 4, 5, 6], $probs)), '未保存なら補完');
+        $this->assertFalse(persist_predictions($this->pdo, 1, $this->scores([2, 1, 3, 4, 5, 6], $probs)), '保存済みなら凍結');
+        $this->assertSame(1, (int)$this->prediction(1, 5001)['predicted_rank']);
+    }
+
     // ── 3. 表示: 保存済み予測を優先 ───────────────────────────
 
     public function test_overlay_uses_stored_predictions_when_complete(): void

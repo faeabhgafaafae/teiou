@@ -39,7 +39,7 @@ $data = [
     'races' => 0, 'venues' => 0,
     'exhibit_total' => 0, 'exhibit_filled' => 0,
     'odds_races' => 0, 'before_last' => null, 'odds_last' => null,
-    'top1_daily' => [], 'strat_7d' => [], 'strat_all' => [], 'strat_points' => [],
+    'top1_daily' => [], 'strat_7d' => [], 'strat_all' => [], 'strat_points' => [], 'strat_timing' => [],
 ];
 
 try {
@@ -72,6 +72,9 @@ try {
 
     // ── 3. モデル運用状況: 保存済み予測の1着的中(model_status_lib.php) ────────
     $data['top1_daily'] = ms_top1_daily($pdo, V3W_PRODUCTION_FROM, $today);
+
+    // ── 5b. データ品質: 買い目の初回生成時刻と締切の比較(model_status_lib.php) ────────
+    $data['strat_timing'] = ms_strategy_timing($pdo, ADMIN_DATA_FROM, $today);
 
     // ── 3b. 戦略ロジック: 本日分の買い目点数(model_status_lib.php) ────────
     $data['strat_points'] = ms_strategy_points($pdo, $today, $today)[$today] ?? [];
@@ -150,6 +153,23 @@ for ($d = $today; $d >= V3W_PRODUCTION_FROM; $d = date('Y-m-d', strtotime($d . '
 // データ品質の注意(成績データの開始日〜本日に該当するもの)
 $dq_issues = data_quality_issues(ADMIN_DATA_FROM, $today);
 $DQ_LABELS = ['leak' => 'リーク込み', 'gap' => '欠損', 'change' => 'ロジック変更'];
+
+// 買い目の初回生成時刻と締切: 期間別の集計と直近14日の日別(締切前に生成された割合)
+function timing_sum(array $days, string $from, string $to): array {
+    $s = ['races' => 0, 'before_deadline' => 0, 'after_deadline' => 0, 'unknown' => 0];
+    foreach ($days as $d => $t) {
+        if ($d < $from || $d > $to) continue;
+        foreach ($s as $k => $_) $s[$k] += $t[$k];
+    }
+    return $s;
+}
+$timing_periods = [
+    '全期間(' . ADMIN_DATA_FROM . '〜)'          => timing_sum($data['strat_timing'], ADMIN_DATA_FROM, $today),
+    '公開の集計対象(2026-09-29〜)'               => timing_sum($data['strat_timing'], '2026-09-29', $today),
+    '締切前生成の導入後(2026-11-05〜)'           => timing_sum($data['strat_timing'], '2026-11-05', $today),
+];
+$timing_recent = array_slice($data['strat_timing'], -14, null, true);
+krsort($timing_recent);
 
 $STRAT_NAMES = ['的中特化' => '的中特化', 'バランス' => 'バランス', '一撃重視' => '一撃重視', '絞り込み' => '絞り込み'];
 
@@ -235,6 +255,7 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
 .history { font-size: 12px; color: #444; line-height: 1.8; margin: 8px 0 12px; }
 .history b { color: #0055a4; margin-right: 6px; }
 .history a { color: #0055a4; }
+h3.dq-sub { font-size: 13px; margin: 14px 0 6px; color: #333; }
 td.logic-cell { text-align: left; white-space: normal; min-width: 220px; font-size: 12px; }
 
 .dq-list { list-style: none; }
@@ -501,6 +522,46 @@ td.logic-cell { text-align: left; white-space: normal; min-width: 220px; font-si
     <?php endforeach; ?>
   </ul>
   <?php endif; ?>
+  <h3 class="dq-sub">締切後に初めて生成された買い目</h3>
+  <div class="table-wrap">
+    <table class="dash">
+      <thead><tr><th>期間</th><th>レース</th><th>締切前に生成</th><th>締切後に生成</th><th>締切時刻不明</th></tr></thead>
+      <tbody>
+      <?php foreach ($timing_periods as $label => $t): ?>
+        <tr>
+          <td><?= htmlspecialchars($label) ?></td>
+          <td><?= number_format($t['races']) ?></td>
+          <td><?= number_format($t['before_deadline']) ?>(<?= pct(rate_pct($t['before_deadline'], $t['races'])) ?>)</td>
+          <td class="<?= $t['after_deadline'] > 0 ? 'worse' : '' ?>"><?= number_format($t['after_deadline']) ?>(<?= pct(rate_pct($t['after_deadline'], $t['races'])) ?>)</td>
+          <td><?= number_format($t['unknown']) ?></td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-wrap scroll-y" style="margin-top: 8px;">
+    <table class="dash">
+      <thead><tr><th>日付</th><th>レース</th><th>締切前に生成された割合</th><th>締切後に生成</th></tr></thead>
+      <tbody>
+      <?php foreach ($timing_recent as $d => $t): $bp = rate_pct($t['before_deadline'], $t['races']); ?>
+        <tr>
+          <td><?= htmlspecialchars($d) ?></td>
+          <td><?= $t['races'] ?></td>
+          <td class="<?= $bp !== null ? ($bp >= 95 ? 'better' : 'worse') : '' ?>"><?= pct($bp) ?></td>
+          <td><?= $t['after_deadline'] ?></td>
+        </tr>
+      <?php endforeach; ?>
+      <?php if (!$timing_recent): ?><tr><td colspan="4" class="no-data">データなし</td></tr><?php endif; ?>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">※ 買い目(strategies)の初回生成時刻と締切時刻(races.scheduled_time)の比較。レース単位(4戦略のうち最も早い生成時刻)。
+    2026-11-04 までは、閲覧されたレース以外は結果取込み前の夜バッチ(締切後)で初めて買い目が作られていました。
+    2026-11-05 から live.yml の各実行(約15分ごと)で締切35分前以内のレースを締切前に生成し、締切後は保存済みの予想・買い目を上書きしません(夜バッチは補完のみ)。
+    過去分は公開ページの成績から除外していません。<br>
+    ※ <b>締切後に生成された買い目のバランス・一撃重視は、オッズ条件(バランス <?= (int)BALANCE_MAX_ODDS ?>倍超を除外・一撃重視 <?= (int)ICHIGEKI_MIN_ODDS ?>倍未満を除外)の判定に確定オッズを使っています</b>
+    (締切前に生成された分は生成時点のオッズ)。的中特化・絞り込みはオッズを使わないため影響しません。</p>
+
   <p class="note">※ 定義は data_quality.php。管理画面ではすべて表示しています。公開ページ(performance.php)では
     注記を<?= PUBLIC_SHOW_DATA_NOTES ? '表示' : '表示せず' ?>(PUBLIC_SHOW_DATA_NOTES)、リーク込み期間の成績を<?= PUBLIC_EXCLUDE_LEAK_PERIODS ? '集計から除外' : '集計に含めて' ?>います(PUBLIC_EXCLUDE_LEAK_PERIODS)。</p>
 

@@ -131,7 +131,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   </div>
 
   <div class="ai-locked-banner" id="aiLockedBanner" style="display:none">
-    <span>🔒 AI予想の1位候補・自信度はStandard/Premium会員限定です。</span>
+    <span>🔒 予想の1位候補・自信度はStandard/Premium会員限定です。</span>
     <a href="mypage.php#planCardStandard">プランをアップグレード</a>
   </div>
 
@@ -488,11 +488,8 @@ function runPool(items, worker, concurrency, onDone) {
 /* --- 初期化 --- */
 async function init() {
   try {
-    var meRes = await fetch('me.php');
-    if (meRes.ok) {
-      var meData = await meRes.json();
-      if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
-    }
+    var meData = await window.getMe();  // sidebar.php(ページ内で1回だけ取得)
+    if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
   } catch (e) {}
 
   if (userPlan === 'free') {

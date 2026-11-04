@@ -439,6 +439,9 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
     // 再生成→import_results.php の再清算で strategy_results まで上書きされるのを防ぐ
     // (api_predict.php 経由・単独エンドポイント経由の両方に効かせるためここで判定)。
     if (race_is_settled($pdo, $race_id)) return [];
+    // 締切後は、締切前に作った買い目を上書きしない(2026-11-05〜。夜バッチは締切前に作れなかった
+    // レースの補完だけを行う。prediction_guard_lib.php の race_frozen_after_deadline)
+    if (race_frozen_after_deadline($pdo, $race_id, 'strategies')) return [];
 
     // STRATEGY_MODEL_MAP が参照する全モデル(+フォールバック)の予測をロードする。
     // 全戦略 v3w なら predictions_v2(v3w) と predictions(フォールバック用 v2) の2つを読む。

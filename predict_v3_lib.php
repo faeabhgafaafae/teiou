@@ -109,6 +109,8 @@ function build_v3_inputs(PDO $pdo, array $entries, string $race_date, string $ve
  */
 function persist_v3_predictions(PDO $pdo, int $race_id, array $results): bool {
     if (!$results || race_is_settled($pdo, $race_id)) return false;
+    // 締切後は締切前に保存済みの v3w 予測を上書きしない(prediction_guard_lib.php)
+    if (race_frozen_after_deadline($pdo, $race_id, 'predictions_v2')) return false;
     PredictV3::save_shadow_predictions($pdo, $race_id, $results);
     return true;
 }

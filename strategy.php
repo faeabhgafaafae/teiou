@@ -151,7 +151,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   </div>
 
   <div class="note-box">
-    各戦略の全期間実績と今レースの買い目を表示します。1点100円換算。
+    各戦略の実績(2026-08-19〜09-28 を除く全期間)と今レースの買い目を表示します。賭け金は予測確率に比例した傾斜配分(1点平均600円)です。
   </div>
 
   <div id="mainArea">
@@ -634,11 +634,8 @@ function renderPremiumLock() {
 async function init() {
   var userPlan = 'free';
   try {
-    var meRes = await fetch('me.php');
-    if (meRes.ok) {
-      var meData = await meRes.json();
-      if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
-    }
+    var meData = await window.getMe();  // sidebar.php(ページ内で1回だけ取得)
+    if (meData && meData.user && meData.user.plan) { userPlan = meData.user.plan; }
   } catch (e) {}
 
   if (userPlan === 'free') {

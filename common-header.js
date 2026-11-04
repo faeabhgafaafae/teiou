@@ -18,12 +18,11 @@
     var authEl = document.getElementById('headerAuth');
     if (!authEl) return;
     try {
-      var res = await fetch('me.php');
-      if (!res.ok) {
+      var data = await window.getMe();  // sidebar.php(ページ内で1回だけ取得)
+      if (!data || !data.user) {
         authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
         return;
       }
-      var data = await res.json();
       var user = data.user;
       var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
       var planClass = user.plan !== 'free' ? user.plan : '';

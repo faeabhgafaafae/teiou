@@ -135,7 +135,13 @@ function renderFeaturedBanner(venues) {
   }).slice(0, 3);
 
   if (featuredVenues.length === 0) {
-    banner.innerHTML = '<div style="font-size:12px; color:#718096;">本日の注目レースはありません。</div>';
+    // 開催0場(深夜・早朝や非開催日)は「読み込み中」のままにせず、開催がないことを表示する
+    var jstToday = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+    var isTodayPage = !window.PAGE_DATE || window.PAGE_DATE === jstToday;
+    var msg = venues.length === 0
+      ? (isTodayPage ? '本日の開催はありません。' : 'この日の開催はありません。')
+      : (isTodayPage ? '本日の注目レースはありません。' : 'この日の注目レースはありません。');
+    banner.innerHTML = '<div style="font-size:12px; color:#718096;">' + msg + '</div>';
     return;
   }
 
@@ -198,13 +204,8 @@ async function loadVenues() {
       data.venues.forEach(function(v) { venueMap[v.venue] = v; });
     }
 
-    var activeCount = data.venues ? data.venues.length : 0;
-    var sb = document.getElementById('statsBadge');
-    if (sb) sb.textContent = activeCount + '場 開催中 / 全' + ALL_VENUES.length + '場';
-
-    if (data.venues && data.venues.length > 0) {
-      renderFeaturedBanner(data.venues);
-    }
+    // サイドバーの「本日のレース数」は sidebar.php が当日分を表示する(表示中の日付に関係なく本日)
+    renderFeaturedBanner(data.venues || []);
 
     // お気に入りデータの読み込み
     await fetchFavoriteVenues();
@@ -285,13 +286,12 @@ function setupFilterEvents() {
 async function checkAuth() {
   var authEl = document.getElementById('headerAuth');
   try {
-    var res = await fetch('me.php');
-    if (!res.ok) {
+    var data = await window.getMe();  // sidebar.php(ページ内で1回だけ取得)
+    if (!data || !data.user) {
       authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a>' +
         '<a class="auth-link register" href="register.html">新規登録</a>';
       return;
     }
-    var data = await res.json();
     var user = data.user;
     var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
     var planClass = user.plan !== 'free' ? user.plan : '';

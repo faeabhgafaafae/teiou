@@ -284,6 +284,12 @@ if (persist_predictions($pdo, (int)$race_id, $scores)) {
         }
     }
 } else {
+    // 締切後で v2 予測が保存済み(凍結)の未確定レース: v3w 予測・買い目が欠けていればここで補完する
+    // (どちらも締切前に保存済みなら各関数が何もしない。結果確定済みなら何もしない)
+    if (!race_is_settled($pdo, (int)$race_id)) {
+        try { persist_v3_predictions($pdo, (int)$race_id, $v3_results); } catch (Exception $e) {}
+        try { generate_and_save_strategies($pdo, (int)$race_id); } catch (Exception $e) {}
+    }
     $scores  = overlay_stored_predictions($scores, fetch_stored_predictions($pdo, (int)$race_id));
     $display = load_display_predictions($pdo, (int)$race_id, $date, $display_model);
 }
@@ -291,7 +297,7 @@ if (persist_predictions($pdo, (int)$race_id, $scores)) {
 $scores = apply_display_ranks($scores, $display);
 
 // このAPIは直前情報(exhibit_time等)を無料機能(直前情報タブ・出走表フォールバック等)が
-// 参照するため誰でも呼び出せる状態を維持しつつ、AI予測由来のフィールド
+// 参照するため誰でも呼び出せる状態を維持しつつ、予想(統計モデル)由来のフィールド
 // (score_*・predicted_rank)はStandard/Premium限定として出力時のみ除去する。
 // DBへの保存・戦略生成は呼び出し元のプランに関わらず常に行う(データを最新に保つため)。
 $user   = current_user();

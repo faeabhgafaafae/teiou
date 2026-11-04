@@ -82,14 +82,56 @@ function race_is_settled(PDO $pdo, int $race_id): bool {
 }
 
 /**
+ * レースの締切時刻(races.date + scheduled_time 'HH:MM'、JST)を過ぎているか。
+ * 締切時刻が未設定・列が無い(テスト用DB等)場合は false(締切前扱い)。
+ * $now は 'Y-m-d H:i:s'(JST)。省略時は現在時刻。
+ */
+function race_deadline_passed(PDO $pdo, int $race_id, ?string $now = null): bool {
+    try {
+        $stmt = $pdo->prepare('SELECT date, scheduled_time FROM races WHERE id = ?');
+        $stmt->execute([$race_id]);
+        $r = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return false;
+    }
+    if (!$r || empty($r['scheduled_time']) || !preg_match('/^(\d{1,2}):(\d{2})/', (string)$r['scheduled_time'], $m)) {
+        return false;
+    }
+    $deadline = sprintf('%s %02d:%02d:00', $r['date'], (int)$m[1], (int)$m[2]);
+    $now = $now ?? (new DateTime('now', new DateTimeZone('Asia/Tokyo')))->format('Y-m-d H:i:s');
+    return $now > $deadline;
+}
+
+/**
+ * 締切後は、締切前に保存済みの予測・買い目を上書きしない(2026-11-05〜)。
+ * 締切前に作られた買い目がそのまま清算されるようにするため(夜バッチの再生成で、確定オッズによる
+ * バランス・一撃重視のオッズ条件判定や、締切後に補完された直前情報で書き換わるのを防ぐ)。
+ * 締切前に1件も作られなかったレースは、結果取込み前の夜バッチで補完できるよう false を返す。
+ * $table は 'predictions' / 'predictions_v2' / 'strategies'。
+ */
+function race_frozen_after_deadline(PDO $pdo, int $race_id, string $table, ?string $now = null): bool {
+    if (!in_array($table, ['predictions', 'predictions_v2', 'strategies'], true)) return false;
+    if (!race_deadline_passed($pdo, $race_id, $now)) return false;
+    try {
+        $stmt = $pdo->prepare("SELECT 1 FROM $table WHERE race_id = ? LIMIT 1");
+        $stmt->execute([$race_id]);
+        return $stmt->fetchColumn() !== false;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
  * api_predict.php の計算結果を predictions に保存する。
  * 結果確定済みレースは保存せず false を返す(レース前に記録した予測を保持する)。
+ * 締切後で保存済みの予測があるレースも上書きせず false を返す(race_frozen_after_deadline)。
  *
  * @param array $scores api_predict.php の $scores(player_id/predicted_rank/score_* を含む)
  * @return bool 保存したら true
  */
 function persist_predictions(PDO $pdo, int $race_id, array $scores): bool {
     if (race_is_settled($pdo, $race_id)) return false;
+    if (race_frozen_after_deadline($pdo, $race_id, 'predictions')) return false;
 
     // model_version カラムの存在確認・追加。
     // ALTER TABLE が権限エラー等で失敗した場合は model_version なしでINSERTする。

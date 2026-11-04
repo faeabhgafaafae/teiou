@@ -1,6 +1,11 @@
 <?php
-// PHPレベルの認証ガードなし。ログインチェックはJS側のcheckAuth()で行い、
-// 未ログイン時はヘッダーのログインUIに置き換える。SSR不要の静的ページなのでこの設計で十分
+// 未ログインならログイン画面へ(2026-11-05〜。以前は JS 側のチェックだけで、未ログインでも
+// 見本データ(email@example.com 等)とパスワード変更・プラン変更フォームが表示されていた)
+require_once __DIR__ . '/auth.php';
+if (!current_user()) {
+    header('Location: login.html');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -164,9 +169,7 @@
           var data = await res.json();
           apiDate = data.date;
           document.getElementById('headerDate').textContent = formatDate(data.date);
-          var activeCount = data.venues ? data.venues.length : 0;
-          var sb = document.getElementById('statsBadge');
-          if (sb) sb.textContent = activeCount + '場 開催中 / 全24場';
+          // 「本日のレース数」は sidebar.php が表示する
         }
       } catch (e) { console.error(e); }
     }
@@ -205,12 +208,11 @@
     async function checkAuth() {
       var authEl = document.getElementById('headerAuth');
       try {
-        var res = await fetch('me.php');
-        if (!res.ok) {
-          authEl.innerHTML = '<a class="auth-link" href="login.html">ログイン</a><a class="auth-link register" href="register.html">新規登録</a>';
+        var data = await window.getMe();  // sidebar.php(ページ内で1回だけ取得)
+        if (!data || !data.user) {
+          location.href = 'login.html';  // セッション切れ
           return;
         }
-        var data = await res.json();
         var user = data.user;
         var planLabel = { free: 'Free', standard: 'Standard', premium: 'Premium' };
         var planClass = user.plan !== 'free' ? user.plan : '';

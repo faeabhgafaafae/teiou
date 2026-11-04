@@ -198,7 +198,7 @@
     <!-- オリジナル展示タブ -->
     <div class="panel" id="panel-original">
       <div class="card">
-        <h2>艇王オリジナル展示(AI予想スコア)</h2>
+        <h2>艇王オリジナル展示(予想スコア)</h2>
         <div class="pred-table-wrap" id="originalTableWrap"></div>
       </div>
     </div>
@@ -469,7 +469,7 @@ function buildOriginalTable(predictions, aiLocked) {
     icon.className = 'premium-lock-icon';
     icon.textContent = '🔒';
     var p = document.createElement('p');
-    p.textContent = 'AI予想スコアはStandard/Premium会員限定です。';
+    p.textContent = '予想スコアはStandard/Premium会員限定です。';
     var a = document.createElement('a');
     a.href = 'mypage.php#planCardStandard';
     a.textContent = 'プランをアップグレード';

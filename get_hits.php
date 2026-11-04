@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/hits_lib.php';
+require_once __DIR__ . '/data_quality.php';
 
 /**
  * 的中速報API
@@ -27,12 +28,20 @@ $offset = isset($_GET['offset']) ? (int)$_GET['offset']        : 0;
 if ($limit < 1 || $limit > 500) $limit = 20;
 if ($offset < 0) $offset = 0;
 
-$where  = 'sr.is_hit = 1 AND sr.payout > 0';
+// リーク込み期間(data_quality.php、PUBLIC_EXCLUDE_LEAK_PERIODS)の的中は公開しない
+$where  = 'sr.is_hit = 1 AND sr.payout > 0' . public_exclusion_sql('r.date');
 $params = [];
 
 if ($date !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
     $where   .= ' AND r.date = ?';
     $params[] = $date;
+    foreach (public_excluded_periods() as [$ef, $et]) {
+        if ($date >= $ef && $date <= $et) {
+            // 画面には「この期間の的中は表示していません」とだけ出す(home-races.js)
+            echo json_encode(['total' => 0, 'hits' => [], 'excluded' => true], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
 }
 
 try {

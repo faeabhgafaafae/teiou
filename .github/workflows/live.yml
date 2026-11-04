@@ -38,3 +38,29 @@ jobs:
           API_ODDS: ${{ secrets.API_URL_ODDS }}
           API_PENDING: ${{ secrets.API_URL_PENDING }}
         run: python scrape_live.py
+
+  # [2026-11-05] 締切が近いレースの予想・買い目を締切前に生成する(閲覧の有無に関係なく)。
+  # 以前は閲覧されたレースしか締切前に買い目が作られず、10月は93%のレースが結果取込み前の
+  # 夜バッチ(締切後)で初めて生成されていた。scrape_live と並列に動かし、時間予算を分ける。
+  # 締切後は保存済みの予想・買い目を上書きしない(prediction_guard_lib.php)ので、
+  # 夜バッチは締切前に作れなかったレースの補完だけになる。
+  pregenerate_upcoming:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: 締切前の予想・買い目生成
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          API_PENDING: ${{ secrets.API_URL_PENDING }}
+        run: python pregenerate_upcoming.py

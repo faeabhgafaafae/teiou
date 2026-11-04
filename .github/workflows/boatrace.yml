@@ -303,7 +303,7 @@ jobs:
         run: |
           python download_results.py --start $TARGET --end $TARGET
 
-      # [2026-08-27] v2(LR)本番昇格により api_v2_batch.php の呼び出しを廃止。
+      # [2026-08-27] v2(LR)本番昇格により api_v2_batch.php の呼び出しを廃止(2026-11-05 ファイルも削除)。
       # api_predict.php が直接 v2 モデルで predictions テーブルに書き込むため不要。
 
       # [2026-09-17] strategy_sim.py / sim_stake_allocation.py 用データエクスポート。
