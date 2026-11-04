@@ -73,7 +73,7 @@ final class AdminOpsTest extends TestCase
             'CREATE TABLE results (race_id INTEGER, lane INTEGER, player_id INTEGER, actual_rank INTEGER)',
             'CREATE TABLE predictions (race_id INTEGER, player_id INTEGER, predicted_rank INTEGER)',
             'CREATE TABLE predictions_v2 (race_id INTEGER, player_id INTEGER, predicted_rank INTEGER)',
-            'CREATE TABLE strategies (id INTEGER PRIMARY KEY, race_id INTEGER, strategy_type TEXT, model_ref TEXT)',
+            'CREATE TABLE strategies (id INTEGER PRIMARY KEY, race_id INTEGER, strategy_type TEXT, model_ref TEXT, combinations TEXT)',
             'CREATE TABLE strategy_results (id INTEGER PRIMARY KEY, strategy_id INTEGER, race_id INTEGER,
                 is_hit INTEGER, cost INTEGER, payout INTEGER, model_ref TEXT)',
         ] as $ddl) {
@@ -130,7 +130,7 @@ final class AdminOpsTest extends TestCase
     {
         $pdo = $this->db();
         $pdo->exec("INSERT INTO races VALUES (1, '2026-10-07'), (2, '2026-10-08')");
-        $pdo->exec("INSERT INTO strategies VALUES (1, 1, '一撃重視', 'v3w'), (2, 2, '一撃重視', 'v2'), (3, 2, '的中特化', 'v3w')");
+        $pdo->exec("INSERT INTO strategies (id, race_id, strategy_type, model_ref) VALUES (1, 1, '一撃重視', 'v3w'), (2, 2, '一撃重視', 'v2'), (3, 2, '的中特化', 'v3w')");
         $pdo->exec("INSERT INTO strategy_results VALUES
             (1, 1, 1, 1, 600, 1800, 'v3w'),
             (2, 2, 2, 0, 600, 0,    'v2'),
@@ -146,6 +146,22 @@ final class AdminOpsTest extends TestCase
 
         $counts = ms_strategy_counts($pdo, '2026-10-07', '2026-10-08');
         $this->assertSame(['v2' => 1], $counts['2026-10-08']['一撃重視']);
+    }
+
+    public function test_strategy_points(): void
+    {
+        $pdo = $this->db();
+        $pdo->exec("INSERT INTO races VALUES (1, '2026-11-04'), (2, '2026-11-05'), (3, '2026-11-05')");
+        $c = fn(int $n) => json_encode(array_map(fn($i) => "1-2-$i", range(1, $n)));
+        $pdo->exec("INSERT INTO strategies (id, race_id, strategy_type, model_ref, combinations) VALUES
+            (1, 1, '的中特化', 'v3w', '{$c(9)}'),
+            (2, 2, '的中特化', 'v3w', '{$c(15)}'),
+            (3, 3, '的中特化', 'v3w', '{$c(15)}'),
+            (4, 3, 'バランス', 'v3w', '{$c(10)}')");
+        $pts = ms_strategy_points($pdo, '2026-11-04', '2026-11-05');
+        $this->assertSame(['races' => 1, 'avg' => 9.0, 'min' => 9, 'max' => 9], $pts['2026-11-04']['的中特化']);
+        $this->assertSame(['races' => 2, 'avg' => 15.0, 'min' => 15, 'max' => 15], $pts['2026-11-05']['的中特化']);
+        $this->assertSame(10, $pts['2026-11-05']['バランス']['max']);
     }
 
     public function test_prediction_coverage(): void

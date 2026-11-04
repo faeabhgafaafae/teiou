@@ -4,7 +4,8 @@
  * v3w 本番切り替えの監視(読み取り専用・DB書き込みなし)。design_v3w_switch_20261001.md §3。
  * 日別に、予測の保存状況(v2=predictions / v3w=predictions_v2)と、
  * strategies / strategy_results の model_ref 別件数・的中・回収率、
- * 保存済み予測(結果取込み前に保存された値)の1着的中・1号艇1位率を返す。
+ * 保存済み予測(結果取込み前に保存された値)の1着的中・1号艇1位率と、
+ * 戦略別の買い目点数(strategy_points: レース平均・最小・最大。2026-11-04 追加)を返す。
  *
  * 呼び出し: ?api_key=xxx&from=YYYY-MM-DD&to=YYYY-MM-DD
  */
@@ -37,6 +38,9 @@ foreach (ms_prediction_coverage($pdo, $from, $to) as $d => $row) {
 }
 foreach (ms_strategy_counts($pdo, $from, $to) as $d => $types) {
     $daily[$d]['strategies'] = $types;
+}
+foreach (ms_strategy_points($pdo, $from, $to) as $d => $types) {
+    $daily[$d]['strategy_points'] = $types;
 }
 foreach (ms_strategy_results($pdo, $from, $to) as $d => $types) {
     $daily[$d]['strategy_results'] = $types;

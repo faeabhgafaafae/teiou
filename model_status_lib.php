@@ -45,6 +45,33 @@ function ms_strategy_counts(PDO $pdo, string $from, string $to): array {
     return $out;
 }
 
+/**
+ * 日別 × 戦略: strategies に保存された買い目の点数(レース平均・最小・最大)。
+ * 清算前でも、買い目ロジックの変更(例: 的中特化 2026-11-05〜 15点)が本番に反映されたかを確認できる。
+ */
+function ms_strategy_points(PDO $pdo, string $from, string $to): array {
+    $stmt = $pdo->prepare("
+        SELECT r.date, s.strategy_type, s.combinations
+        FROM strategies s JOIN races r ON r.id = s.race_id
+        WHERE r.date BETWEEN ? AND ?
+    ");
+    $stmt->execute([$from, $to]);
+    $acc = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $n = count(json_decode((string)$row['combinations'], true) ?: []);
+        $acc[$row['date']][$row['strategy_type']][] = $n;
+    }
+    $out = [];
+    ksort($acc);
+    foreach ($acc as $d => $types) {
+        foreach ($types as $type => $ns) {
+            $out[$d][$type] = ['races' => count($ns), 'avg' => round(array_sum($ns) / count($ns), 2),
+                               'min' => min($ns), 'max' => max($ns)];
+        }
+    }
+    return $out;
+}
+
 /** 日別 × 戦略 × model_ref: strategy_results の件数・的中・投資額・払戻額・的中率・回収率 */
 function ms_strategy_results(PDO $pdo, string $from, string $to): array {
     $stmt = $pdo->prepare("
