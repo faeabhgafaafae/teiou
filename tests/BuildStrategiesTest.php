@@ -101,6 +101,30 @@ final class BuildStrategiesTest extends TestCase
         $this->assertSame($this->bruteTopHarville($prob, [1, 2, 3, 4], 4, 15), $combos);
     }
 
+    public function test_tekichu_switches_by_race_date(): void
+    {
+        $prob  = $this->probMap6();
+        $lanes = [1, 2, 3, 4, 5, 6];
+        $this->assertSame('2026-11-05', TOKKA_FROM_DATE);
+        // 切り替え前日のレース(結果未取込みのまま再生成されうる)は旧ロジック: 上位4艇・9点
+        $old = build_strategies($lanes, $prob, true, [], '2026-11-04')['的中特化']['combinations'];
+        $this->assertSame($this->bruteTopHarville($prob, $lanes, 4, 9), $old);
+        // 切り替え当日以降と日付不明(null)は新ロジック: 上位5艇・15点
+        foreach (['2026-11-05', '2026-12-01', null] as $d) {
+            $new = build_strategies($lanes, $prob, true, [], $d)['的中特化']['combinations'];
+            $this->assertSame($this->bruteTopHarville($prob, $lanes, 5, 15), $new, (string)$d);
+        }
+        // ハイブリッド経由でもレース日が効く
+        $hyb = build_strategies_hybrid(['v2' => ['lanes' => $lanes, 'prob_map' => $prob, 'prob_ok' => true]], [],
+            ['的中特化' => 'v2'], 'v2', '2026-11-04');
+        $this->assertCount(9, $hyb['的中特化']['combinations']);
+        // 他戦略はレース日に関係なく同じ
+        $this->assertSame(
+            build_strategies($lanes, $prob, true, [], '2026-11-04')['バランス'],
+            build_strategies($lanes, $prob, true, [], '2026-11-05')['バランス']
+        );
+    }
+
     public function test_tekichu_stakes_use_prob_allocation(): void
     {
         $prob = $this->probMap6();

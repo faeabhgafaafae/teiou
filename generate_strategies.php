@@ -43,6 +43,20 @@ const ICHIGEKI_MIN_ODDS = 15.0;  // 一撃重視: これを下回る3連単オ�
 // strategy_sim.py はこの2行を読み取って同じ値を使う(変更はここ1か所)。
 const TOKKA_POOL_SIZE = 5;   // 対象艇数(5艇 → 60通り)
 const TOKKA_POINTS    = 15;  // 点数
+// 新ロジックを適用するレース日の初日。これより前のレースは旧ロジック(上位4艇・9点)のまま。
+// デプロイ時点で結果未取込みの前日分レース(21:30バッチの遅延や閲覧で買い目が再生成される)が
+// 新ロジックで作り直され、事前に表示していない買い目で清算されるのを防ぐ。
+const TOKKA_FROM_DATE    = '2026-11-05';
+const TOKKA_LEGACY_POOL   = 4;
+const TOKKA_LEGACY_POINTS = 9;
+
+/** レース日に応じた的中特化の [対象艇数, 点数]。日付不明(null)は現行ロジック */
+function tokka_params(?string $race_date): array {
+    if ($race_date !== null && $race_date < TOKKA_FROM_DATE) {
+        return [TOKKA_LEGACY_POOL, TOKKA_LEGACY_POINTS];
+    }
+    return [TOKKA_POOL_SIZE, TOKKA_POINTS];
+}
 
 // 賭け金傾斜配分 (2026-09-09導入。sim_budget_sweep.py で検証)
 // STAKE_SCHEME: 'flat'=均等100円(傾斜なし) / 'prob'=Harville確率比例 /
@@ -182,9 +196,11 @@ function _strat_permutations(array $arr) {
  * @param array $prob_map lane => v2の1着確率(win_probability)
  * @param bool  $prob_ok  $prob_map が全艇分・合計ほぼ1で有効かどうか
  * @param array $odds_map combo('a-b-c') => 3連単オッズ
+ * @param ?string $race_date レース日(的中特化のロジック切り替え判定。null=現行ロジック)
  * @return array strategy_type => ['combinations'=>, 'stakes'=>, 'stake_scheme'=>, 'total_cost'=>]
  */
-function build_strategies(array $lanes, array $prob_map, bool $prob_ok, array $odds_map): array {
+function build_strategies(array $lanes, array $prob_map, bool $prob_ok, array $odds_map,
+                          ?string $race_date = null): array {
     $n = count($lanes);
 
     $strats = [];
@@ -195,8 +211,10 @@ function build_strategies(array $lanes, array $prob_map, bool $prob_ok, array $o
     // (上位3艇全順列6点・stakes=null の均等100円)にフォールバック。
     // 参照モデル(v3w)の予測自体が無いレースは build_strategies_hybrid() が
     // 他戦略と同様に STRATEGY_MODEL_FALLBACK(v2)で組み直す。
+    // TOKKA_FROM_DATE より前のレースは旧ロジック(上位4艇・9点)。tokka_params() 参照。
+    [$tokka_pool, $tokka_points] = tokka_params($race_date);
     if ($prob_ok && $n >= 3) {
-        $strats['的中特化'] = _strat_top_harville($prob_map, array_slice($lanes, 0, TOKKA_POOL_SIZE), TOKKA_POINTS);
+        $strats['的中特化'] = _strat_top_harville($prob_map, array_slice($lanes, 0, $tokka_pool), $tokka_points);
     } else {
         $strats['的中特化'] = _strat_permutations(array_slice($lanes, 0, 3));
     }
@@ -295,17 +313,19 @@ function build_strategies(array $lanes, array $prob_map, bool $prob_ok, array $o
  * @param array  $odds_map  combo('a-b-c') => 3連単オッズ
  * @param array  $model_map strategy_type => 参照モデル名(既定 STRATEGY_MODEL_MAP)
  * @param string $fallback  参照モデル欠損時のフォールバック先(既定 STRATEGY_MODEL_FALLBACK)
+ * @param ?string $race_date レース日(build_strategies() に渡す。null=現行ロジック)
  * @return array strategy_type => ['combinations'=>, 'stakes'=>, 'stake_scheme'=>, 'total_cost'=>, 'model_ref'=>]
  */
 function build_strategies_hybrid(array $models, array $odds_map,
                                  array $model_map = STRATEGY_MODEL_MAP,
-                                 string $fallback = STRATEGY_MODEL_FALLBACK): array {
+                                 string $fallback = STRATEGY_MODEL_FALLBACK,
+                                 ?string $race_date = null): array {
     $cache = [];
-    $build_for = function(string $m) use (&$cache, $models, $odds_map) {
+    $build_for = function(string $m) use (&$cache, $models, $odds_map, $race_date) {
         if (array_key_exists($m, $cache)) return $cache[$m];
         if (!isset($models[$m]) || $models[$m] === null) return $cache[$m] = null;
         $d = $models[$m];
-        return $cache[$m] = build_strategies($d['lanes'], $d['prob_map'], $d['prob_ok'], $odds_map);
+        return $cache[$m] = build_strategies($d['lanes'], $d['prob_map'], $d['prob_ok'], $odds_map, $race_date);
     };
 
     $result = [];
@@ -442,7 +462,12 @@ function generate_and_save_strategies(PDO $pdo, int $race_id): array {
         }
     } catch (PDOException $e) { /* odds未取得時は全組み合わせを許容 */ }
 
-    $built = build_strategies_hybrid($models, $odds_map);
+    // レース日(的中特化のロジック切り替え日 TOKKA_FROM_DATE の判定用)
+    $rd = $pdo->prepare('SELECT date FROM races WHERE id = ?');
+    $rd->execute([$race_id]);
+    $race_date = $rd->fetchColumn() ?: null;
+
+    $built = build_strategies_hybrid($models, $odds_map, STRATEGY_MODEL_MAP, STRATEGY_MODEL_FALLBACK, $race_date);
 
     // stakes/stake_scheme/model_ref カラムの存在確認・追加 (api_predict.phpと同方式。
     // error 1060 = カラム既存 は正常ケース)。利用可能なカラムのみを動的に保存する。
