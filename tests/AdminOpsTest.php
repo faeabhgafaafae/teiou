@@ -36,6 +36,8 @@ final class AdminOpsTest extends TestCase
         $this->assertSame([], data_quality_issues('2026-09-29', '2026-10-04'), 'リーク後・欠損前は該当なし');
         $this->assertSame([], data_quality_issues('2026-10-06', '2026-10-08'), '欠損日の翌日以降は該当なし');
         $this->assertSame(['gap'], $types(data_quality_issues('2026-10-05', '2026-10-05')));
+        $this->assertSame(['gap', 'gap'], $types(data_quality_issues('2026-09-09', '2026-11-03', ['gap'])), '10-05 と 10-22');
+        $this->assertSame([], data_quality_issues('2026-10-23', '2026-11-03'), '10-22 の翌日以降は該当なし');
     }
 
     public function test_issue_on_date(): void
@@ -43,6 +45,8 @@ final class AdminOpsTest extends TestCase
         $this->assertSame('gap', data_quality_issue_on('2026-10-05')['type']);
         $this->assertSame('leak', data_quality_issue_on('2026-08-19')['type']);
         $this->assertNull(data_quality_issue_on('2026-10-06'));
+        $this->assertSame('gap', data_quality_issue_on('2026-10-22')['type']);
+        $this->assertNull(data_quality_issue_on('2026-10-21'));
     }
 
     // ── 2. 集計ライブラリ ─────────────────────────────────────
