@@ -39,6 +39,9 @@ foreach (ms_prediction_coverage($pdo, $from, $to) as $d => $row) {
 foreach (ms_strategy_counts($pdo, $from, $to) as $d => $types) {
     $daily[$d]['strategies'] = $types;
 }
+foreach (ms_strategy_timing($pdo, $from, $to) as $d => $t) {
+    $daily[$d]['strategy_timing'] = $t;
+}
 foreach (ms_strategy_points($pdo, $from, $to) as $d => $types) {
     $daily[$d]['strategy_points'] = $types;
 }
@@ -57,5 +60,6 @@ av_output([
         'STRATEGY_MODEL_FALLBACK'  => STRATEGY_MODEL_FALLBACK,
         'PREDICTION_DISPLAY_MODEL' => PREDICTION_DISPLAY_MODEL,
     ],
+    'clock'  => ms_db_clock($pdo),
     'daily'  => $daily,
 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT, 'model_switch_status', $AV_PAGE);

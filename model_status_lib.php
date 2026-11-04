@@ -72,6 +72,49 @@ function ms_strategy_points(PDO $pdo, string $from, string $to): array {
     return $out;
 }
 
+/**
+ * 日別: 買い目の初回生成時刻(strategies.created_at。upsert では変わらない)と締切時刻(races.scheduled_time)の比較。
+ * レース単位(4戦略のうち最も早い生成時刻)で、締切前 / 締切後 / 締切時刻不明 の件数を返す。比較は PHP 側
+ * (DB の日時関数に依存しない)。DB の時刻は JST 前提(ms_db_clock() で確認)。
+ */
+function ms_strategy_timing(PDO $pdo, string $from, string $to): array {
+    $stmt = $pdo->prepare("
+        SELECT r.id, r.date, r.scheduled_time, MIN(s.created_at) AS first_created
+        FROM strategies s JOIN races r ON r.id = s.race_id
+        WHERE r.date BETWEEN ? AND ?
+        GROUP BY r.id, r.date, r.scheduled_time
+    ");
+    $stmt->execute([$from, $to]);
+    $out = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $d = $row['date'];
+        $out[$d] = $out[$d] ?? ['races' => 0, 'before_deadline' => 0, 'after_deadline' => 0, 'unknown' => 0];
+        $out[$d]['races']++;
+        $dl = race_deadline($row['date'], $row['scheduled_time']);
+        if ($dl === null || $row['first_created'] === null) {
+            $out[$d]['unknown']++;
+        } elseif ($row['first_created'] > $dl) {
+            $out[$d]['after_deadline']++;
+        } else {
+            $out[$d]['before_deadline']++;
+        }
+    }
+    ksort($out);
+    return $out;
+}
+
+/** レース日 + 締切 'HH:MM' → 'YYYY-MM-DD HH:MM:00'(形式不正・未設定は null) */
+function race_deadline(string $date, ?string $hhmm): ?string {
+    if ($hhmm === null || !preg_match('/^(\d{1,2}):(\d{2})/', $hhmm, $m)) return null;
+    return sprintf('%s %02d:%02d:00', $date, (int)$m[1], (int)$m[2]);
+}
+
+/** DB の現在時刻(タイムゾーン確認用) */
+function ms_db_clock(PDO $pdo): array {
+    $r = $pdo->query("SELECT NOW() AS now, @@session.time_zone AS tz")->fetch(PDO::FETCH_ASSOC);
+    return ['db_now' => $r['now'], 'db_time_zone' => $r['tz'], 'php_now' => date('Y-m-d H:i:s'), 'php_tz' => date_default_timezone_get()];
+}
+
 /** 日別 × 戦略 × model_ref: strategy_results の件数・的中・投資額・払戻額・的中率・回収率 */
 function ms_strategy_results(PDO $pdo, string $from, string $to): array {
     $stmt = $pdo->prepare("
