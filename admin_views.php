@@ -183,7 +183,8 @@ function av_issue_label(string $date): ?string {
 function av_issue_notes(string $from, string $to): string {
     $h = '';
     foreach (data_quality_issues($from, $to) as $i) {
-        $h .= '<p class="av-warn">' . av_e(($i['type'] === 'gap' ? '欠損: ' : 'リーク込み: ') . $i['text']) . '</p>';
+        $label = ['gap' => '欠損: ', 'leak' => 'リーク込み: ', 'change' => 'ロジック変更: '][$i['type']] ?? '';
+        $h .= '<p class="av-warn">' . av_e($label . $i['text']) . '</p>';
     }
     return $h;
 }

@@ -15,8 +15,13 @@ $PERIOD_OPTIONS = [
     '2026-06-29' => '全期間(v1手動スコア時代を含む、2026-06-29〜)',
 ];
 $period_gap_notes = [];
+$period_strategy_notes = [];  // from => 戦略名 => [注記](戦略の買い目ロジック変更。data_quality.php の type='change')
 foreach (array_keys($PERIOD_OPTIONS) as $from) {
-    $period_gap_notes[$from] = array_column(data_quality_issues($from, date('Y-m-d'), ['gap']), 'text');
+    $period_gap_notes[$from] = array_column(data_quality_issues($from, date('Y-m-d'), ['gap', 'change']), 'text');
+    $period_strategy_notes[$from] = [];
+    foreach (data_quality_issues($from, date('Y-m-d'), ['change']) as $i) {
+        $period_strategy_notes[$from][$i['strategy']][] = $i['text'];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -281,6 +286,12 @@ var PERIOD_DESC = {
 };
 // 期間ごとの欠損日の注記(data_quality.php の DATA_QUALITY_ISSUES から期間該当分をサーバー側で判定)
 var PERIOD_GAP_NOTES = <?= json_encode($period_gap_notes, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+// 期間ごと・戦略ごとの買い目ロジック変更の注記(戦略カード・戦略比較表に表示)
+var PERIOD_STRATEGY_NOTES = <?= json_encode((object)array_map(fn($m) => (object)$m, $period_strategy_notes), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+function strategyNotes(type) {
+  var m = PERIOD_STRATEGY_NOTES[getPeriodFrom()] || {};
+  return m[type] || [];
+}
 function getPeriodFrom() {
   var sel = document.getElementById('periodSelect');
   return sel ? sel.value : '2026-09-09';
@@ -361,6 +372,12 @@ async function loadSummary() {
       name.className = 'strategy-card-name';
       name.textContent = s.strategy_type;
       card.appendChild(name);
+      strategyNotes(s.strategy_type).forEach(function(t) {
+        var sn = document.createElement('div');
+        sn.className = 'note';
+        sn.textContent = '※ ' + t;
+        card.appendChild(sn);
+      });
 
       var rows = [
         ['対象レース数', s.total_races + '件'],
@@ -691,6 +708,14 @@ async function loadCompare() {
     table.appendChild(tbody);
     wrap.appendChild(table);
     el.appendChild(wrap);
+    data.stats.forEach(function(s) {
+      strategyNotes(s.strategy_type).forEach(function(t) {
+        var sn = document.createElement('div');
+        sn.className = 'note';
+        sn.textContent = '※ ' + t;
+        el.appendChild(sn);
+      });
+    });
   } catch (e) {
     el.textContent = '';
     el.appendChild(makeError('データの取得に失敗しました'));

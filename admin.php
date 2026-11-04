@@ -134,7 +134,7 @@ $review_left = (int)ceil((strtotime(NEXT_MODEL_REVIEW['date']) - strtotime($toda
 // 日別表(新しい日が上): 結果確定データの無い日は、データ品質の問題(欠損等)に該当するときだけ行を出す
 $top1_rows = [];
 for ($d = $today; $d >= V3W_PRODUCTION_FROM; $d = date('Y-m-d', strtotime($d . ' -1 day'))) {
-    $issue = data_quality_issue_on($d);
+    $issue = data_quality_issue_on($d, ['leak', 'gap']);  // 戦略ロジック変更('change')は1着的中の日別表には関係しない
     if (isset($data['top1_daily'][$d])) {
         $top1_rows[] = ['date' => $d, 't' => $data['top1_daily'][$d], 'issue' => $issue];
     } elseif ($issue) {
@@ -144,7 +144,7 @@ for ($d = $today; $d >= V3W_PRODUCTION_FROM; $d = date('Y-m-d', strtotime($d . '
 
 // データ品質の注意(成績データの開始日〜本日に該当するもの)
 $dq_issues = data_quality_issues(ADMIN_DATA_FROM, $today);
-$DQ_LABELS = ['leak' => 'リーク込み', 'gap' => '欠損'];
+$DQ_LABELS = ['leak' => 'リーク込み', 'gap' => '欠損', 'change' => 'ロジック変更'];
 
 $STRAT_NAMES = ['的中特化' => '的中特化', 'バランス' => 'バランス', '一撃重視' => '一撃重視', '絞り込み' => '絞り込み'];
 ?>

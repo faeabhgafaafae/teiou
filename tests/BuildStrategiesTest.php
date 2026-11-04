@@ -24,20 +24,97 @@ final class BuildStrategiesTest extends TestCase
         $this->assertSame(['的中特化', 'バランス', '一撃重視', '絞り込み'], array_keys($built));
     }
 
-    public function test_tekichu_uses_harville_top9_when_prob_ok(): void
+    public function test_tekichu_constants(): void
+    {
+        // 2026-11-05〜 上位5艇60通りから Harville 上位15点(design_tokka_review_20261104.md)
+        $this->assertSame(5, TOKKA_POOL_SIZE);
+        $this->assertSame(15, TOKKA_POINTS);
+    }
+
+    /** テスト側で独立に計算した「予測上位 $k 艇の3連単全通りを Harville 降順に並べた上位 $n 点」 */
+    private function bruteTopHarville(array $prob, array $lanes, int $k, int $n): array
+    {
+        $pool = array_slice($lanes, 0, $k);
+        $cand = [];
+        foreach ($pool as $a) foreach ($pool as $b) foreach ($pool as $c) {
+            if ($a === $b || $a === $c || $b === $c) continue;
+            $p = $prob[$a] * ($prob[$b] / (1 - $prob[$a])) * ($prob[$c] / (1 - $prob[$a] - $prob[$b]));
+            $cand[] = ["$a-$b-$c", $p];
+        }
+        usort($cand, fn($x, $y) => $y[1] <=> $x[1]);
+        return array_column(array_slice($cand, 0, $n), 0);
+    }
+
+    public function test_tekichu_uses_harville_top15_of_top5_when_prob_ok(): void
     {
         $prob = $this->probMap6();
         $built = build_strategies([1, 2, 3, 4, 5, 6], $prob, true, []);
+        $combos = $built['的中特化']['combinations'];
 
-        $expected = _strat_top_harville($prob, [1, 2, 3, 4], 9);
-        $this->assertSame($expected, $built['的中特化']['combinations']);
-        $this->assertCount(9, $built['的中特化']['combinations']);
-        // 上位4艇(1-4)のみから構成される
-        foreach ($built['的中特化']['combinations'] as $combo) {
+        $this->assertCount(15, $combos);
+        $this->assertSame($this->bruteTopHarville($prob, [1, 2, 3, 4, 5, 6], 5, 15), $combos);
+        $this->assertSame(count(array_unique($combos)), count($combos), '重複なし');
+        // 上位5艇(1-5)のみから構成され、5番手の艇を含む組も選ばれる(旧ロジックの上位4艇では選ばれない)
+        $lanesUsed = [];
+        foreach ($combos as $combo) {
             foreach (explode('-', $combo) as $lane) {
-                $this->assertContains((int)$lane, [1, 2, 3, 4]);
+                $this->assertContains((int)$lane, [1, 2, 3, 4, 5]);
+                $lanesUsed[(int)$lane] = true;
             }
         }
+        $this->assertArrayHasKey(5, $lanesUsed);
+    }
+
+    public function test_tekichu_is_sorted_by_harville_desc(): void
+    {
+        $prob = $this->probMap6();
+        $combos = build_strategies([1, 2, 3, 4, 5, 6], $prob, true, [])['的中特化']['combinations'];
+        $ps = array_map(fn($c) => _strat_harville($prob, ...array_map('intval', explode('-', $c))), $combos);
+        for ($i = 1; $i < count($ps); $i++) {
+            $this->assertGreaterThanOrEqual($ps[$i], $ps[$i - 1], "{$combos[$i - 1]} → {$combos[$i]}");
+        }
+        // 選ばれなかった上位5艇の組はどれも、選ばれた最下位の組より確率が高くない
+        $min = end($ps);
+        foreach ($this->bruteTopHarville($prob, [1, 2, 3, 4, 5, 6], 5, 60) as $c) {
+            if (in_array($c, $combos, true)) continue;
+            $this->assertLessThanOrEqual($min, _strat_harville($prob, ...array_map('intval', explode('-', $c))));
+        }
+    }
+
+    public function test_tekichu_pool_follows_predicted_rank_not_lane_number(): void
+    {
+        // 予測順位 3,6,1,5,2,4 → 対象は予測上位5艇(3,6,1,5,2)。予測6位の4号艇は含まない
+        $lanes = [3, 6, 1, 5, 2, 4];
+        $prob  = [3 => 0.30, 6 => 0.22, 1 => 0.18, 5 => 0.12, 2 => 0.10, 4 => 0.08];
+        $combos = build_strategies($lanes, $prob, true, [])['的中特化']['combinations'];
+        $this->assertSame($this->bruteTopHarville($prob, $lanes, 5, 15), $combos);
+        foreach ($combos as $combo) {
+            $this->assertNotContains(4, array_map('intval', explode('-', $combo)));
+        }
+    }
+
+    public function test_tekichu_with_four_boats_uses_all_entrants(): void
+    {
+        // 欠場で4艇しかいないレース: 4艇の24通りから15点
+        $prob = [1 => 0.4, 2 => 0.3, 3 => 0.2, 4 => 0.1];
+        $combos = build_strategies([1, 2, 3, 4], $prob, true, [])['的中特化']['combinations'];
+        $this->assertSame($this->bruteTopHarville($prob, [1, 2, 3, 4], 4, 15), $combos);
+    }
+
+    public function test_tekichu_stakes_use_prob_allocation(): void
+    {
+        $prob = $this->probMap6();
+        $b = build_strategies([1, 2, 3, 4, 5, 6], $prob, true, [])['的中特化'];
+        $this->assertSame('prob', $b['stake_scheme']);
+        $this->assertCount(15, $b['stakes']);
+        $this->assertSame(15 * STAKE_UNIT, array_sum($b['stakes']));
+        $this->assertSame(15 * STAKE_UNIT, $b['total_cost']);
+        foreach ($b['stakes'] as $st) {
+            $this->assertGreaterThanOrEqual(STAKE_MIN, $st);
+            $this->assertSame(0, $st % 100);
+        }
+        // Harville 降順に並んでいるので、先頭の組の金額が最大
+        $this->assertSame(max($b['stakes']), $b['stakes'][0]);
     }
 
     public function test_tekichu_falls_back_to_permutations_when_prob_not_ok(): void

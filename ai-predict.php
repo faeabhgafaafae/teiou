@@ -1017,10 +1017,10 @@ document.getElementById('pikaichiToggle').onclick = function() {
 /* ─── 戦略タブ（strategy.phpから移植） ─────────────── */
 var COMBO_LIMIT = 10;
 var STRAT_DEFS = [
-  { type: '的中特化', color: '#2563eb', desc: '上位3艇の全順列（最大6点）' },
+  { type: '的中特化', color: '#2563eb', desc: '上位5艇から確率上位15点' },
   { type: 'バランス',   color: '#16a34a', desc: '上位2艇固定×上位4艇流し（最大12点）' },
   { type: '一撃重視', color: '#dc2626', desc: '1位固定・中穴狙い（最大6点）' },
-  { type: '絞り込み', color: '#7c3aed', desc: '1点勝負' }
+  { type: '絞り込み', color: '#7c3aed', desc: '上位3艇から確率上位3点' }
 ];
 
 function makeWakuBadge(lane) {

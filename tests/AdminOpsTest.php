@@ -3,6 +3,7 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../model_status_lib.php';
 require_once __DIR__ . '/../data_quality.php';
+require_once __DIR__ . '/../model_switch.php';
 
 /**
  * 管理画面のモデル運用状況・データ品質欄(2026-10-08)のテスト。
@@ -19,7 +20,11 @@ final class AdminOpsTest extends TestCase
     public function test_issue_definitions_are_well_formed(): void
     {
         foreach (DATA_QUALITY_ISSUES as $i) {
-            $this->assertContains($i['type'], ['leak', 'gap']);
+            $this->assertContains($i['type'], ['leak', 'gap', 'change']);
+            if ($i['type'] === 'change') {
+                $this->assertContains($i['strategy'] ?? null, array_keys(STRATEGY_MODEL_MAP), 'change は対象戦略名が必須');
+                $this->assertSame($i['from'], $i['to'], 'change は適用初日の1日');
+            }
             $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $i['from']);
             $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $i['to']);
             $this->assertLessThanOrEqual($i['to'], $i['from']);
@@ -38,6 +43,13 @@ final class AdminOpsTest extends TestCase
         $this->assertSame(['gap'], $types(data_quality_issues('2026-10-05', '2026-10-05')));
         $this->assertSame(['gap', 'gap'], $types(data_quality_issues('2026-09-09', '2026-11-03', ['gap'])), '10-05 と 10-22');
         $this->assertSame([], data_quality_issues('2026-10-23', '2026-11-03'), '10-22 の翌日以降は該当なし');
+        // 的中特化のロジック変更(2026-11-05〜 上位5艇15点)は、変更日をまたぐ期間でのみ該当
+        $chg = data_quality_issues('2026-09-09', '2026-11-30', ['change']);
+        $this->assertCount(1, $chg);
+        $this->assertSame('的中特化', $chg[0]['strategy']);
+        $this->assertSame('2026-11-05', $chg[0]['from']);
+        $this->assertSame([], data_quality_issues('2026-09-09', '2026-11-04', ['change']), '変更前だけの期間は該当なし');
+        $this->assertSame(['gap', 'gap'], $types(data_quality_issues('2026-09-09', '2026-11-30', ['gap'])), 'gap 指定に change は混ざらない');
     }
 
     public function test_issue_on_date(): void

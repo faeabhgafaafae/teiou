@@ -3,8 +3,8 @@
  * 戦略別買い目生成
  * predict.php から require_once して使う。単独呼び出し（?race_id=xxx）も可。
  *
- * 的中特化: 上位4艇の3連単24通りからHarville確率上位9点
- *           (v2確率が取れない場合は従来の上位3艇全順列にフォールバック)
+ * 的中特化: 上位TOKKA_POOL_SIZE艇(5艇)の3連単60通りからHarville確率上位TOKKA_POINTS点(15点)
+ *           (予測確率が取れない場合は従来の上位3艇全順列6点にフォールバック)
  * バランス: 上位2艇を1着に各固定 × 上位4艇の2,3着総流し（最大12点）
  *           オッズ上限フィルタあり: BALANCE_MAX_ODDS 超の組み合わせは除外
  * 一撃重視: 1位固定 × 2〜4位の2,3着総流し（最大6点）
@@ -19,6 +19,8 @@
  * v2確率は predictions.score_total (v2昇格後は win_probability×100) を使用。
  *
  * 2026-09-17: 的中特化をHV6点→HV9点に拡大(design_v3_improvement_20260917.md参照)。
+ * 2026-11-05: 的中特化を上位4艇HV9点→上位5艇HV15点に作り直し(design_tokka_review_20261104.md)。
+ *   v3w再現 09-30〜11-03: 的中率 38.8%→53.9% / 回収率 75.2%→76.6%(バランス 43.1% / 79.4%)
  *
  * 2026-09-09: 賭け金傾斜配分を導入(STAKE_SCHEME/STAKE_UNIT参照)。
  * 各買い目の金額を strategies.stakes (JSON、combinationsと同順) に保存し、
@@ -35,6 +37,12 @@ require_once __DIR__ . '/model_switch.php';
 // シム上 的中率30.6%→40.8% / 回収率79.1%→82.8%)。100倍は万舟テールガードとして残す。
 const BALANCE_MAX_ODDS  = 100.0;  // バランス: これを超える3連単オッズは除外
 const ICHIGEKI_MIN_ODDS = 15.0;  // 一撃重視: これを下回る3連単オッズは除外
+
+// 的中特化の買い目(2026-11-05〜。design_tokka_review_20261104.md)。
+// 予測上位 TOKKA_POOL_SIZE 艇の3連単全通りから Harville 確率上位 TOKKA_POINTS 点。
+// strategy_sim.py はこの2行を読み取って同じ値を使う(変更はここ1か所)。
+const TOKKA_POOL_SIZE = 5;   // 対象艇数(5艇 → 60通り)
+const TOKKA_POINTS    = 15;  // 点数
 
 // 賭け金傾斜配分 (2026-09-09導入。sim_budget_sweep.py で検証)
 // STAKE_SCHEME: 'flat'=均等100円(傾斜なし) / 'prob'=Harville確率比例 /
@@ -181,10 +189,14 @@ function build_strategies(array $lanes, array $prob_map, bool $prob_ok, array $o
 
     $strats = [];
 
-    // 的中特化: 上位4艇の3連単24通りからHarville確率上位9点（オッズフィルタなし）
-    // v2確率が使えない場合は従来の上位3艇全順列（最大6点）
-    if ($prob_ok && $n >= 4) {
-        $strats['的中特化'] = _strat_top_harville($prob_map, array_slice($lanes, 0, 4), 9);
+    // 的中特化: 上位5艇の3連単60通りからHarville確率上位15点（オッズフィルタなし）
+    // 欠場等で5艇未満のときは出走艇すべてを対象にする(4艇なら24通りから15点)。
+    // 予測確率が使えない場合は、絞り込みと同じく確率を使わない従来ロジック
+    // (上位3艇全順列6点・stakes=null の均等100円)にフォールバック。
+    // 参照モデル(v3w)の予測自体が無いレースは build_strategies_hybrid() が
+    // 他戦略と同様に STRATEGY_MODEL_FALLBACK(v2)で組み直す。
+    if ($prob_ok && $n >= 3) {
+        $strats['的中特化'] = _strat_top_harville($prob_map, array_slice($lanes, 0, TOKKA_POOL_SIZE), TOKKA_POINTS);
     } else {
         $strats['的中特化'] = _strat_permutations(array_slice($lanes, 0, 3));
     }

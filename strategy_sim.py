@@ -18,6 +18,7 @@ strategy_sim.py — 4戦略シミュレーション + ROI-CVゲート共通モ�
 """
 import glob
 import os
+import re
 import numpy as np
 import pandas as pd
 from itertools import permutations
@@ -31,7 +32,21 @@ SOFT_WARN_PT = 3.0    # soft warning: ROI点推定の悪化幅
 STRATS = ['tokka', 'balance', 'ichigeki', 'shibori']
 NAMES  = {'tokka': '的中特化', 'balance': 'バランス', 'ichigeki': '一撃重視', 'shibori': '絞り込み'}
 
-TOKKA_POINTS = 9   # 的中特化のデフォルト点数(本番generate_strategies.phpと一致)
+
+
+def _php_const(name):
+    """generate_strategies.php の整数定数を読む(的中特化の点数・対象艇数を本番と1か所で共有するため)"""
+    src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'generate_strategies.php'),
+               encoding='utf-8').read()
+    m = re.search(r"^const\s+" + name + r"\s*=\s*(\d+)\s*;", src, re.M)
+    if not m:
+        raise RuntimeError(f'generate_strategies.php に const {name} が見つからない')
+    return int(m.group(1))
+
+
+# 的中特化(2026-11-05〜): 上位 TOKKA_POOL_SIZE 艇の3連単から Harville 上位 TOKKA_POINTS 点
+TOKKA_POOL_SIZE = _php_const('TOKKA_POOL_SIZE')
+TOKKA_POINTS    = _php_const('TOKKA_POINTS')
 
 
 def harville(probs, a, b, c):
@@ -75,13 +90,13 @@ def payout_for(market, rid, combo):
 def strategies_for(lanes, odds_r, probs=None, n_tokka=TOKKA_POINTS):
     """現行本番ロジック(generate_strategies.php)の再現。lanes=予測順位順の枠番リスト
 
-    tokka(的中特化)は本番と同じく、probsが与えられ4艇以上あれば
-    上位4艇の3連単24通りをHarville確率降順で上位 n_tokka 点。
-    probsが無い/4艇未満なら従来の上位3艇全順列(6点)にフォールバック。
+    tokka(的中特化)は本番と同じく、probsが与えられ3艇以上あれば
+    上位 TOKKA_POOL_SIZE 艇(5艇=60通り)の3連単をHarville確率降順で上位 n_tokka 点(既定 TOKKA_POINTS=15)。
+    probsが無ければ従来の上位3艇全順列(6点)にフォールバック。
     probs: {枠番: 確率}(レース内で正規化済みを想定)"""
     s = {}
-    if probs is not None and len(lanes) >= 4:
-        perms = sorted(permutations(lanes[:4], 3), key=lambda p: -harville(probs, *p))
+    if probs is not None and len(lanes) >= 3:
+        perms = sorted(permutations(lanes[:TOKKA_POOL_SIZE], 3), key=lambda p: -harville(probs, *p))
         s['tokka'] = ['-'.join(map(str, p)) for p in perms[:n_tokka]]
     else:
         s['tokka'] = ['-'.join(map(str, p)) for p in permutations(lanes[:3])]
@@ -116,7 +131,7 @@ def build_race_table(preds, model_cols, market, n_tokka=TOKKA_POINTS):
     """レース単位の戦略別cost/payout + rank1枠番 + 勝者枠番のテーブルを構築。
 
     preds: race_id, lane, 確率列(model_cols)を持つDataFrame(1行=1艇)
-    n_tokka: 的中特化のHarville上位点数(デフォルト9=本番と一致)
+    n_tokka: 的中特化のHarville上位点数(デフォルト TOKKA_POINTS=本番と一致)
     返り値: 1行=1レースのDataFrame
     """
     rows = []
