@@ -115,74 +115,107 @@
   // ─── 的中速報 ─────────────────────────────────────────
   var LANE_BG   = ['', '#f0f0f0', '#222',    '#e53e3e', '#2563eb', '#eab308', '#16a34a'];
   var LANE_FG   = ['', '#555',    '#fff',    '#fff',    '#fff',    '#333',    '#fff'   ];
-  var STRAT_STYLE = {
-    '的中特化': 'background:#dbeafe; color:#1d4ed8;',
-    'バランス':  'background:#d1fae5; color:#065f46;',
-    '一撃重視': 'background:#fee2e2; color:#991b1b;',
-    '絞り込み': 'background:#ede9fe; color:#5b21b6;'
+  // 戦略の色は予想画面(ai-predict.php / strategy.php の STRAT_DEFS)に揃える
+  var STRAT_COLOR = {
+    '的中特化': { fg: '#2563eb', bg: '#dbeafe' },
+    'バランス':  { fg: '#16a34a', bg: '#d1fae5' },
+    '一撃重視': { fg: '#dc2626', bg: '#fee2e2' },
+    '絞り込み': { fg: '#7c3aed', bg: '#ede9fe' }
+  };
+  // 戦略アイコン(インラインSVG、24x24、currentColor で描画)
+  //   的中特化=的 / バランス=天秤 / 一撃重視=稲妻 / 絞り込み=漏斗
+  var STRAT_ICON_SVG = {
+    '的中特化': '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>' +
+                '<circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>' +
+                '<circle cx="12" cy="12" r="1.8" fill="currentColor"/>',
+    'バランス':  '<path d="M12 4v16M7 20h10M4 7h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+                '<path d="M6 7l-3 6h6zM18 7l-3 6h6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' +
+                '<path d="M3 13a3 2 0 0 0 6 0zM15 13a3 2 0 0 0 6 0z" fill="currentColor"/>',
+    '一撃重視': '<path d="M13 2L4 14h7l-1 8 10-13h-7z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>',
+    '絞り込み': '<path d="M3 4h18l-7 8.5V19l-4 2v-8.5z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>'
   };
 
+  function makeStrategyIcon(type) {
+    var c = STRAT_COLOR[type] || { fg: '#4a5568', bg: '#e2e8f0' };
+    var chip = document.createElement('span');
+    chip.setAttribute('title', type);
+    chip.setAttribute('aria-label', type);
+    chip.setAttribute('role', 'img');
+    chip.style.cssText = 'display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;' +
+      ' width:22px; height:22px; border-radius:50%; background:' + c.bg + '; color:' + c.fg + ';';
+    var inner = STRAT_ICON_SVG[type];
+    if (inner) {
+      chip.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + inner + '</svg>';
+    } else {
+      chip.style.fontSize = '10px';
+      chip.style.fontWeight = 'bold';
+      chip.textContent = type.charAt(0);
+    }
+    return chip;
+  }
+
+  // 1枚 = 1レース(同じレースで複数戦略が的中した場合は get_hits.php がまとめて strategies に並べる)
   function renderHitCard(hit) {
     var card = document.createElement('div');
-    card.style.cssText = 'background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:10px;';
+    card.style.cssText = 'position:relative; background:#fff; border:1px solid #e2e8f0; border-radius:8px;' +
+      ' padding:10px 12px; margin-bottom:10px; box-sizing:border-box; min-width:0;';
 
-    // 会場・R番号 + 戦略バッジ
+    // 右上の「的中」バッジ
+    var badge = document.createElement('span');
+    badge.style.cssText = 'position:absolute; top:8px; right:8px; background:#e53e3e; color:#fff;' +
+      ' font-size:10px; font-weight:bold; line-height:1; padding:4px 7px; border-radius:10px;';
+    badge.textContent = '的中';
+    card.appendChild(badge);
+
+    // 1行目: 会場名+レース番号 / 的中した戦略のアイコン
     var header = document.createElement('div');
-    header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;';
-
+    header.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px;' +
+      ' margin-bottom:8px; padding-right:44px; min-width:0;';
     var venueEl = document.createElement('span');
-    venueEl.style.cssText = 'font-size:13px; font-weight:bold; color:#2d3748;';
+    venueEl.style.cssText = 'font-size:13px; font-weight:bold; color:#2d3748; white-space:nowrap;';
     venueEl.textContent = venueDisplayName(hit.venue) + ' ' + hit.race_no + 'R';
-
-    var stratEl = document.createElement('span');
-    var stratStyle = STRAT_STYLE[hit.strategy_type] || 'background:#e2e8f0; color:#4a5568;';
-    stratEl.style.cssText = 'font-size:10px; font-weight:bold; padding:2px 7px; border-radius:10px; ' + stratStyle;
-    stratEl.textContent = hit.strategy_type;
-
     header.appendChild(venueEl);
-    header.appendChild(stratEl);
+    var icons = document.createElement('span');
+    icons.style.cssText = 'display:inline-flex; flex-wrap:wrap; align-items:center; gap:4px;';
+    var strategies = hit.strategies || (hit.strategy_type ? [hit.strategy_type] : []);
+    strategies.forEach(function(t) { icons.appendChild(makeStrategyIcon(t)); });
+    icons.setAttribute('aria-label', '的中した戦略: ' + strategies.join('、'));
+    header.appendChild(icons);
     card.appendChild(header);
 
-    // 的中買い目（艇番カラーバッジ）
+    // 2行目: 組み合わせ(艇番の色付きボックスを線でつなぐ。1白・2黒・3赤・4青・5黄・6緑)
     if (hit.combination) {
       var comboRow = document.createElement('div');
-      comboRow.style.cssText = 'display:flex; align-items:center; gap:3px; margin-bottom:8px;';
-
+      comboRow.style.cssText = 'display:flex; align-items:center; margin-bottom:8px;';
+      comboRow.setAttribute('aria-label', '3連単 ' + hit.combination);
       var parts = hit.combination.split('-');
       for (var i = 0; i < parts.length; i++) {
         if (i > 0) {
-          var sep = document.createElement('span');
-          sep.style.cssText = 'color:#bbb; font-size:11px; font-weight:bold;';
-          sep.textContent = '-';
-          comboRow.appendChild(sep);
+          var line = document.createElement('span');
+          line.style.cssText = 'display:inline-block; width:12px; height:2px; background:#cbd5e0; flex:0 0 auto;';
+          comboRow.appendChild(line);
         }
         var ln = parseInt(parts[i], 10);
-        var badge = document.createElement('span');
-        badge.style.cssText = 'display:inline-flex; align-items:center; justify-content:center;' +
-          ' width:22px; height:22px; border-radius:4px; font-size:12px; font-weight:bold;' +
+        var box = document.createElement('span');
+        box.style.cssText = 'display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;' +
+          ' width:24px; height:24px; border-radius:4px; font-size:13px; font-weight:bold;' +
           ' background:' + (LANE_BG[ln] || '#ccc') + '; color:' + (LANE_FG[ln] || '#333') + ';' +
-          ' border:1px solid rgba(0,0,0,0.12);';
-        badge.textContent = parts[i];
-        comboRow.appendChild(badge);
+          ' border:1px solid rgba(0,0,0,0.15);';
+        box.textContent = parts[i];
+        comboRow.appendChild(box);
       }
       card.appendChild(comboRow);
     }
 
-    // 払戻金額（大） + 日付
-    var footer = document.createElement('div');
-    footer.style.cssText = 'display:flex; justify-content:space-between; align-items:flex-end;';
-
-    var payoutEl = document.createElement('span');
-    payoutEl.style.cssText = 'font-size:18px; font-weight:bold; color:#e91e8c;';
-    payoutEl.textContent = Number(hit.payout).toLocaleString() + '円';
-
-    var dateEl = document.createElement('span');
-    dateEl.style.cssText = 'font-size:11px; color:#a0aec0;';
-    dateEl.textContent = hit.date || '';
-
-    footer.appendChild(payoutEl);
-    footer.appendChild(dateEl);
-    card.appendChild(footer);
+    // 3行目: オッズ(3連単の確定払戻÷100)と人気
+    var oddsEl = document.createElement('div');
+    oddsEl.style.cssText = 'font-size:15px; font-weight:bold; color:#e91e8c;';
+    var oddsText = (hit.odds !== null && hit.odds !== undefined)
+      ? Number(hit.odds).toFixed(1) + '倍'
+      : 'オッズ不明';
+    if (hit.popularity) oddsText += '(' + hit.popularity + '番人気)';
+    oddsEl.textContent = oddsText;
+    card.appendChild(oddsEl);
 
     return card;
   }
