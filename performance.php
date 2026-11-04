@@ -113,6 +113,7 @@ svg.trend-chart { width: 100%; height: auto; }
 }
 </style>
 <script src="venue-display.js"></script>
+<script src="strategy-colors.js?v=<?php echo (int)@filemtime(__DIR__ . '/strategy-colors.js'); ?>"></script>
 </head>
 <body>
 
@@ -261,7 +262,7 @@ svg.trend-chart { width: 100%; height: auto; }
 
 var IS_STANDARD_PLUS = <?php echo $isStandardPlus ? 'true' : 'false'; ?>;
 var IS_PREMIUM       = <?php echo $isPremium      ? 'true' : 'false'; ?>;
-var STRATEGY_COLORS = { '的中特化': '#0055a4', 'バランス': '#16a34a', '一撃重視': '#dc2626', '絞り込み': '#d97706' };
+// 戦略の色は strategy-colors.js の strategyColor()(サイト共通の定義)を使う
 var ALL_VENUES = [
   '桐生','戸田','江戸川','平和島','多摩川','浜名湖',
   '蒲郡','常滑','津','三国','琵琶湖','住之江',
@@ -446,7 +447,7 @@ function buildTrendChart(daily, metricKey, metricSuffix) {
   svgParts.push('<line x1="' + padL + '" y1="' + zeroY + '" x2="' + (W - padR) + '" y2="' + zeroY + '" stroke="#e0e3e8" stroke-width="1" />');
 
   Object.keys(strategies).forEach(function(type) {
-    var color = STRATEGY_COLORS[type] || '#888';
+    var color = strategyColor(type);
     var points = [];
     dates.forEach(function(date, i) {
       var row = strategies[type].filter(function(d) { return d.date === date; })[0];
@@ -478,7 +479,7 @@ function buildLegend(types) {
     item.className = 'chart-legend-item';
     var dot = document.createElement('span');
     dot.className = 'chart-legend-dot';
-    dot.style.background = STRATEGY_COLORS[t] || '#888';
+    dot.style.background = strategyColor(t);
     var label = document.createElement('span');
     label.textContent = t;
     item.appendChild(dot); item.appendChild(label);

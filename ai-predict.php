@@ -319,6 +319,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 @media (max-width:600px) { .comp-grid { grid-template-columns:repeat(2,1fr); } .comp-col-sub { display:none; } }
 </style>
 <script src="venue-display.js"></script>
+<script src="strategy-colors.js?v=<?php echo (int)@filemtime(__DIR__ . '/strategy-colors.js'); ?>"></script>
 </head>
 <body>
 
@@ -1017,10 +1018,10 @@ document.getElementById('pikaichiToggle').onclick = function() {
 /* ─── 戦略タブ（strategy.phpから移植） ─────────────── */
 var COMBO_LIMIT = 10;
 var STRAT_DEFS = [
-  { type: '的中特化', color: '#2563eb', desc: '上位5艇から確率上位15点' },
-  { type: 'バランス',   color: '#16a34a', desc: '上位2艇固定×上位4艇流し（最大12点）' },
-  { type: '一撃重視', color: '#dc2626', desc: '1位固定・中穴狙い（最大6点）' },
-  { type: '絞り込み', color: '#7c3aed', desc: '上位3艇から確率上位3点' }
+  { type: '的中特化', color: strategyColor('的中特化'), desc: '上位5艇から確率上位15点' },
+  { type: 'バランス',   color: strategyColor('バランス'), desc: '上位2艇固定×上位4艇流し（最大12点）' },
+  { type: '一撃重視', color: strategyColor('一撃重視'), desc: '1位固定・中穴狙い（最大6点）' },
+  { type: '絞り込み', color: strategyColor('絞り込み'), desc: '上位3艇から確率上位3点' }
 ];
 
 function makeWakuBadge(lane) {
@@ -1481,14 +1482,13 @@ function renderComparisonView(comboData, statsMap) {
     }
   }
 
-  var STRAT_COLORS = { '的中特化':'#2563eb', 'バランス':'#16a34a', '一撃重視':'#dc2626', '絞り込み':'#7c3aed' };
   var MAX_ROWS = 6;
   var grid = document.createElement('div');
   grid.className = 'comp-grid';
 
   for (var si = 0; si < strats.length; si++) {
     var strat = strats[si];
-    var color = STRAT_COLORS[strat.strategy_type] || '#888';
+    var color = strategyColor(strat.strategy_type);  // strategy-colors.js
     var statRow = statsMap[strat.strategy_type] || null;
 
     var col = document.createElement('div');

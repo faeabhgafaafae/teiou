@@ -115,13 +115,7 @@
   // ─── 的中速報 ─────────────────────────────────────────
   var LANE_BG   = ['', '#f0f0f0', '#222',    '#e53e3e', '#2563eb', '#eab308', '#16a34a'];
   var LANE_FG   = ['', '#555',    '#fff',    '#fff',    '#fff',    '#333',    '#fff'   ];
-  // 戦略の色は予想画面(ai-predict.php / strategy.php の STRAT_DEFS)に揃える
-  var STRAT_COLOR = {
-    '的中特化': { fg: '#2563eb', bg: '#dbeafe' },
-    'バランス':  { fg: '#16a34a', bg: '#d1fae5' },
-    '一撃重視': { fg: '#dc2626', bg: '#fee2e2' },
-    '絞り込み': { fg: '#7c3aed', bg: '#ede9fe' }
-  };
+  // 戦略の色は strategy-colors.js(サイト共通の定義。index.php で先に読み込む)
   // 戦略アイコン(インラインSVG、24x24、currentColor で描画)
   //   的中特化=的 / バランス=天秤 / 一撃重視=稲妻 / 絞り込み=漏斗
   var STRAT_ICON_SVG = {
@@ -136,13 +130,13 @@
   };
 
   function makeStrategyIcon(type) {
-    var c = STRAT_COLOR[type] || { fg: '#4a5568', bg: '#e2e8f0' };
+
     var chip = document.createElement('span');
     chip.setAttribute('title', type);
     chip.setAttribute('aria-label', type);
     chip.setAttribute('role', 'img');
     chip.style.cssText = 'display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;' +
-      ' width:22px; height:22px; border-radius:50%; background:' + c.bg + '; color:' + c.fg + ';';
+      ' width:22px; height:22px; border-radius:50%; background:' + strategyBgColor(type) + '; color:' + strategyColor(type) + ';';
     var inner = STRAT_ICON_SVG[type];
     if (inner) {
       chip.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + inner + '</svg>';
@@ -244,14 +238,55 @@
     container.appendChild(btn);
   }
 
+  // 'YYYY-MM-DD' → 'MM/DD'
+  function formatMD(ymd) {
+    var p = String(ymd).split('-');
+    return p.length === 3 ? (p[1] + '/' + p[2]) : String(ymd);
+  }
+  // 'YYYY-MM-DD' の前日(タイムゾーンの影響を受けないよう UTC で計算)
+  function prevDate(ymd) {
+    var p = String(ymd).split('-');
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]) - 86400000);
+    var mm = String(d.getUTCMonth() + 1), dd = String(d.getUTCDate());
+    return d.getUTCFullYear() + '-' + (mm.length < 2 ? '0' + mm : mm) + '-' + (dd.length < 2 ? '0' + dd : dd);
+  }
+  // 見出し: 「今日の的中 11/04」/ 前日分表示時「11/03の的中(本日分は集計前)」/ 過去日付選択時「11/03の的中」
+  function setHitsHeading(shownDate, isFallback) {
+    var el = document.getElementById('hitsHeading');
+    if (!el) return;
+    if (isFallback) {
+      el.textContent = formatMD(shownDate) + 'の的中(本日分は集計前)';
+    } else if (isToday) {
+      el.textContent = '今日の的中 ' + formatMD(shownDate);
+    } else {
+      el.textContent = formatMD(shownDate) + 'の的中';
+    }
+  }
+
+  async function fetchHits(date) {
+    var res = await fetch(API_HOST + '/get_hits.php?date=' + encodeURIComponent(date) + '&limit=500');
+    if (!res.ok) throw new Error('fetch error');
+    return await res.json();
+  }
+
   async function loadHits() {
     var container = document.getElementById('hitsList');
     if (!container) return;
+    setHitsHeading(currentDate, false);
     try {
-      var url = API_HOST + '/get_hits.php?date=' + encodeURIComponent(currentDate) + '&limit=500';
-      var res = await fetch(url);
-      if (!res.ok) throw new Error('fetch error');
-      var data = await res.json();
+      var shownDate = currentDate;
+      var isFallback = false;
+      var data = await fetchHits(currentDate);
+      // 当日の結果がまだ取り込まれていない(的中0件)ときは前日分を表示する
+      if (isToday && (!data.hits || data.hits.length === 0)) {
+        var prev = await fetchHits(prevDate(currentDate));
+        if (prev.hits && prev.hits.length > 0) {
+          data = prev;
+          shownDate = prevDate(currentDate);
+          isFallback = true;
+        }
+      }
+      setHitsHeading(shownDate, isFallback);
       _hitsAll   = data.hits || [];
       _hitsShown = 0;
 

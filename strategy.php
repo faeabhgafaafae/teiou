@@ -124,6 +124,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 .premium-lock a:hover { background: #b45309; }
 </style>
 <script src="venue-display.js"></script>
+<script src="strategy-colors.js?v=<?php echo (int)@filemtime(__DIR__ . '/strategy-colors.js'); ?>"></script>
 </head>
 <body>
 
@@ -181,10 +182,10 @@ var raceNo = params.get('race_no') || '1';
 var COMBO_LIMIT = 10;
 
 var STRAT_DEFS = [
-  { type: '的中特化', color: '#2563eb', desc: '上位5艇から確率上位15点' },
-  { type: 'バランス',   color: '#16a34a', desc: '上位2艇固定×上位4艇流し（最大12点）' },
-  { type: '一撃重視', color: '#dc2626', desc: '1位固定・中穴狙い（最大6点）' },
-  { type: '絞り込み', color: '#7c3aed', desc: '上位3艇から確率上位3点' }
+  { type: '的中特化', color: strategyColor('的中特化'), desc: '上位5艇から確率上位15点' },
+  { type: 'バランス',   color: strategyColor('バランス'), desc: '上位2艇固定×上位4艇流し（最大12点）' },
+  { type: '一撃重視', color: strategyColor('一撃重視'), desc: '1位固定・中穴狙い（最大6点）' },
+  { type: '絞り込み', color: strategyColor('絞り込み'), desc: '上位3艇から確率上位3点' }
 ];
 
 var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
