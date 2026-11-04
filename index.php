@@ -277,6 +277,7 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
   <script>var PAGE_DATE = '<?php echo htmlspecialchars($pageDate, ENT_QUOTES, 'UTF-8'); ?>';</script>
   <script src="venue-display.js"></script>
   <script src="app.js"></script>
-  <script src="home-races.js" defer></script>
+  <!-- get_hits.php の応答形式変更(2026-11-05、レース単位にまとめる)に合わせ、古いキャッシュの JS を使わないよう更新時刻を付ける -->
+  <script src="home-races.js?v=<?php echo (int)@filemtime(__DIR__ . '/home-races.js'); ?>" defer></script>
 </body>
 </html>
