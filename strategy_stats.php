@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/data_quality.php';
 
 // 認証ガードなし: このエンドポイントは集計値のみを返し個人情報を含まないため意図的に公開
 header('Content-Type: application/json; charset=utf-8');
@@ -21,7 +22,8 @@ try {
     exit;
 }
 
-$where  = '';
+// リーク込み期間(data_quality.php)は公開の集計から除外する
+$where  = public_exclusion_sql('r.date');
 $params = [];
 if ($start_date) { $where .= ' AND r.date >= ?'; $params[] = $start_date; }
 if ($end_date)   { $where .= ' AND r.date <= ?'; $params[] = $end_date;   }

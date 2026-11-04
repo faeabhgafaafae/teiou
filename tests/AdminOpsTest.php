@@ -183,7 +183,66 @@ final class AdminOpsTest extends TestCase
         sort($sorted);
         $this->assertSame($sorted, $dates, '履歴は日付順');
         $this->assertSame(V3W_PRODUCTION_FROM, $dates[0], 'v3w 本番化の起点 = 最初の切り替え日');
-        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', NEXT_MODEL_REVIEW['date']);
+        $this->assertFalse(defined('NEXT_MODEL_REVIEW'), '次回再集計のカウントダウンは撤去済み(11-04 実施)');
+        $last = MODEL_SWITCH_HISTORY[count(MODEL_SWITCH_HISTORY) - 1];
+        $this->assertSame('2026-11-04', $last['date']);
+        $this->assertSame('design_v3w_postswitch_20261104.md', $last['doc']);
+        foreach (MODEL_SWITCH_HISTORY as $h) {
+            if (isset($h['doc'])) {
+                $this->assertFileExists($this->root() . '/' . $h['doc'], 'リンク先の設計メモがリポジトリにある');
+            }
+        }
+        $this->assertStringStartsWith('https://github.com/', REPO_DOC_BASE_URL);
+    }
+
+    // ── 公開ページでの扱い(注記の非表示・リーク期間の除外) ──────────────
+
+    public function test_public_flags_hide_notes_and_exclude_leak(): void
+    {
+        $this->assertFalse(PUBLIC_SHOW_DATA_NOTES);
+        $this->assertTrue(PUBLIC_EXCLUDE_LEAK_PERIODS);
+        $this->assertSame([], public_data_notes('2026-06-29', '2026-11-30'), '公開ページには注記を出さない');
+        $this->assertNotEmpty(data_quality_issues('2026-06-29', '2026-11-30'), '定義自体は残す(管理画面用)');
+        $this->assertSame([['2026-08-19', '2026-09-28']], public_excluded_periods());
+        $this->assertSame(" AND NOT (r.date BETWEEN '2026-08-19' AND '2026-09-28')", public_exclusion_sql('r.date'));
+    }
+
+    public function test_public_exclusion_sql_filters_leak_rows(): void
+    {
+        $pdo = $this->db();
+        $pdo->exec("INSERT INTO races VALUES (1, '2026-08-18'), (2, '2026-08-19'), (3, '2026-09-28'), (4, '2026-09-29')");
+        $ids = $pdo->query('SELECT r.id FROM races r WHERE 1=1' . public_exclusion_sql('r.date') . ' ORDER BY r.id')
+                   ->fetchAll(PDO::FETCH_COLUMN);
+        $this->assertSame([1, 4], array_map('intval', $ids), '08-19〜09-28 の両端を含めて除外');
+    }
+
+    public function test_public_stats_endpoints_exclude_leak_period(): void
+    {
+        foreach (['get_performance_summary.php', 'get_performance_daily.php', 'get_performance_venue.php',
+                  'get_performance_races.php', 'get_dashboard_comparison.php', 'strategy_stats.php',
+                  'get_user_picks_strategy_compare.php'] as $f) {
+            $src = file_get_contents($this->root() . '/' . $f);
+            $this->assertStringContainsString("require_once __DIR__ . '/data_quality.php'", $src, $f);
+            $this->assertStringContainsString('public_exclusion_sql(', $src, "$f はリーク込み期間を集計から除外する");
+        }
+    }
+
+    public function test_performance_period_options_match_exclusion(): void
+    {
+        $perf = file_get_contents($this->root() . '/performance.php');
+        preg_match('/\$PERIOD_OPTIONS = \[(.*?)\];/s', $perf, $m);
+        preg_match_all("/'(\d{4}-\d{2}-\d{2})' =>/", $m[1], $mm);
+        $this->assertSame(['2026-09-29', '2026-06-29'], $mm[1]);
+        foreach ($mm[1] as $from) {
+            // 選択肢の開始日が除外期間の中に入っていない(ラベルの期間と実際の集計範囲が食い違わない)
+            foreach (public_excluded_periods() as [$f, $t]) {
+                $this->assertFalse($from >= $f && $from <= $t, "$from が除外期間内");
+            }
+            $this->assertMatchesRegularExpression("/'" . $from . "': \{ text:/", $perf, "$from の説明文");
+        }
+        $this->assertStringNotContainsString("'2026-09-09'", $perf, '旧選択肢の値が残っていない');
+        $this->assertStringContainsString('public_data_notes(', $perf, '注記はフラグ経由');
+        $this->assertStringContainsString('08-19〜09-28', $perf, '全期間の説明に除外期間を明記');
     }
 
     // ── 3. 静的チェック ───────────────────────────────────────
@@ -199,7 +258,7 @@ final class AdminOpsTest extends TestCase
     {
         $src = file_get_contents($this->root() . '/admin.php');
         foreach (['ms_top1_daily(', 'ms_strategy_results(', 'data_quality_issues(', 'STRATEGY_MODEL_MAP',
-                  'PREDICTION_DISPLAY_MODEL', 'MODEL_SWITCH_HISTORY', 'NEXT_MODEL_REVIEW',
+                  'PREDICTION_DISPLAY_MODEL', 'MODEL_SWITCH_HISTORY', 'REPO_DOC_BASE_URL', 'ms_strategy_points(', 'TOKKA_POINTS',
                   'model_switch_status.php', 'audit_leak_rewrites.php'] as $needle) {
             $this->assertStringContainsString($needle, $src);
         }
@@ -216,7 +275,7 @@ final class AdminOpsTest extends TestCase
         $this->assertStringNotContainsString('FROM predictions', $api, '集計SQLは model_status_lib.php のみ');
 
         $perf = file_get_contents($this->root() . '/performance.php');
-        $this->assertStringContainsString('data_quality_issues(', $perf);
+        $this->assertStringContainsString('public_data_notes(', $perf);
         $this->assertStringNotContainsString('DATA_GAPS', $perf, '欠損日をページ内に直書きしない');
         $this->assertStringNotContainsString('2026-10-05', $perf);
         $this->assertStringNotContainsString('`', $this->scripts($perf), 'WAF: テンプレートリテラル不可');

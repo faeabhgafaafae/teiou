@@ -9,6 +9,7 @@
  * を並べて返す。読み取り専用。プラン制限は my-picks 全体(Premium限定)に準拠。
  */
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/data_quality.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -22,10 +23,13 @@ $uid = (int)$user['id'];
 
 // 対象レース = ユーザーが購入し、かつ結果確定済み(race_payoutsが存在する)レース。
 // user_picks / strategy_results 双方でこの同一条件を使い、比較対象を揃える。
+// 戦略側の成績がリーク込みの期間(data_quality.php)のレースは、両方から除外する。
+$excludeLeak = public_exclusion_sql('rx.date') === '' ? ''
+    : ' AND EXISTS (SELECT 1 FROM races rx WHERE rx.id = up.race_id' . public_exclusion_sql('rx.date') . ')';
 $settledRaceSubquery =
     'SELECT DISTINCT up.race_id FROM user_picks up
      WHERE up.user_id = ?
-       AND EXISTS (SELECT 1 FROM race_payouts rp WHERE rp.race_id = up.race_id)';
+       AND EXISTS (SELECT 1 FROM race_payouts rp WHERE rp.race_id = up.race_id)' . $excludeLeak;
 
 // 1) 実際の購入をレース単位で集計(1レースで3連単の的中は最大1点なので amount 合算で可)
 $stmt = $pdo->prepare('
@@ -40,7 +44,7 @@ $stmt = $pdo->prepare('
         AND rp.bet_type = up.bet_type
         AND rp.combo    = up.combo
     WHERE up.user_id = ?
-      AND EXISTS (SELECT 1 FROM race_payouts rp2 WHERE rp2.race_id = up.race_id)
+      AND EXISTS (SELECT 1 FROM race_payouts rp2 WHERE rp2.race_id = up.race_id)' . $excludeLeak . '
     GROUP BY up.race_id
 ');
 $stmt->execute([$uid]);

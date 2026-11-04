@@ -6,20 +6,22 @@ $plan = $user['plan'] ?? 'free';
 $isStandardPlus = ($plan === 'standard' || $plan === 'premium');
 $isPremium = ($plan === 'premium');
 
-// 集計期間の選択肢(value=from日付)。各期間に該当する欠損日の注記は data_quality.php の
-// 共通定数・判定(admin.php のデータ品質欄と同じ)でサーバー側で決める。
+// 集計期間の選択肢(value=from日付)。
+// 2026-11-05〜: リーク込み期間(data_quality.php の 'leak'、08-19〜09-28)は各APIが集計から除外する
+// (PUBLIC_EXCLUDE_LEAK_PERIODS)ため、選択肢はその後の 09-29〜 と全期間の2つにした
+// (旧「09-09〜」「08-27〜」はどちらも除外後は 09-29〜 と同じ範囲になるため廃止)。
+// 欠損日・ロジック変更の注記は PUBLIC_SHOW_DATA_NOTES=false の間は表示しない(管理画面には常に表示)。
 require_once __DIR__ . '/data_quality.php';
 $PERIOD_OPTIONS = [
-    '2026-09-09' => '現行設定(傾斜配分、2026-09-09〜 / 09-30〜v3w)',
-    '2026-08-27' => 'v2以降(1点100円時代を含む、2026-08-27〜)',
-    '2026-06-29' => '全期間(v1手動スコア時代を含む、2026-06-29〜)',
+    '2026-09-29' => '現行(2026-09-29〜)',
+    '2026-06-29' => '全期間(2026-06-29〜。08-19〜09-28 を除く)',
 ];
 $period_gap_notes = [];
 $period_strategy_notes = [];  // from => 戦略名 => [注記](戦略の買い目ロジック変更。data_quality.php の type='change')
 foreach (array_keys($PERIOD_OPTIONS) as $from) {
-    $period_gap_notes[$from] = array_column(data_quality_issues($from, date('Y-m-d'), ['gap', 'change']), 'text');
+    $period_gap_notes[$from] = array_column(public_data_notes($from, date('Y-m-d'), ['gap', 'change']), 'text');
     $period_strategy_notes[$from] = [];
-    foreach (data_quality_issues($from, date('Y-m-d'), ['change']) as $i) {
+    foreach (public_data_notes($from, date('Y-m-d'), ['change']) as $i) {
         $period_strategy_notes[$from][$i['strategy']][] = $i['text'];
     }
 }
@@ -281,9 +283,8 @@ function formatDateJP(iso) {
 // 期間フィルタ: セレクタの値(from日付)を各APIに渡し、4セクションを連動させる
 // ============================================================
 var PERIOD_DESC = {
-  '2026-09-09': { text: '現行設定(確率傾斜配分、1点平均600円)。予測モデルは 2026-09-29 のレースまでv2ロジスティック回帰、2026-09-30 のレースから重み付き学習モデル v3w です。的中特化のHarville再選定・絞り込み3点化も反映した最新ロジックです。運用開始から日が浅く対象レースが少ないため、回収率は大きく変動しやすい点にご留意ください。', caution: true },
-  '2026-08-27': { text: 'v2(ロジスティック回帰)切替以降。ただし9/8以前は全買い目1点100円均等、9/9以降は傾斜配分(1点平均600円)のため、投資額・払戻額の絶対値は期間内で不連続です。的中率・回収率(比率)は比較できます。', caution: false },
-  '2026-06-29': { text: '全期間。v1(手動スコア、〜8/26)やオッズ上限・艇プールの変更前を含むため、条件の異なるデータが混在します。長期の傾向把握用の参考値としてご覧ください。', caution: false }
+  '2026-09-29': { text: '現在の予測モデルと買い方の成績です(確率傾斜配分、1点平均600円)。予測モデルは 2026-09-29 のレースまでv2ロジスティック回帰、2026-09-30 のレースから重み付き学習モデル v3w です。', caution: false },
+  '2026-06-29': { text: '全期間の成績です。v1(手動スコア、〜8/18)と 2026-09-29 以降の成績の合算で、2026-08-19〜09-28 は集計対象外です。買い方(1点100円均等・傾斜配分)が期間内で異なるため、投資額・払戻額の絶対値より的中率・回収率(比率)を参考にしてください。', caution: false }
 };
 // 期間ごとの欠損日の注記(data_quality.php の DATA_QUALITY_ISSUES から期間該当分をサーバー側で判定)
 var PERIOD_GAP_NOTES = <?= json_encode($period_gap_notes, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
@@ -295,7 +296,7 @@ function strategyNotes(type) {
 }
 function getPeriodFrom() {
   var sel = document.getElementById('periodSelect');
-  return sel ? sel.value : '2026-09-09';
+  return sel ? sel.value : '2026-09-29';
 }
 function withPeriod(url) {
   var from = getPeriodFrom();

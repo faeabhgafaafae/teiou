@@ -4,6 +4,7 @@
  * GET /get_performance_venue.php
  */
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/data_quality.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -17,10 +18,11 @@ $pdo = get_db();
 
 // 期間フィルタ: ?from=YYYY-MM-DD (未指定/不正時は全期間)
 $from = $_GET['from'] ?? null;
-$dateWhere = '';
+// リーク込み期間(data_quality.php)は公開ページの集計から除外する
+$dateWhere = ' WHERE 1=1' . public_exclusion_sql('r.date');
 $params = [];
 if ($from !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
-    $dateWhere = ' WHERE r.date >= ?';
+    $dateWhere .= ' AND r.date >= ?';
     $params[] = $from;
 }
 

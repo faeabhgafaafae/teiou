@@ -11,7 +11,15 @@
  *   'change' = 戦略の買い目ロジックの変更日(from=to=適用されるレースの初日)。'strategy' に対象戦略名。
  *            期間が変更日をまたぐと、その戦略の成績は新旧ロジックの混在になる
  * 新しい問題が見つかったらここに1行足せば、両画面に同じ判定で表示される。
+ *
+ * 公開ページでの扱い(2026-11-05〜)は下の2つのフラグで切り替える。admin.php のデータ品質欄は
+ * フラグに関係なく常にすべて表示する。
  */
+
+// 公開ページ(performance.php)に欠損日・ロジック変更などの注記を表示するか
+const PUBLIC_SHOW_DATA_NOTES = false;
+// 'leak'(リーク込み)期間の成績を公開ページの集計(成績・回収率の各API)から除外するか
+const PUBLIC_EXCLUDE_LEAK_PERIODS = true;
 
 const DATA_QUALITY_ISSUES = [
     [
@@ -40,6 +48,35 @@ function data_quality_issues(string $from, string $to, array $types = []): array
         return ($types === [] || in_array($i['type'], $types, true))
             && $i['from'] <= $to && $i['to'] >= $from;
     }));
+}
+
+/** 公開ページに出す注記(PUBLIC_SHOW_DATA_NOTES=false なら常に空) */
+function public_data_notes(string $from, string $to, array $types = []): array {
+    return PUBLIC_SHOW_DATA_NOTES ? data_quality_issues($from, $to, $types) : [];
+}
+
+/** 公開ページの集計から除外する期間 [[from, to], ...](PUBLIC_EXCLUDE_LEAK_PERIODS=false なら空) */
+function public_excluded_periods(): array {
+    if (!PUBLIC_EXCLUDE_LEAK_PERIODS) return [];
+    $out = [];
+    foreach (DATA_QUALITY_ISSUES as $i) {
+        if ($i['type'] === 'leak') $out[] = [$i['from'], $i['to']];
+    }
+    return $out;
+}
+
+/**
+ * 公開ページの集計SQLに足す除外条件(例 " AND NOT (r.date BETWEEN '2026-08-19' AND '2026-09-28')")。
+ * 日付は上の定数(YYYY-MM-DD 形式を検証済み)だけなので、プレースホルダを使わず埋め込む
+ * (呼び出し側のパラメータ順に影響しないように)。$col は日付列(例 'r.date')。
+ */
+function public_exclusion_sql(string $col = 'r.date'): string {
+    $sql = '';
+    foreach (public_excluded_periods() as [$f, $t]) {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $f) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $t)) continue;
+        $sql .= " AND NOT ($col BETWEEN '$f' AND '$t')";
+    }
+    return $sql;
 }
 
 /** 指定日が問題の期間に含まれるか(日別表の行に印を付ける用途) */

@@ -7,17 +7,20 @@
  *   2. ジョブ実行状況(GitHub Actions API・公開リポジトリのため未認証。
  *      ページ表示をブロックしないようクライアント側fetchで遅延取得)
  *   3. モデル運用状況(2026-10-08: v3wシャドウ進捗から置き換え)
- *      参照モデル(model_switch.php)・切り替え履歴・次回再集計日と、v3w 本番化以降の
+ *      参照モデル(model_switch.php)・切り替え履歴(設計メモへのリンク付き)と、v3w 本番化以降の
  *      v3w / v2(並行保存)/ 1号艇決め打ちの1着的中率。集計は model_status_lib.php
- *      (model_switch_status.php と共用)
+ *      (model_switch_status.php と共用)。2026-11-05: 次回再集計のカウントダウンを撤去
+ *   3b. 戦略ロジック(2026-11-05 追加): 各戦略の現行の買い目ロジック(generate_strategies.php の定数から表示)と、
+ *      本日分の買い目点数(ms_strategy_points。model_switch_status.php の strategy_points と同じ)
  *   4. 4戦略の直近7日成績 vs 全期間(7日分は model_ref 別)
- *   5. データ品質の注意(data_quality.php。performance.php の注記と同じ定数・判定)
+ *   5. データ品質の注意(data_quality.php。公開ページの注記は PUBLIC_SHOW_DATA_NOTES で非表示にしているが、ここは常に全件表示)
  * WAF 制約: CSS はページ内 <style> のみ、JS はテンプレートリテラル(バッククォート)を使わない。
  */
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/model_switch.php';
 require_once __DIR__ . '/model_status_lib.php';
 require_once __DIR__ . '/data_quality.php';
+require_once __DIR__ . '/generate_strategies.php';  // 戦略ロジックの定数(TOKKA_POINTS 等)の表示用。関数定義のみ
 $user = current_user();
 if (!$user || !$user['is_admin']) {
     http_response_code(403);
@@ -36,7 +39,7 @@ $data = [
     'races' => 0, 'venues' => 0,
     'exhibit_total' => 0, 'exhibit_filled' => 0,
     'odds_races' => 0, 'before_last' => null, 'odds_last' => null,
-    'top1_daily' => [], 'strat_7d' => [], 'strat_all' => [],
+    'top1_daily' => [], 'strat_7d' => [], 'strat_all' => [], 'strat_points' => [],
 ];
 
 try {
@@ -69,6 +72,9 @@ try {
 
     // ── 3. モデル運用状況: 保存済み予測の1着的中(model_status_lib.php) ────────
     $data['top1_daily'] = ms_top1_daily($pdo, V3W_PRODUCTION_FROM, $today);
+
+    // ── 3b. 戦略ロジック: 本日分の買い目点数(model_status_lib.php) ────────
+    $data['strat_points'] = ms_strategy_points($pdo, $today, $today)[$today] ?? [];
 
     // ── 4. 4戦略の直近7日(model_ref 別。model_status_lib.php)vs 全期間 ────────
     $data['strat_7d'] = ms_sum_strategy_results(ms_strategy_results($pdo, $from7, $today));
@@ -129,7 +135,6 @@ $v3w_pct     = rate_pct($top1_sum['v3w_hits'],        $top1_sum['races']);
 $v2_pct      = rate_pct($top1_sum['v2_hits'],         $top1_sum['races']);
 $lane1_pct   = rate_pct($top1_sum['lane1_wins'],      $top1_sum['races']);
 $l1rank_pct  = rate_pct($top1_sum['v3w_lane1_rank1'], $top1_sum['races']);
-$review_left = (int)ceil((strtotime(NEXT_MODEL_REVIEW['date']) - strtotime($today)) / 86400);
 
 // 日別表(新しい日が上): 結果確定データの無い日は、データ品質の問題(欠損等)に該当するときだけ行を出す
 $top1_rows = [];
@@ -147,6 +152,31 @@ $dq_issues = data_quality_issues(ADMIN_DATA_FROM, $today);
 $DQ_LABELS = ['leak' => 'リーク込み', 'gap' => '欠損', 'change' => 'ロジック変更'];
 
 $STRAT_NAMES = ['的中特化' => '的中特化', 'バランス' => 'バランス', '一撃重視' => '一撃重視', '絞り込み' => '絞り込み'];
+
+// 戦略ロジックの表示(generate_strategies.php の定数から組み立てる。exact=全レースこの点数になるはずの戦略)
+$STRATEGY_LOGIC = [
+    '的中特化' => [
+        'text'   => '予想上位' . TOKKA_POOL_SIZE . '艇の3連単から Harville 確率の高い順に' . TOKKA_POINTS . '点('
+                    . date('n/j', strtotime(TOKKA_FROM_DATE)) . '〜。それ以前は上位' . TOKKA_LEGACY_POOL . '艇から' . TOKKA_LEGACY_POINTS . '点)',
+        'points' => TOKKA_POINTS . '点',
+        'exact'  => TOKKA_POINTS,
+    ],
+    'バランス' => [
+        'text'   => '予想1・2位を1着に固定 × 上位4艇から2・3着(オッズ' . (int)BALANCE_MAX_ODDS . '倍超は除外)',
+        'points' => '最大12点',
+        'exact'  => null,
+    ],
+    '一撃重視' => [
+        'text'   => '予想1位を1着に固定 × 2〜4位から2・3着(オッズ' . (int)ICHIGEKI_MIN_ODDS . '倍未満は除外)',
+        'points' => '最大6点',
+        'exact'  => null,
+    ],
+    '絞り込み' => [
+        'text'   => '予想上位3艇の3連単6通りから Harville 確率の高い順に3点',
+        'points' => '3点',
+        'exact'  => 3,
+    ],
+];
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -204,6 +234,8 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
 .ref-list { font-size: 12px; line-height: 1.8; }
 .history { font-size: 12px; color: #444; line-height: 1.8; margin: 8px 0 12px; }
 .history b { color: #0055a4; margin-right: 6px; }
+.history a { color: #0055a4; }
+td.logic-cell { text-align: left; white-space: normal; min-width: 220px; font-size: 12px; }
 
 .dq-list { list-style: none; }
 .dq-item { border: 1px solid #f59e0b; background: #fffbeb; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 12px; line-height: 1.6; color: #444; }
@@ -304,7 +336,8 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
   </div>
   <div class="history">
     <?php foreach (MODEL_SWITCH_HISTORY as $h): ?>
-      <div><b><?= htmlspecialchars($h['date']) ?></b><?= htmlspecialchars($h['text']) ?></div>
+      <div><b><?= htmlspecialchars($h['date']) ?></b><?= htmlspecialchars($h['text']) ?>
+        <?php if (!empty($h['doc'])): ?>(<a href="<?= htmlspecialchars(REPO_DOC_BASE_URL . $h['doc']) ?>" target="_blank" rel="noopener"><?= htmlspecialchars($h['doc']) ?></a>)<?php endif; ?></div>
     <?php endforeach; ?>
     <div>v3w の予測が無いレースは <?= model_badge(STRATEGY_MODEL_FALLBACK) ?> で買い目を作り、strategies.model_ref に実際の参照先が残ります。v2 の予測は常に並行保存しています。</div>
   </div>
@@ -332,11 +365,6 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
           v3w との差 <span class="<?= signed_class($v3w_pct, $v2_pct) ?>"><?= sprintf('%+.1f', $v3w_pct - $v2_pct) ?>pt</span>
         <?php else: ?>結果確定待ち<?php endif; ?>
       </div>
-    </div>
-    <div class="dcard <?= ($review_left >= 0 && $review_left <= 3) ? 'warn' : '' ?>">
-      <div class="dcard-label">次回再集計(<?= htmlspecialchars(NEXT_MODEL_REVIEW['date']) ?>)</div>
-      <div class="dcard-val"><?= $review_left > 0 ? 'あと' . $review_left . '日' : ($review_left === 0 ? '本日' : '実施日経過') ?></div>
-      <div class="dcard-sub"><?= htmlspecialchars(NEXT_MODEL_REVIEW['text']) ?></div>
     </div>
   </div>
 
@@ -386,7 +414,42 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
     </table>
   </div>
   <p class="note">※ 結果取込み前に保存された予測(v3w=predictions_v2、v2=predictions)と着順の突き合わせ。v2・v3w とも予測があり結果確定済みのレースのみ(当日分は結果取込み後に反映)。
-    数日〜数週間の差は誤差の範囲で、v3w と1号艇決め打ちの差の判定には約1ヶ月(4,000R)が必要です(次回再集計で判定)。</p>
+    数日〜数週間の差は誤差の範囲です。11/04 の再集計(09-30〜11-03、本番 5,043R)では v3w − 1号艇決め打ち = +0.7pt で、有意差はありませんでした(<a href="<?= htmlspecialchars(REPO_DOC_BASE_URL . 'design_v3w_postswitch_20261104.md') ?>" target="_blank" rel="noopener">design_v3w_postswitch_20261104.md</a>)。</p>
+
+  <!-- ── 3b. 戦略ロジック(generate_strategies.php の定数)と本日分の買い目点数 ────────────── -->
+  <h2 class="sub">🧩 戦略ロジック</h2>
+  <div class="table-wrap">
+    <table class="dash">
+      <thead>
+        <tr><th>戦略</th><th>参照</th><th>現在のロジック</th><th>想定点数</th><th>本日の点数 平均(最小〜最大)</th><th>本日のレース</th></tr>
+      </thead>
+      <tbody>
+      <?php foreach ($STRATEGY_LOGIC as $type => $lg):
+          $pt = $data['strat_points'][$type] ?? null;
+          $pt_cls = '';
+          if ($pt !== null && $lg['exact'] !== null) {
+              $pt_cls = ($pt['min'] === $lg['exact'] && $pt['max'] === $lg['exact']) ? 'better' : 'worse';
+          }
+      ?>
+        <tr>
+          <td><?= htmlspecialchars($type) ?></td>
+          <td><?= model_badge(STRATEGY_MODEL_MAP[$type] ?? '-') ?></td>
+          <td class="logic-cell"><?= htmlspecialchars($lg['text']) ?></td>
+          <td><?= htmlspecialchars($lg['points']) ?></td>
+          <td class="<?= $pt_cls ?>">
+            <?php if ($pt === null): ?><span class="no-data">未生成</span>
+            <?php else: ?><?= sprintf('%.1f', $pt['avg']) ?>点(<?= $pt['min'] ?>〜<?= $pt['max'] ?>)<?php endif; ?>
+          </td>
+          <td><?= $pt !== null ? $pt['races'] : '<span class="no-data">-</span>' ?></td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">※ ロジックの文言は generate_strategies.php の定数から組み立てています。賭け金はすべて確率比例の傾斜配分(1点平均<?= number_format(STAKE_UNIT) ?>円・最低<?= STAKE_MIN ?>円)。
+    本日の点数は strategies に保存済みの買い目(<?= htmlspecialchars($today) ?>、出走表取込み後に生成)で、
+    <a href="model_switch_status.php?from=<?= htmlspecialchars($today) ?>&to=<?= htmlspecialchars($today) ?>">model_switch_status.php</a> の strategy_points と同じ集計です。
+    的中特化は全レース <?= TOKKA_POINTS ?>点なら緑、外れるレースがあれば赤で表示します。</p>
 
   <!-- ── 4. 4戦略の直近成績 ──────────────────────────────────── -->
   <h2 class="sub">🎯 4戦略の直近7日成績(vs 全期間)</h2>
@@ -438,7 +501,8 @@ table.dash tr.issue-row td { color: #94a3b8; background: #f8fafc; font-size: 12p
     <?php endforeach; ?>
   </ul>
   <?php endif; ?>
-  <p class="note">※ 定義は data_quality.php(performance.php の利用者向け注記と同じ定数・判定)。新しい問題はそこに1行追加すると両画面に反映されます。</p>
+  <p class="note">※ 定義は data_quality.php。管理画面ではすべて表示しています。公開ページ(performance.php)では
+    注記を<?= PUBLIC_SHOW_DATA_NOTES ? '表示' : '表示せず' ?>(PUBLIC_SHOW_DATA_NOTES)、リーク込み期間の成績を<?= PUBLIC_EXCLUDE_LEAK_PERIODS ? '集計から除外' : '集計に含めて' ?>います(PUBLIC_EXCLUDE_LEAK_PERIODS)。</p>
 
   <!-- ── ツールリンク一覧 ────────────────────────────────────── -->
   <h2 class="sub" style="margin-top: 28px;">🔗 管理ツール</h2>

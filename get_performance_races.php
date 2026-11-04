@@ -6,6 +6,7 @@
  * 各レースの詳細スコア内訳は get_prediction.php を別途呼び出して取得する。
  */
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/data_quality.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -36,6 +37,7 @@ $stmt = $pdo->query('
     FROM strategy_results sr
     JOIN strategies s ON s.id = sr.strategy_id
     JOIN races r      ON r.id = sr.race_id
+    WHERE 1=1' . public_exclusion_sql('r.date') . '
     ORDER BY r.date DESC, r.race_no DESC, sr.id DESC
     LIMIT 30
 ');

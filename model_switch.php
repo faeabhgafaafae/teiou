@@ -23,15 +23,20 @@ const STRATEGY_MODEL_FALLBACK = 'v2';
 // 画面表示(予測順位・確率・AI解説)に使う予測モデル
 const PREDICTION_DISPLAY_MODEL = 'v3w';
 
-// 切り替え履歴(レース日基準)。上の定数を変えたらここにも1行足す(admin.php の「モデル運用状況」に表示)。
+// 切り替え履歴(レース日基準)。上の定数を変えたら・再集計で判断したらここにも1行足す
+// (admin.php の「モデル運用状況」に表示)。doc はリポジトリ内の設計メモ(管理画面から GitHub 上のファイルへリンク)。
 const MODEL_SWITCH_HISTORY = [
-    ['date' => '2026-09-30', 'text' => '全4戦略と予測表示を v2 → v3w(本番デプロイ 10-01 01:07、9/30 のレースは21:30事前生成で v3w)'],
-    ['date' => '2026-10-08', 'text' => '一撃重視のみ v3w → v2(他3戦略・予測表示は v3w のまま)'],
+    ['date' => '2026-09-30', 'text' => '全4戦略と予測表示を v2 → v3w(本番デプロイ 10-01 01:07、9/30 のレースは21:30事前生成で v3w)',
+     'doc' => 'design_v3w_switch_20261001.md'],
+    ['date' => '2026-10-08', 'text' => '一撃重視のみ v3w → v2(他3戦略・予測表示は v3w のまま)',
+     'doc' => 'design_v3w_postswitch_20261008.md'],
+    ['date' => '2026-11-04', 'text' => '本番値で再集計(09-30〜11-03)、一撃重視は v2 継続(v3w の優位は本番値で再現されず)。v3w − 1号艇決め打ちは +0.7pt で有意差なし',
+     'doc' => 'design_v3w_postswitch_20261104.md'],
 ];
+// 設計メモ(*.md)は本番にデプロイしない(deploy.yml で除外)ため、管理画面からは GitHub 上のファイルを開く
+const REPO_DOC_BASE_URL = 'https://github.com/faeabhgafaafae/teiou/blob/main/';
 // v3w 本番運用の起点(admin.php の1着的中率の集計開始日)
 const V3W_PRODUCTION_FROM = '2026-09-30';
-// 次回の実績再集計(クラウドルーチン「v3w切り替え後実績の再集計(2026-11-04)」、10:00 JST 実行)
-const NEXT_MODEL_REVIEW = ['date' => '2026-11-04', 'text' => '切り替え後実績の再集計(design_v3w_postswitch_20261104.md を作成予定)'];
 
 // predictions_v2 が v3w の予測を持つ最初の日。これより前の行は旧v3(09-04〜09-12)・
 // 旧v2シャドウ(07-28〜08-27)で別モデルのため、表示では v2 を使う。

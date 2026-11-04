@@ -5,6 +5,7 @@
  * 全会場・全期間の戦略別成績(会場×戦略のクロス集計)を返す。
  */
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/data_quality.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -27,6 +28,7 @@ $stmt = $pdo->query('
     FROM strategy_results sr
     JOIN strategies s ON s.id = sr.strategy_id
     JOIN races r       ON r.id = sr.race_id
+    WHERE 1=1' . public_exclusion_sql('r.date') . '   -- リーク込み期間は除外(data_quality.php)
     GROUP BY r.venue, s.strategy_type
     ORDER BY r.venue
 ');
