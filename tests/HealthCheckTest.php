@@ -109,6 +109,8 @@ final class HealthCheckTest extends TestCase
         $py = $this->src('healthcheck.py');
         $this->assertStringContainsString("'gh', 'workflow', 'run', 'boatrace.yml'", $py);
         $this->assertStringContainsString('MAX_ATTEMPTS = 2', $py);
+        $this->assertStringContainsString("'レース中止' in html", $py, '中止レースは未清算として扱わない');
+        $this->assertStringContainsString("'unsettled_races'", $this->src('health_check.php'));
 
         foreach (['scrape_racelist.py', 'scrape_boatrace.py'] as $f) {
             $this->assertStringContainsString('SEND_RETRY_WAITS', $this->src($f), "$f: 送信の再試行");

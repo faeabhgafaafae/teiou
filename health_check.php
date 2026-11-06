@@ -42,7 +42,15 @@ $rows    = hc_race_rows($pdo, $date);
 $summary = hc_day_summary($rows, $now);
 $checks  = array_values(array_filter(hc_list($pdo, $date), fn($c) => $c['check_date'] === $date));
 
-$out = ['date' => $date, 'now' => $now, 'summary' => $summary, 'reason_labels' => HC_REASON_LABELS, 'checks' => $checks];
+// 締切済みで未清算のレース(healthcheck.py が boatrace.jp で「レース中止」かどうかを確かめるため)
+$unsettled = [];
+foreach ($rows as $rid => $r) {
+    if ($r['deadline'] !== null && $r['deadline'] <= $now && !$r['settled'] && $r['n_entries'] > 0) {
+        $unsettled[] = ['race_id' => $rid, 'venue' => $r['venue'], 'race_no' => $r['race_no']];
+    }
+}
+$out = ['date' => $date, 'now' => $now, 'summary' => $summary, 'reason_labels' => HC_REASON_LABELS, 'checks' => $checks,
+        'unsettled_races' => $unsettled];
 if (($_GET['detail'] ?? '') === '1') {
     $late = [];
     foreach ($rows as $rid => $r) {

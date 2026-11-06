@@ -20,9 +20,11 @@ import os
 import subprocess
 import sys
 
+import time
+
 import requests
 
-from scrape_racelist import get_today_venues, VENUES
+from scrape_racelist import get_today_venues, VENUES, fetch
 
 API_KEY      = os.environ.get('API_KEY', '')
 HEALTH_URL   = os.environ.get('HEALTH_URL') or 'https://2410049.moo.jp/health_check.php'
@@ -32,6 +34,28 @@ MAX_ATTEMPTS = 2
 WAIT_MIN     = 75     # 再実行してからこの分数は結果待ち(boatrace.yml の各ジョブは長いもので約60分)
 MIN_BAD      = 3      # 中止レース等の誤検知を避けるため、これ未満の欠けは問題にしない
 JST          = dt.timezone(dt.timedelta(hours=9))
+
+
+JCD_OF = {name: jcd for jcd, name in VENUES.items()}
+
+
+def cancelled_races(date: str, races: list) -> set:
+    """未清算レースのうち、boatrace.jp の結果ページが「レース中止」のもの(race_id の集合)。
+    中止レースは結果が出ないため、未清算として再実行・警告の対象にしない(11-06 常滑の全レース中止で判明)"""
+    out = set()
+    hd = date.replace('-', '')
+    for r in races[:40]:
+        jcd = JCD_OF.get(r['venue'])
+        if not jcd:
+            continue
+        try:
+            html = fetch(f'https://www.boatrace.jp/owpc/pc/race/raceresult?rno={r["race_no"]}&jcd={jcd}&hd={hd}').text
+            if 'レース中止' in html:
+                out.add(r['race_id'])
+        except Exception as e:
+            print(f'  [{r["venue"]}] {r["race_no"]}R 中止確認に失敗: {e}')
+        time.sleep(1)
+    return out
 
 
 def get_status(date: str) -> dict:
@@ -114,13 +138,19 @@ def main() -> int:
         handle(today, 'odds', problem, 'odds', None, prev.get((today, 'odds')), now)
 
     # 成績・買い目: 前日は終日、当日は 23:00 以降
-    targets = [(yesterday, st_yday['summary'])] + ([(today, s)] if hm >= '23:00' else [])
-    for date, sm in targets:
+    targets = [(yesterday, st_yday)] + ([(today, st_today)] if hm >= '23:00' else [])
+    for date, st in targets:
+        sm = st['summary']
         if sm['races'] == 0:
             continue
         parts = []
-        if sm['unsettled_past_deadline'] >= MIN_BAD:
-            parts.append(f'未清算 {sm["unsettled_past_deadline"]}R')
+        unsettled = sm['unsettled_past_deadline']
+        n_cancel = 0
+        if unsettled >= MIN_BAD:
+            n_cancel = len(cancelled_races(date, st.get('unsettled_races', [])))
+            unsettled -= n_cancel
+        if unsettled >= MIN_BAD:
+            parts.append(f'未清算 {unsettled}R' + (f'(ほか中止 {n_cancel}R)' if n_cancel else ''))
         if sm['missing_strategy'] >= MIN_BAD:
             parts.append(f'買い目なし {sm["missing_strategy"]}R')
         problem = ' / '.join(parts) + f'(締切済み {sm["past_deadline"]}R)' if parts else None
