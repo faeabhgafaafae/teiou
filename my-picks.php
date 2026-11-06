@@ -553,13 +553,14 @@ function renderSummary(s) {
     return;
   }
   var hitRate = s.hit_rate !== null ? s.hit_rate + '%' : '-';
-  var roi     = s.roi     !== null ? (s.roi >= 0 ? '+' : '') + s.roi + '%' : '-';
+  // 回収率(払戻÷投資)。s.roi は損益率なので +100(下の「戦略通りに買っていたら」の表と同じ表示)
+  var roi     = s.roi     !== null ? (Number(s.roi) + 100).toFixed(1) + '%' : '-';
   var roiClass = s.roi === null ? '' : s.roi >= 0 ? 'positive' : 'negative';
   el.innerHTML =
     '<div class="summary-grid">' +
     '<div class="summary-box"><div class="summary-label">総記録数</div><div class="summary-value">' + s.total + '<span style="font-size:12px;color:#888;"> 件</span></div></div>' +
     '<div class="summary-box"><div class="summary-label">的中率</div><div class="summary-value ' + (s.hit_rate !== null && s.hit_rate >= 30 ? 'positive' : '') + '">' + hitRate + '</div></div>' +
-    '<div class="summary-box"><div class="summary-label">回収率(損益率)</div><div class="summary-value ' + roiClass + '">' + roi + '</div></div>' +
+    '<div class="summary-box"><div class="summary-label">回収率</div><div class="summary-value ' + roiClass + '">' + roi + '</div></div>' +
     '<div class="summary-box"><div class="summary-label">総購入額(確定分)</div><div class="summary-value neutral">' + (s.total_cost || 0).toLocaleString() + '<span style="font-size:11px;color:#888;"> 円</span></div></div>' +
     '<div class="summary-box"><div class="summary-label">総払戻額</div><div class="summary-value ' + (s.total_payout > 0 ? 'positive' : '') + '">' + (s.total_payout || 0).toLocaleString() + '<span style="font-size:11px;color:#888;"> 円</span></div></div>' +
     '</div>' +

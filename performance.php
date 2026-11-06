@@ -328,10 +328,11 @@ function makeError(text) {
   d.textContent = text;
   return d;
 }
+// 回収率(払戻÷投資)。API の roi は損益率(回収率−100)なので +100 して表示する(サイト全体で「回収率」はこの意味)
 function roiSpan(roi) {
   var span = document.createElement('span');
   span.className = roi >= 0 ? 'roi-plus' : 'roi-minus';
-  span.textContent = (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%';
+  span.textContent = (roi + 100).toFixed(1) + '%';
   return span;
 }
 
@@ -531,7 +532,8 @@ async function loadDaily() {
 
     var titleR2 = document.createElement('div');
     titleR2.style.fontSize = '12px'; titleR2.style.fontWeight = '700'; titleR2.style.color = '#555'; titleR2.style.margin = '18px 0 4px';
-    titleR2.textContent = '回収率(損益率, %)の推移';
+    // グラフは収支トントン(0%)の線を基準に上下で見せるため、回収率ではなく損益率(回収率−100%)で描く
+    titleR2.textContent = '損益率(%)の推移(回収率−100%。0% で収支トントン)';
     el.appendChild(titleR2);
     el.appendChild(buildLegend(types));
     el.appendChild(buildTrendChart(data.daily, 'roi'));
@@ -684,12 +686,7 @@ async function loadCompare() {
       ['的中率', function(s) { return s.hit_rate.toFixed(1) + '%'; }],
       ['投資額', function(s) { return s.total_cost.toLocaleString() + '円'; }],
       ['払戻額', function(s) { return s.total_payout.toLocaleString() + '円'; }],
-      ['回収率(損益率)', function(s) {
-        var span = document.createElement('span');
-        span.className = s.roi >= 0 ? 'roi-plus' : 'roi-minus';
-        span.textContent = (s.roi >= 0 ? '+' : '') + s.roi.toFixed(1) + '%';
-        return span;
-      }],
+      ['回収率', function(s) { return roiSpan(s.roi); }],
     ];
     metricRows.forEach(function(mr) {
       var tr = document.createElement('tr');

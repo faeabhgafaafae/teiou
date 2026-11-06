@@ -46,7 +46,7 @@ jobs:
   # 夜バッチは締切前に作れなかったレースの補完だけになる。
   pregenerate_upcoming:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,10 +57,12 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests beautifulsoup4
 
+      # 生成の直前にそのレースの3連単オッズも取得する(scrape_live.py の関数を流用)
       - name: 締切前の予想・買い目生成
         env:
           API_KEY: ${{ secrets.API_KEY }}
           API_PENDING: ${{ secrets.API_URL_PENDING }}
+          API_ODDS: ${{ secrets.API_URL_ODDS }}
         run: python pregenerate_upcoming.py

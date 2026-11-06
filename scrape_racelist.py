@@ -248,21 +248,31 @@ def scrape_racelist(jcd: str, rno: int, hd: str) -> dict | None:
     return result if result['players'] else None
 
 
+SEND_RETRY_WAITS = [3, 10]   # 送信失敗時の再試行の待ち秒数(計3回送信)
+
+
 def send_data(data: dict) -> bool:
-    try:
-        res = requests.post(API_URL, json={
-            'api_key': API_KEY,
-            'data':    data,
-        }, timeout=15)
-        result = res.json()
-        if result.get('error'):
-            print(f'    [API ERROR] {result["error"]}')
-            return False
-        print(f'    → {result.get("ok", 0)}件登録')
-        return True
-    except Exception as e:
-        print(f'    [SEND ERROR] {e}')
-        return False
+    """自サイトの API へ送信する。通信エラー・JSON 以外の応答(2026-10-22 の全件失敗)は再試行する。
+    API がエラーを JSON で返した場合(入力不正など)は再試行しない。"""
+    for attempt in range(len(SEND_RETRY_WAITS) + 1):
+        try:
+            res = requests.post(API_URL, json={
+                'api_key': API_KEY,
+                'data':    data,
+            }, timeout=15)
+            result = res.json()
+            if result.get('error'):
+                print(f'    [API ERROR] {result["error"]}')
+                return False
+            print(f'    → {result.get("ok", 0)}件登録')
+            return True
+        except Exception as e:
+            if attempt < len(SEND_RETRY_WAITS):
+                print(f'    [SEND ERROR] {e} → {SEND_RETRY_WAITS[attempt]}秒後に再試行', end=' ')
+                time.sleep(SEND_RETRY_WAITS[attempt])
+            else:
+                print(f'    [SEND ERROR] {e}')
+    return False
 
 
 def main():
@@ -285,6 +295,7 @@ def main():
 
     send_ok = 0
     send_attempted = 0
+    failed = []   # 送信に失敗したデータ(最後にまとめて再送する)
 
     for jcd in jcds:
         venue_name = VENUES.get(jcd, jcd)
@@ -312,6 +323,18 @@ def main():
 
             print(f'{len(data["players"])}選手', end=' ')
             send_attempted += 1
+            if send_data(data):
+                send_ok += 1
+            else:
+                failed.append(data)
+            time.sleep(SLEEP_SEC)
+
+    # サーバー側の一時的な障害に備え、失敗分を少し待ってからもう一度送る
+    if failed:
+        print(f'\n送信失敗 {len(failed)}件を60秒後に再送します')
+        time.sleep(60)
+        for data in failed:
+            print(f'  [{data.get("venue")}] {data.get("race_no")}R 再送', end=' ')
             if send_data(data):
                 send_ok += 1
             time.sleep(SLEEP_SEC)

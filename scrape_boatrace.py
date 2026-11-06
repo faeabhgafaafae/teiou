@@ -254,21 +254,31 @@ def scrape_beforeinfo(jcd: str, rno: int, hd: str):
     return result
 
 
+SEND_RETRY_WAITS = [3, 10]   # 送信失敗時の再試行の待ち秒数(計3回送信)
+
+
 def send_data(data: dict) -> bool:
-    try:
-        res = requests.post(API_URL, json={
-            'api_key': API_KEY,
-            'data':    data,
-        }, timeout=30)
-        result = res.json()
-        if result.get('error'):
-            print(f'    [API ERROR] {result["error"]}')
-            return False
-        print(f'    → 登録OK')
-        return True
-    except Exception as e:
-        print(f'    [SEND ERROR] {e}')
-        return False
+    """自サイトの API へ送信する。通信エラー・JSON 以外の応答は再試行する。
+    API がエラーを JSON で返した場合(入力不正など)は再試行しない。"""
+    for attempt in range(len(SEND_RETRY_WAITS) + 1):
+        try:
+            res = requests.post(API_URL, json={
+                'api_key': API_KEY,
+                'data':    data,
+            }, timeout=30)
+            result = res.json()
+            if result.get('error'):
+                print(f'    [API ERROR] {result["error"]}')
+                return False
+            print(f'    → 登録OK')
+            return True
+        except Exception as e:
+            if attempt < len(SEND_RETRY_WAITS):
+                print(f'    [SEND ERROR] {e} → {SEND_RETRY_WAITS[attempt]}秒後に再試行', end=' ')
+                time.sleep(SEND_RETRY_WAITS[attempt])
+            else:
+                print(f'    [SEND ERROR] {e}')
+    return False
 
 
 def main():

@@ -1,0 +1,40 @@
+name: 艇王 ヘルスチェック(毎時)
+
+# [2026-11-07] データ取得・生成・清算の欠けを毎時確認し、欠けていれば boatrace.yml を job / target_date
+# 指定で再実行する(healthcheck.py)。再実行しても直らなければ health_checks に alert を記録し、
+# admin.php のデータ品質欄に警告を出す。
+# 本番の起動は cron-job.org から毎時の workflow_dispatch。schedule は外部トリガー停止時の保険。
+on:
+  schedule:
+    - cron: '20 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: healthcheck
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write   # gh workflow run で boatrace.yml を起動するため
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: ヘルスチェック・自動再実行
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: python healthcheck.py

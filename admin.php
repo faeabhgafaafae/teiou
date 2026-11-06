@@ -21,6 +21,7 @@ require_once __DIR__ . '/model_switch.php';
 require_once __DIR__ . '/model_status_lib.php';
 require_once __DIR__ . '/data_quality.php';
 require_once __DIR__ . '/generate_strategies.php';  // 戦略ロジックの定数(TOKKA_POINTS 等)の表示用。関数定義のみ
+require_once __DIR__ . '/health_lib.php';           // 毎時ヘルスチェックの記録(healthcheck.py)
 $user = current_user();
 if (!$user || !$user['is_admin']) {
     http_response_code(403);
@@ -40,6 +41,7 @@ $data = [
     'exhibit_total' => 0, 'exhibit_filled' => 0,
     'odds_races' => 0, 'before_last' => null, 'odds_last' => null,
     'top1_daily' => [], 'strat_7d' => [], 'strat_all' => [], 'strat_points' => [], 'strat_timing' => [],
+    'health' => [],
 ];
 
 try {
@@ -72,6 +74,9 @@ try {
 
     // ── 3. モデル運用状況: 保存済み予測の1着的中(model_status_lib.php) ────────
     $data['top1_daily'] = ms_top1_daily($pdo, V3W_PRODUCTION_FROM, $today);
+
+    // ── 5a. 毎時ヘルスチェックの記録(直近3日。health_lib.php) ────────
+    $data['health'] = hc_list($pdo, date('Y-m-d', strtotime('-3 days')));
 
     // ── 5b. データ品質: 買い目の初回生成時刻と締切の比較(model_status_lib.php) ────────
     $data['strat_timing'] = ms_strategy_timing($pdo, ADMIN_DATA_FROM, $today);
@@ -522,6 +527,41 @@ td.logic-cell { text-align: left; white-space: normal; min-width: 220px; font-si
     <?php endforeach; ?>
   </ul>
   <?php endif; ?>
+  <?php
+    $HC_NAMES  = ['racelist' => '出走表', 'odds' => 'オッズ', 'strategies' => '買い目', 'results' => '成績・買い目'];
+    $HC_STATUS = ['ok' => '正常', 'retrying' => '自動再実行中', 'alert' => '要対応', 'pending' => '判定前'];
+    $hc_alerts = array_values(array_filter($data['health'], fn($h) => $h['status'] === 'alert'));
+  ?>
+  <h3 class="dq-sub">毎時ヘルスチェック(直近3日)</h3>
+  <?php if ($hc_alerts): ?>
+  <div class="error-box">
+    <b>⚠ 自動再実行しても解消しない欠けがあります(手動対応が必要)</b>
+    <?php foreach ($hc_alerts as $h): ?>
+      <div><?= htmlspecialchars($h['check_date']) ?> <?= htmlspecialchars($HC_NAMES[$h['check_name']] ?? $h['check_name']) ?>: <?= htmlspecialchars((string)$h['detail']) ?></div>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+  <div class="table-wrap">
+    <table class="dash">
+      <thead><tr><th>日付</th><th>項目</th><th>状態</th><th>自動再実行</th><th>内容</th><th>最終確認</th></tr></thead>
+      <tbody>
+      <?php foreach ($data['health'] as $h): ?>
+        <tr>
+          <td><?= htmlspecialchars($h['check_date']) ?></td>
+          <td><?= htmlspecialchars($HC_NAMES[$h['check_name']] ?? $h['check_name']) ?></td>
+          <td class="<?= $h['status'] === 'ok' ? 'better' : ($h['status'] === 'alert' ? 'worse' : '') ?>"><?= htmlspecialchars($HC_STATUS[$h['status']] ?? $h['status']) ?></td>
+          <td><?= (int)$h['attempts'] ?>回</td>
+          <td class="logic-cell"><?= htmlspecialchars((string)$h['detail']) ?></td>
+          <td><?= htmlspecialchars(substr((string)$h['updated_at'], 5, 11)) ?></td>
+        </tr>
+      <?php endforeach; ?>
+      <?php if (!$data['health']): ?><tr><td colspan="6" class="no-data">記録なし(healthcheck.yml の実行待ち)</td></tr><?php endif; ?>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">※ healthcheck.yml(cron-job.org から毎時)が health_check.php で出走表・オッズ・成績・買い目の欠けを確認し、
+    欠けていれば boatrace.yml を対象日指定で再実行します(同じ日・項目で最大2回)。それでも直らないと「要対応」になります。</p>
+
   <h3 class="dq-sub">締切後に初めて生成された買い目</h3>
   <div class="table-wrap">
     <table class="dash">

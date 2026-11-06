@@ -1,19 +1,31 @@
 name: 艇王 自動データ取得
 
+# [2026-11-07] GitHub の schedule は毎日数時間遅れて起動していた(朝7:00 → 9〜12時、21:30 → 翌1〜5時。
+# design_site_audit_20261105.md #1)。本番の起動は cron-job.org からの workflow_dispatch(inputs.job で
+# ジョブを指定)に切り替え、schedule は保険として残す。各取込みは upsert で冪等なので、cron-job.org の起動と
+# 遅れた schedule が二重に動いても結果は変わらない(CSV のコミットは push 前に rebase して衝突を避ける)。
+# healthcheck.yml(毎時)も欠けを見つけたら inputs.job と target_date を指定してここを起動する。
 on:
   schedule:
-    - cron: '0 22 * * *'   # JST 7:00 出走表・直前情報取得
-    - cron: '0 5 * * *'    # JST 14:00 オッズ2回目取得(夕方以降のレース分の取りこぼし対策)
-    - cron: '0 11 * * *'   # JST 20:00 競走成績取得(前日分)
-    - cron: '30 12 * * *'  # JST 21:30 競走成績速報取得(当日分)
-  workflow_dispatch:        # 手動実行も可能
+    - cron: '0 22 * * *'   # JST 7:00 出走表・直前情報・オッズ(保険)
+    - cron: '0 5 * * *'    # JST 14:00 オッズ2回目(保険)
+    - cron: '0 11 * * *'   # JST 20:00 競走成績(前日分、保険)
+    - cron: '30 12 * * *'  # JST 21:30 競走成績(当日分、保険)
+  workflow_dispatch:
     inputs:
+      job:
+        description: >-
+          実行するジョブ。morning=出走表・直前情報+オッズ(7:00) / racelist=出走表・直前情報のみ /
+          odds=朝のオッズのみ / odds_evening=夕方オッズ(14:00) / results_yesterday=前日分の成績(20:00) /
+          results_today=当日分の成績+直前情報補完(21:30) / results=target_date の成績 / 空=従来どおり(全ジョブ)
+        required: false
+        default: ''
       target_date:
-        description: '対象日 (YYYY-MM-DD). 指定時は fetch_results のみ実行。省略時は全ジョブ実行。'
+        description: '対象日 (YYYY-MM-DD)。job=results(または job 空)で指定すると、その日の fetch_results のみ実行'
         required: false
         default: ''
       test_evening_odds:
-        description: '夕方オッズ取得ジョブ(scrape_odds_evening_a/b)を手動テスト実行する場合はtrue'
+        description: '夕方オッズ取得ジョブを手動テスト実行する場合はtrue(job=odds_evening と同じ)'
         required: false
         default: 'false'
 
@@ -26,7 +38,9 @@ jobs:
   scrape_beforeinfo:
     if: >-
       github.event.schedule == '0 22 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_date == '')
+      (github.event_name == 'workflow_dispatch' && (
+        (github.event.inputs.job == '' && github.event.inputs.target_date == '') ||
+        github.event.inputs.job == 'morning' || github.event.inputs.job == 'racelist'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -61,8 +75,11 @@ jobs:
   scrape_odds_a:
     needs: scrape_beforeinfo
     if: >-
+      ${{ !cancelled() && (
       github.event.schedule == '0 22 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_date == '')
+      (github.event_name == 'workflow_dispatch' && (
+        (github.event.inputs.job == '' && github.event.inputs.target_date == '') ||
+        github.event.inputs.job == 'morning' || github.event.inputs.job == 'odds'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -90,8 +107,11 @@ jobs:
   scrape_odds_b:
     needs: scrape_beforeinfo
     if: >-
+      ${{ !cancelled() && (
       github.event.schedule == '0 22 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_date == '')
+      (github.event_name == 'workflow_dispatch' && (
+        (github.event.inputs.job == '' && github.event.inputs.target_date == '') ||
+        github.event.inputs.job == 'morning' || github.event.inputs.job == 'odds'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -119,8 +139,11 @@ jobs:
   scrape_odds_c:
     needs: scrape_beforeinfo
     if: >-
+      ${{ !cancelled() && (
       github.event.schedule == '0 22 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_date == '')
+      (github.event_name == 'workflow_dispatch' && (
+        (github.event.inputs.job == '' && github.event.inputs.target_date == '') ||
+        github.event.inputs.job == 'morning' || github.event.inputs.job == 'odds'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -151,7 +174,8 @@ jobs:
   scrape_odds_evening_a:
     if: >-
       github.event.schedule == '0 5 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.test_evening_odds == 'true')
+      (github.event_name == 'workflow_dispatch' && (
+        github.event.inputs.test_evening_odds == 'true' || github.event.inputs.job == 'odds_evening'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -179,7 +203,8 @@ jobs:
   scrape_odds_evening_b:
     if: >-
       github.event.schedule == '0 5 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.test_evening_odds == 'true')
+      (github.event_name == 'workflow_dispatch' && (
+        github.event.inputs.test_evening_odds == 'true' || github.event.inputs.job == 'odds_evening'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -207,7 +232,8 @@ jobs:
   scrape_odds_evening_c:
     if: >-
       github.event.schedule == '0 5 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.test_evening_odds == 'true')
+      (github.event_name == 'workflow_dispatch' && (
+        github.event.inputs.test_evening_odds == 'true' || github.event.inputs.job == 'odds_evening'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -238,7 +264,9 @@ jobs:
     if: >-
       github.event.schedule == '0 11 * * *' ||
       github.event.schedule == '30 12 * * *' ||
-      github.event_name == 'workflow_dispatch'
+      (github.event_name == 'workflow_dispatch' && (
+        github.event.inputs.job == '' || github.event.inputs.job == 'results' ||
+        github.event.inputs.job == 'results_today' || github.event.inputs.job == 'results_yesterday'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -259,15 +287,24 @@ jobs:
 
       - name: 対象日を決定
         run: |
+          # 日付は JST で決める(schedule が遅れて日付をまたいでも、21:30 分は「当日」、20:00 分は「前日」の
+          # 意味を保つため、schedule の場合は予定時刻の日付を基準にする)
+          JOB="${{ github.event.inputs.job }}"
           if [ -n "${{ github.event.inputs.target_date }}" ]; then
             TARGET="${{ github.event.inputs.target_date }}"
-            echo "[手動] 指定日: $TARGET"
+            echo "[指定日] $TARGET"
+          elif [ "$JOB" = "results_today" ]; then
+            TARGET=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+            echo "[当日分(cron-job.org 21:30)] $TARGET"
+          elif [ "$JOB" = "results_yesterday" ]; then
+            TARGET=$(TZ=Asia/Tokyo date -d 'yesterday' +%Y-%m-%d)
+            echo "[前日分(cron-job.org 20:00)] $TARGET"
           elif [ "${{ github.event.schedule }}" = "30 12 * * *" ]; then
             TARGET=$(date +%Y-%m-%d)
-            echo "[21:30速報バッチ] 当日分: $TARGET"
+            echo "[21:30速報バッチ(schedule)] 当日分: $TARGET"
           else
             TARGET=$(date -d 'yesterday' +%Y-%m-%d)
-            echo "[20:00前日バッチ] 前日分: $TARGET"
+            echo "[20:00前日バッチ(schedule)] 前日分: $TARGET"
           fi
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
@@ -342,7 +379,12 @@ jobs:
             echo "差分なし。コミットをスキップします。"
           else
             git commit -m "data: ${TARGET}分の戦略シミュレーション用CSVを追加"
-            git push
+            # 二重起動(cron-job.org と遅れた schedule、ヘルスチェックの再実行)で同時に push しても失敗しないよう、
+            # rebase して再試行する
+            for i in 1 2 3; do
+              git pull --rebase --autostash && git push && break
+              echo "push 失敗。再試行 ($i)"; sleep $((i * 5))
+            done
           fi
 
   # ─── 毎夜21:30: 当日のbeforeinfo補完 ───────────────────
@@ -354,7 +396,9 @@ jobs:
   backfill_missed_beforeinfo:
     if: >-
       github.event.schedule == '30 12 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_date == '')
+      (github.event_name == 'workflow_dispatch' && (
+        (github.event.inputs.job == '' && github.event.inputs.target_date == '') ||
+        github.event.inputs.job == 'results_today'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:

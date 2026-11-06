@@ -1042,11 +1042,12 @@ document.getElementById('pikaichiToggle').onclick = function() {
 
 /* ─── 戦略タブ（strategy.phpから移植） ─────────────── */
 var COMBO_LIMIT = 10;
+// 説明はレース日(date)に使われていたロジック(strategy-colors.js の STRATEGY_LOGIC_HISTORY)
 var STRAT_DEFS = [
-  { type: '的中特化', color: strategyColor('的中特化'), desc: '上位5艇から確率上位15点' },
-  { type: 'バランス',   color: strategyColor('バランス'), desc: '上位2艇固定×上位4艇流し（最大12点）' },
-  { type: '一撃重視', color: strategyColor('一撃重視'), desc: '1位固定・中穴狙い（最大6点）' },
-  { type: '絞り込み', color: strategyColor('絞り込み'), desc: '上位3艇から確率上位3点' }
+  { type: '的中特化', color: strategyColor('的中特化'), desc: strategyDescription('的中特化', date) },
+  { type: 'バランス',   color: strategyColor('バランス'), desc: strategyDescription('バランス', date) },
+  { type: '一撃重視', color: strategyColor('一撃重視'), desc: strategyDescription('一撃重視', date) },
+  { type: '絞り込み', color: strategyColor('絞り込み'), desc: strategyDescription('絞り込み', date) }
 ];
 
 function makeWakuBadge(lane) {
