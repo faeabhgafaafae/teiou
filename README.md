@@ -230,7 +230,7 @@ v3w は v2 より明確に当たりますが、1号艇決め打ちとの差(+0.7
 
 ## テスト
 
-PHPUnit で **107件**(`tests/`)。買い目生成(Harville・点数・傾斜配分)、清算、参照モデルの切り替え、
+PHPUnit で **125件**(`tests/`)。買い目生成(Harville・点数・傾斜配分)、清算、参照モデルの切り替え、
 先読みリーク防止、管理画面の集計、データ品質の判定、今日の的中のまとめ方、画面の静的チェック(WAF制約: インラインCSSのみ・テンプレートリテラル不可)などを確認しています。
 
 - `main` への push 時: `deploy.yml` の `test` ジョブが通った場合のみデプロイ
@@ -279,6 +279,10 @@ concurrency:
 
 ### `boatrace.yml` — 定期データ取得
 
+GitHub Actions の schedule は毎日数時間遅れて起動するため(朝 7:00 → 9〜12時など)、本番は **cron-job.org から `workflow_dispatch`**
+(`inputs.job` でジョブを指定)で起動し、schedule は保険として残しています。取込みはすべて upsert で冪等なので、二重に起動しても結果は変わりません。
+`healthcheck.yml`(毎時)が欠けを見つけると、`job` と `target_date` を指定してここを自動で再実行します。
+
 | 実行時刻 (JST) | ジョブ | 内容 |
 |---|---|---|
 | 毎朝 7:00 | `scrape_beforeinfo` | 全24場の出走表・直前情報（展示タイム・ST・モーター等）を取得しDBへ投入 |
@@ -319,6 +323,15 @@ GitHub Actions の schedule は実際には数時間に1回しか発火しませ
 ### `backfill.yml` — 払戻補正（手動実行のみ）
 
 `is_hit=1` かつ `payout=0` の欠損レコードについて、オッズを再スクレイピングして払戻を再計算します(`backfill_odds_from_gap.py`)。
+
+### `healthcheck.yml` — 毎時ヘルスチェック・自動再実行
+
+`healthcheck.py` が `health_check.php` で当日・前日の出走表・オッズ・成績・買い目の欠けを確認し、欠けていれば `boatrace.yml` を
+対象日指定で再実行します(同じ日・項目で最大2回)。それでも直らなければ管理画面のデータ品質欄に警告を出します。中止レースは除外します。
+
+### `live.yml` の `pregenerate_upcoming` — 締切前の予想・買い目生成
+
+各実行(約15分ごと)で、締切35分前以内のレースのオッズを取得してから予想・買い目を生成します。締切後は保存済みの予想・買い目を上書きしません。
 
 ### `tests.yml` — PHPUnit(Pull Request 時)
 
