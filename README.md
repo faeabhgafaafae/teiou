@@ -264,6 +264,8 @@ vendor/bin/phpunit
 
 > `.php` / `.html` / `.js` / `.css` / 画像ファイルはすべてアップロードされます。`auth.php` も除外設定はなく通常デプロイされますが、認証情報は `config.php`（Secret から生成）に分離されています。
 > 設計メモ(`*.md`)はデプロイされないため、管理画面からは GitHub 上のファイルにリンクしています。
+> 検証用 CSV(`data/`)・シミュレーション出力(`*_output*.txt`)・監査結果(`audit_leak_rewrites_*.json`)もデプロイ対象外です(以前にアップロード済みの分は `.htaccess` で公開拒否)。
+> 2026-11-07 に旧ツール `admin_v2.php` と未参照の出力ファイルを削除しました(一覧は `design_site_audit_20261105.md` 追記4)。
 
 ### 同時実行制御
 
