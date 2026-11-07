@@ -78,4 +78,7 @@ jobs:
             vendor/**
             tests/**
             tools/**
+            data/**
+            **/*_output*.txt
+            **/audit_leak_rewrites_*.json
             .phpunit.cache/**

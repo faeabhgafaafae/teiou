@@ -4,3 +4,10 @@
 RewriteEngine On
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# 検証用CSV(data/)・シミュレーション出力・監査結果は本番で公開しない(2026-11-07〜)。
+# deploy.yml でアップロード対象から外したが、以前にアップロード済みのファイルはサーバーに残るため、ここで拒否する。
+RewriteRule ^data/ - [F,L]
+RewriteRule (^|/)[^/]*_output[^/]*\.txt$ - [F,L]
+RewriteRule ^audit_leak_rewrites_[^/]*\.json$ - [F,L]
+RewriteRule \.bak$ - [F,L]

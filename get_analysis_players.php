@@ -14,7 +14,11 @@ $isStandardPlus = in_array($plan, ['standard', 'premium']);
 
 $scope     = $_GET['scope']     ?? 'national';
 $venue     = $_GET['venue']     ?? '';
-$min_races = max(1, (int)($_GET['min_races'] ?? 20));
+// 出走数の下限(2026-11-07〜)。少数の出走で率が極端になる選手(1走で1着など)が上位に並ぶのを防ぐ。
+// 全国は100走(1着率の誤差がおよそ±4〜5ポイントに収まる目安)、当地は会場別で出走数が少ないため20走
+const MIN_RACES_FLOOR = ['national' => 100, 'local' => 20];
+$floor     = MIN_RACES_FLOOR[$scope] ?? 100;
+$min_races = max($floor, (int)($_GET['min_races'] ?? $floor));
 $sort      = $_GET['sort']      ?? 'rank1_rate';
 $order     = strtolower($_GET['order'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
 $limit     = min(200, max(1, (int)($_GET['limit'] ?? 50)));
@@ -47,7 +51,7 @@ if ($scope === 'local') {
 
 $sql = "
     SELECT
-        p.id, p.name, p.grade,
+        p.id, p.name, p.grade, p.branch,
         COUNT(*) AS race_count,
         SUM(CASE WHEN res.actual_rank = 1 THEN 1 ELSE 0 END) AS rank1_count,
         SUM(CASE WHEN res.actual_rank <= 2 THEN 1 ELSE 0 END) AS rank2_count,
@@ -75,6 +79,7 @@ foreach ($rows as $row) {
         'player_id'   => (int)$row['id'],
         'name'        => $row['name'],
         'grade'       => $row['grade'],
+        'branch'      => $row['branch'],
         'race_count'  => $rc,
         'win_score'   => round($row['score_sum'] / $rc, 2),
         'rank1_rate'  => round($row['rank1_count'] / $rc * 100, 1),

@@ -51,6 +51,16 @@ function strategyDescription(type, raceDate) {
   return '';
 }
 
+/**
+ * 4戦略の表示定義(表示順・色・レース日の説明)。ai-predict.php と strategy.php で同じ定義を使う
+ * (2026-11-07 に両ページの同一の STRAT_DEFS をここへ移動)
+ */
+function strategyDefs(raceDate) {
+  return ['的中特化', 'バランス', '一撃重視', '絞り込み'].map(function(t) {
+    return { type: t, color: strategyColor(t), desc: strategyDescription(t, raceDate) };
+  });
+}
+
 /** 戦略の淡色(背景用) */
 function strategyBgColor(type) {
   return (STRATEGY_PALETTE[type] || STRATEGY_PALETTE_DEFAULT).bg;

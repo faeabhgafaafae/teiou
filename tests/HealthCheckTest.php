@@ -137,7 +137,8 @@ final class HealthCheckTest extends TestCase
             'JS の最新ロジック = generate_strategies.php の定数');
         $this->assertStringContainsString("desc: '上位" . TOKKA_LEGACY_POOL . '艇から確率上位' . TOKKA_LEGACY_POINTS . "点'", $js);
         foreach (['ai-predict.php', 'strategy.php'] as $f) {
-            $this->assertSame(4, substr_count($this->src($f), "strategyDescription('"), "$f: 4戦略ともレース日の説明");
+            $this->assertStringContainsString('var STRAT_DEFS = strategyDefs(date);', $this->src($f), "$f: 4戦略ともレース日の説明(共通定義)");
         }
+        $this->assertStringContainsString("strategyDescription(t, raceDate)", $js);
     }
 }

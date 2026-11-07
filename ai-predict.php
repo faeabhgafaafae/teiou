@@ -895,12 +895,7 @@ document.getElementById('pikaichiToggle').onclick = function() {
 /* ─── 戦略タブ（strategy.phpから移植） ─────────────── */
 var COMBO_LIMIT = 10;
 // 説明はレース日(date)に使われていたロジック(strategy-colors.js の STRATEGY_LOGIC_HISTORY)
-var STRAT_DEFS = [
-  { type: '的中特化', color: strategyColor('的中特化'), desc: strategyDescription('的中特化', date) },
-  { type: 'バランス',   color: strategyColor('バランス'), desc: strategyDescription('バランス', date) },
-  { type: '一撃重視', color: strategyColor('一撃重視'), desc: strategyDescription('一撃重視', date) },
-  { type: '絞り込み', color: strategyColor('絞り込み'), desc: strategyDescription('絞り込み', date) }
-];
+var STRAT_DEFS = strategyDefs(date);   // strategy-colors.js(ai-predict.php と strategy.php で共通)
 
 function makeWakuBadge(lane) {
   var el = document.createElement('span');

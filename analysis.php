@@ -183,7 +183,7 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
   <!-- 選手ランキング -->
   <div class="panel active" id="panel-players">
     <div class="card">
-      <h2>選手ランキング(全国・上位10)</h2>
+      <h2>選手ランキング(全国・上位10、100走以上)</h2>
       <div class="metric-tabs" id="metricTabs">
         <button class="metric-tab active" data-metric="win_score" data-order="desc">勝率(簡易)</button>
         <button class="metric-tab" data-metric="rank1_rate" data-order="desc">1着率</button>
@@ -204,7 +204,7 @@ table.adv-table tr.adv-rank1 { background: #fffbeb; }
           </div>
           <select id="playersVenueSelect" style="display:none;"></select>
           <label>最低出走数</label>
-          <input type="number" id="minRacesInput" value="20" min="1" style="width:70px;">
+          <input type="number" id="minRacesInput" value="100" min="20" style="width:70px;">
           <button id="playersSearchBtn">表示</button>
         </div>
         <div id="playersResult"><div class="loading">条件を選択して「表示」を押してください</div></div>
@@ -611,7 +611,7 @@ async function loadCompactRanking() {
   el.textContent = '';
   el.appendChild(makeLoading('読み込み中...'));
 
-  var qs = 'scope=national&min_races=20&sort=' + currentMetric + '&order=' + currentMetricOrder + '&limit=10';
+  var qs = 'scope=national&min_races=100&sort=' + currentMetric + '&order=' + currentMetricOrder + '&limit=10';
   try {
     var res = await fetch('get_analysis_players.php?' + qs);
     var data = await res.json();
@@ -752,7 +752,7 @@ async function loadPlayers() {
   resultEl.textContent = '';
   resultEl.appendChild(makeLoading('読み込み中...'));
 
-  var minRaces = document.getElementById('minRacesInput').value || 20;
+  var minRaces = document.getElementById('minRacesInput').value || 100;
   var qs = 'scope=' + currentScope + '&min_races=' + encodeURIComponent(minRaces) + '&sort=' + currentMetric + '&order=' + currentMetricOrder + '&limit=50';
   if (currentScope === 'local') {
     qs += '&venue=' + encodeURIComponent(playersVenueSelect.value);
@@ -771,7 +771,7 @@ async function loadPlayers() {
     var footnote = document.createElement('div');
     footnote.className = 'note';
     footnote.style.marginTop = '10px';
-    footnote.textContent = '勝率(簡易)は (1着数×2 + 2着数×1) ÷ 出走数 で算出した当サイト独自の簡易指標です。公式発表の勝率とは計算方法が異なる場合があります。';
+    footnote.textContent = '勝率(簡易)は (1着数×2 + 2着数×1) ÷ 出走数 で算出した当サイト独自の簡易指標です。公式発表の勝率とは計算方法が異なる場合があります。出走数が少ないと率が極端になるため、全国は100走以上、当地は20走以上の選手だけを表示しています。';
     resultEl.appendChild(footnote);
   } catch (e) {
     resultEl.textContent = '';

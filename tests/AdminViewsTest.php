@@ -199,8 +199,7 @@ final class AdminViewsTest extends TestCase
             $this->assertNotFalse($g, "$file: 管理者チェック {$guard}() を維持");
             $this->assertLessThan(strpos($src, 'av_output('), $g, "$file: 出力より前に管理者チェック");
         }
-        $this->assertStringContainsString('format=json', file_get_contents("$root/admin_v2.php"),
-            'admin_v2.php は shadow_eval_v3.php の JSON を内部で使うため format=json を付ける');
+        $this->assertFileDoesNotExist("$root/admin_v2.php", '旧ツール admin_v2.php は 2026-11-07 に削除');
     }
 
     public function test_views_follow_waf_constraints(): void

@@ -658,10 +658,6 @@ td.logic-cell { text-align: left; white-space: normal; min-width: 220px; font-si
 
   <div class="tool-group legacy">
     <h3>旧(役目を終えたツール・参照用)</h3>
-    <a class="tool-link" href="admin_v2.php">
-      <strong>v2/v3wシャドウテスト比較(〜2026-09-29)</strong>
-      <span>v3w 昇格判定用。v2 側の値は 2026-08-19〜09-28 がリーク込みのため比較には使えません</span>
-    </a>
     <a class="tool-link" href="shadow_eval_v3.php?from=2026-09-13&to=2026-09-29">
       <strong>v3wシャドウ評価(shadow_eval_v3.php)</strong>
       <span>シャドウ期間の1着的中率・旧ロジックの戦略シム。長期間は120秒制限で失敗するため、現在の監視は上の model_switch_status.php を使用</span>

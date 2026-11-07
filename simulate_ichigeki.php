@@ -7,6 +7,11 @@
  *   B) 選定プール: 4-6位(現行) / 3-5位 / 5-6位 / 2-4位
  *
  * 呼び出し: ?api_key=teio2025 [&days=30]
+ *
+ * 2026-11-07: days=30 で HTTP 500(メモリ不足)になっていたのを修正。約4,300R × 3連単120通り(約50万行)の
+ * オッズを fetchAll() で読み、さらに連想配列に詰め直していた。一撃重視は1着を予想1位に固定するので、
+ * 必要なのは1着が予想1位の組(1レース20通り)だけ。オッズは1行ずつ読み(バッファなし)、その組だけを残す。
+ * 対象レースの抽出も odds_3t との JOIN(+DISTINCT)をやめ、EXISTS にした。
  */
 
 require_once __DIR__ . '/auth.php';
@@ -35,14 +40,14 @@ try {
 
 // ── 対象レース取得: 予測・結果・オッズが全て揃っているもの ──────────
 $stmt = $pdo->prepare('
-    SELECT DISTINCT r.id AS race_id, r.date
+    SELECT r.id AS race_id, r.date
     FROM races r
-    JOIN predictions p  ON p.race_id = r.id
-    JOIN results res1   ON res1.race_id = r.id AND res1.actual_rank = 1
-    JOIN results res2   ON res2.race_id = r.id AND res2.actual_rank = 2
-    JOIN results res3   ON res3.race_id = r.id AND res3.actual_rank = 3
-    JOIN odds_3t  o     ON o.race_id    = r.id
     WHERE r.date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+      AND EXISTS (SELECT 1 FROM predictions p WHERE p.race_id = r.id)
+      AND EXISTS (SELECT 1 FROM results x WHERE x.race_id = r.id AND x.actual_rank = 1)
+      AND EXISTS (SELECT 1 FROM results x WHERE x.race_id = r.id AND x.actual_rank = 2)
+      AND EXISTS (SELECT 1 FROM results x WHERE x.race_id = r.id AND x.actual_rank = 3)
+      AND EXISTS (SELECT 1 FROM odds_3t o WHERE o.race_id = r.id)
     ORDER BY r.date DESC
 ');
 $stmt->execute([$days]);
@@ -67,6 +72,7 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute($race_ids);
 $pred_rows = $stmt->fetchAll();
+$stmt->closeCursor();
 
 $pred_map = []; // race_id => [lane_rank1, lane_rank2, ..., lane_rank6]
 foreach ($pred_rows as $row) {
@@ -80,6 +86,7 @@ foreach ($pred_map as $rid => &$rankLaneMap) {
     $rankLaneMap = array_values($rankLaneMap); // [0]=1位lane, [1]=2位lane, ...
 }
 unset($rankLaneMap);
+unset($pred_rows);
 
 // ── 実際の着順取得 (bulk) ─────────────────────────────────────────
 $stmt = $pdo->prepare("
@@ -89,21 +96,29 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute($race_ids);
 $result_rows = $stmt->fetchAll();
+$stmt->closeCursor();
 
 $result_map = []; // race_id => [1=>lane, 2=>lane, 3=>lane]
 foreach ($result_rows as $row) {
     $result_map[(int)$row['race_id']][(int)$row['actual_rank']] = (int)$row['lane'];
 }
+unset($result_rows);
 
 // ── オッズ取得 (bulk) ──────────────────────────────────────────────
+// 1着が予想1位の組だけを残す(一撃重視の買い目は必ずこの形)。全件を配列に載せるとメモリ不足になるため、
+// バッファなしで1行ずつ読む
+$pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 $stmt = $pdo->prepare("SELECT race_id, combo, odds FROM odds_3t WHERE race_id IN ($ph)");
 $stmt->execute($race_ids);
-$odds_rows = $stmt->fetchAll();
-
-$odds_map = []; // race_id => [combo => odds]
-foreach ($odds_rows as $row) {
-    $odds_map[(int)$row['race_id']][$row['combo']] = (float)$row['odds'];
+$odds_map = []; // race_id => [combo => odds](1着 = 予想1位の組のみ)
+while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
+    $rid   = (int)$row[0];
+    $first = $pred_map[$rid][0] ?? null;
+    if ($first === null || (int)$row[1][0] !== $first) continue;
+    $odds_map[$rid][$row[1]] = (float)$row[2];
 }
+$stmt->closeCursor();
+$pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
 
 // ── プール定義 ────────────────────────────────────────────────────
 // lanes配列(0-indexed): [0]=1位 [1]=2位 ... [5]=6位
