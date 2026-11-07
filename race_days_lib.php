@@ -3,11 +3,13 @@
  * race_days_lib.php — 開催日の判定(2026-11-07〜)
  * トップページ(index.php)で、当日の出走表がまだ無い時間帯(夜〜朝)に、直近の開催日を表示するために使う。
  */
-require_once __DIR__ . '/config.php';
-
 function race_days_pdo(): ?PDO {
     static $pdo = null;
     if ($pdo === null) {
+        if (!defined('DB_HOST')) {
+            if (!is_file(__DIR__ . '/config.php')) return null;
+            require_once __DIR__ . '/config.php';
+        }
         try {
             $pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS,
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);

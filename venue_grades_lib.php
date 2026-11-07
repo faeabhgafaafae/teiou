@@ -7,13 +7,15 @@
  * 開催一覧(scrape_racelist.py → import_grades.php)から races.grade に保存しており、ここで日付ごとに引く。
  * グレード未取込み(過去分・取込み前)の会場は返さない(画面ではバッジを出さない)。
  */
-require_once __DIR__ . '/config.php';
-
 const GRADE_VALUES = ['SG', 'G1', 'G2', 'G3', '一般'];
 
 /** 'YYYY-MM-DD' の会場 => グレード */
 function venue_grades(string $date): array {
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) return [];
+    if (!defined('DB_HOST')) {
+        if (!is_file(__DIR__ . '/config.php')) return [];   // テスト環境(config.php なし)
+        require_once __DIR__ . '/config.php';
+    }
     try {
         $pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS,
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
