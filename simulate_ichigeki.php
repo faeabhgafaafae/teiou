@@ -42,7 +42,7 @@ try {
 $stmt = $pdo->prepare('
     SELECT r.id AS race_id, r.date
     FROM races r
-    WHERE r.date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+    WHERE r.date >= DATE_SUB(CURDATE(), INTERVAL ? DAY) AND r.date <= ?
       AND EXISTS (SELECT 1 FROM predictions p WHERE p.race_id = r.id)
       AND EXISTS (SELECT 1 FROM results x WHERE x.race_id = r.id AND x.actual_rank = 1)
       AND EXISTS (SELECT 1 FROM results x WHERE x.race_id = r.id AND x.actual_rank = 2)
@@ -50,7 +50,7 @@ $stmt = $pdo->prepare('
       AND EXISTS (SELECT 1 FROM odds_3t o WHERE o.race_id = r.id)
     ORDER BY r.date DESC
 ');
-$stmt->execute([$days]);
+$stmt->execute([$days, date('Y-m-d')]);
 $races = $stmt->fetchAll();
 
 if (!$races) {

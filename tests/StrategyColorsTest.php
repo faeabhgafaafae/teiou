@@ -46,7 +46,8 @@ final class StrategyColorsTest extends TestCase
     {
         foreach (['ai-predict.php', 'strategy.php', 'performance.php'] as $f) {
             $s = $this->src($f);
-            $this->assertLessThan(strpos($s, 'strategyColor('), strpos($s, 'src="strategy-colors.js'), "$f: 定義の読み込みが使用より前");
+            $use = strpos($s, 'strategyDefs(') !== false ? strpos($s, 'strategyDefs(') : strpos($s, 'strategyColor(');
+            $this->assertLessThan($use, strpos($s, 'src="strategy-colors.js'), "$f: 定義の読み込みが使用より前");
         }
         $idx = $this->src('index.php');
         $this->assertLessThan(strpos($idx, 'src="home-races.js'), strpos($idx, 'src="strategy-colors.js'));
