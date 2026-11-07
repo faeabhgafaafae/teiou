@@ -131,7 +131,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
   </div>
 
   <div class="ai-locked-banner" id="aiLockedBanner" style="display:none">
-    <span>🔒 予想の1位候補・自信度はStandard/Premium会員限定です。</span>
+    <span>🔒 1着確率・自信度は Standard / Premium 会員限定です(予測1位はどなたでも見られます)。</span>
     <a href="mypage.php#planCardStandard">プランをアップグレード</a>
   </div>
 
@@ -159,7 +159,8 @@ var ALL_VENUES = [
   '尼崎','鳴門','丸亀','児島','宮島','徳山',
   '下関','若松','芦屋','福岡','唐津','大村'
 ];
-var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
+// 開催グレードは races.grade(boatrace.jp から取込み)。未取込みの会場はバッジを出さない(venue_grades_lib.php)
+var VENUE_GRADES = <?php require_once __DIR__ . '/venue_grades_lib.php'; echo venue_grades_json(); ?>;
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
 
 var selectedVenues = [];
@@ -211,7 +212,7 @@ async function loadAllRaces() {
       if (!data.races) return [];
       return data.races.map(function(r) {
         r.venue = v;
-        r.grade = VENUE_GRADES[v] || '一般';
+        r.grade = VENUE_GRADES[v] || '';
         return r;
       });
     } catch (e) {
@@ -324,14 +325,6 @@ function renderPickPlaceholder(pickRow) {
   pickRow.appendChild(ph);
 }
 
-function renderPickLocked(pickRow) {
-  pickRow.textContent = '';
-  var ph = document.createElement('span');
-  ph.className = 'prc-pick-placeholder';
-  ph.textContent = '🔒 Standard/Premium会員限定';
-  pickRow.appendChild(ph);
-}
-
 function renderPick(pickRow, confEl, predictions) {
   pickRow.textContent = '';
   if (!predictions || predictions.length === 0) {
@@ -341,6 +334,8 @@ function renderPick(pickRow, confEl, predictions) {
     pickRow.appendChild(ph);
     return;
   }
+  // 予測順位の順に並べる(予測順位は全員に公開。1着確率・自信度は Standard 以上で、それ以外は API が返さない)
+  predictions = predictions.slice().sort(function(a, b) { return (Number(a.predicted_rank) || 99) - (Number(b.predicted_rank) || 99); });
   var rank1 = predictions[0];
   var rank2 = predictions.length > 1 ? predictions[1] : null;
 
@@ -354,12 +349,20 @@ function renderPick(pickRow, confEl, predictions) {
   nameEl.textContent = formatName(rank1.name);
   pickRow.appendChild(nameEl);
 
+  if (rank1.score_total == null) {
+    var lockEl = document.createElement('span');
+    lockEl.className = 'prc-pick-score';
+    lockEl.textContent = '🔒';
+    lockEl.title = '1着確率・自信度は Standard / Premium 会員限定';
+    pickRow.appendChild(lockEl);
+    return;
+  }
   var scoreEl = document.createElement('span');
   scoreEl.className = 'prc-pick-score';
-  scoreEl.textContent = Number(rank1.score_total).toFixed(1) + '点';
+  scoreEl.textContent = '1着確率 ' + Number(rank1.score_total).toFixed(1) + '%';
   pickRow.appendChild(scoreEl);
 
-  if (rank2 != null) {
+  if (rank2 != null && rank2.score_total != null) {
     var gap = Number(rank1.score_total) - Number(rank2.score_total);
     var tier = 'mid';
     var label = '中';
@@ -369,7 +372,7 @@ function renderPick(pickRow, confEl, predictions) {
     confEl.textContent = '';
     var badge = document.createElement('span');
     badge.className = 'prc-confidence conf-' + tier;
-    badge.textContent = '自信度 ' + label + ' (2着候補と+' + gap.toFixed(1) + 'pt差)';
+    badge.textContent = '自信度 ' + label + ' (予測2位より1着確率が+' + gap.toFixed(1) + 'ポイント高い)';
     confEl.appendChild(badge);
   }
 }
@@ -394,7 +397,7 @@ function renderRaceCard(race) {
   var gradeEl = document.createElement('span');
   gradeEl.className = 'grade-badge ' + (GRADE_CLASSES[race.grade] || 'grade-ippan');
   gradeEl.textContent = race.grade;
-  header.appendChild(gradeEl);
+  if (race.grade) header.appendChild(gradeEl);  // グレード未取込みはバッジなし
 
   var noEl = document.createElement('span');
   noEl.className = 'prc-no';
@@ -540,12 +543,6 @@ async function init() {
   });
 
   applyFilters();
-
-  if (userPlan === 'free') {
-    // Free会員はAPIが403を返すだけなので、無駄なリクエストをせずその場でロック表示にする
-    pending.forEach(function(item) { renderPickLocked(item.pickRow); });
-    return;
-  }
 
   runPool(pending, async function(item) {
     var predictions = await fetchPredictions(item.race);

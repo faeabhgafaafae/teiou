@@ -6,6 +6,19 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawDate) || $rawDate > $today) {
 } else {
     $pageDate = $rawDate;
 }
+// 当日の出走表がまだ無い時間帯(夜〜朝・非開催日)は、日付指定がなければ直近の開催日を表示する
+// (デモや初めての訪問でも中身が見られるように。2026-11-07〜)
+$fallbackFromToday = false;
+if (!isset($_GET['date'])) {
+    require_once __DIR__ . '/race_days_lib.php';
+    if (!has_races_on($today)) {
+        $lastDay = last_race_day_before($today);
+        if ($lastDay !== null) {
+            $pageDate = $lastDay;
+            $fallbackFromToday = true;
+        }
+    }
+}
 $isPast = ($pageDate < $today);
 $prevDate = date('Y-m-d', strtotime($pageDate . ' -1 day'));
 $nextDate = date('Y-m-d', strtotime($pageDate . ' +1 day'));
@@ -201,6 +214,11 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
           <div class="venue-grid" id="favoriteVenueGrid"></div>
         </section>
 
+        <!-- はじめての方へ(艇王について) -->
+        <a href="about.php" style="display:flex; align-items:center; gap:8px; background:#f0f5ff; border:1px solid #d6e4ff; border-radius:10px; padding:10px 14px; margin-bottom:12px; text-decoration:none; color:#0055a4; font-size:13px; font-weight:700;">
+          <i class="fas fa-info-circle"></i><span>はじめての方へ: 艇王の使い方と予想の仕組み</span><span style="margin-left:auto;">&rsaquo;</span>
+        </a>
+
         <div class="date-nav">
           <a class="date-nav-arrow" href="?date=<?php echo $prevDate; ?>"><i class="fas fa-chevron-left"></i></a>
           <div class="date-nav-center">
@@ -215,6 +233,13 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
             <a class="date-nav-arrow" href="?date=<?php echo $nextDate; ?>"><i class="fas fa-chevron-right"></i></a>
           <?php endif; ?>
         </div>
+
+        <?php if ($fallbackFromToday): ?>
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:13px; color:#92400e; line-height:1.6;">
+          本日(<?php echo date('n/j', strtotime($today)); ?>)のレース情報はまだありません(非開催、または出走表の取込み前)。
+          <b>前回開催日(<?php echo date('n/j', strtotime($pageDate)); ?>)</b>のレースと結果を表示しています。
+        </div>
+        <?php endif; ?>
 
         <div class="section-header">
           <h2 class="section-title">開催中のレース場 <span class="venue-count" id="venueCount">0場 開催中</span><?php if ($isPast): ?><span class="badge-past">開催済み</span><?php endif; ?></h2>
@@ -275,6 +300,8 @@ $displayDow  = $weekDays[date('w', strtotime($pageDate))];
 
   <!-- PHP でサーバー側に確定させた日付を JS に渡す。JS で date を再計算すると timezone ずれが生じるため -->
   <script>var PAGE_DATE = '<?php echo htmlspecialchars($pageDate, ENT_QUOTES, 'UTF-8'); ?>';</script>
+  <!-- 表示日の開催グレード(races.grade。app.js の会場カード・注目のレースで使う) -->
+  <script>var VENUE_GRADES_FOR_DATE = <?php require_once __DIR__ . '/venue_grades_lib.php'; echo venue_grades_json($pageDate); ?>;</script>
   <script src="venue-display.js"></script>
   <script src="strategy-colors.js?v=<?php echo (int)@filemtime(__DIR__ . '/strategy-colors.js'); ?>"></script>
   <script src="app.js"></script>

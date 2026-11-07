@@ -1,19 +1,20 @@
 <?php
 /**
- * 艇王 - 成績・回収率: 個別レース一覧API(Premium限定)
+ * 艇王 - 成績・回収率: 個別レース一覧API(Standard 以上。plan_access.php)
  * GET /get_performance_races.php
  * 戦略買い目の的中・不的中を個別レース単位で返す。
- * 各レースの詳細スコア内訳は get_prediction.php を別途呼び出して取得する。
+ * 各レースの予想の根拠は get_prediction.php(factors)を別途呼び出して取得する。
  */
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/data_quality.php';
+require_once __DIR__ . '/plan_access.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 $user = current_user();
-$plan = $user['plan'] ?? 'free';
-if ($plan !== 'premium') {
-    json_response(['error' => 'premium_required', 'message' => 'この機能はPremiumプラン限定です'], 403);
+// 買い目・予想の根拠は Standard 以上(plan_access.php)
+if (!plan_can_view_details($user)) {
+    json_response(['error' => 'premium_required', 'message' => 'この機能はStandard/Premiumプラン限定です'], 403);
 }
 
 $pdo = get_db();

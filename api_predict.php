@@ -297,30 +297,23 @@ if (persist_predictions($pdo, (int)$race_id, $scores)) {
 $scores = apply_display_ranks($scores, $display);
 
 // このAPIは直前情報(exhibit_time等)を無料機能(直前情報タブ・出走表フォールバック等)が
-// 参照するため誰でも呼び出せる状態を維持しつつ、予想(統計モデル)由来のフィールド
-// (score_*・predicted_rank)はStandard/Premium限定として出力時のみ除去する。
+// 参照するため誰でも呼び出せる状態を維持しつつ、公開範囲(plan_access.php)に従って出力時に除く:
+// 予測順位(predicted_rank)は全員に返し、予測確率(score_total)は Standard 以上のみ。
+// 旧 v1 のスコア内訳(score_ability 等)は誰にも返さない(2026-11-07〜。予想の根拠は get_prediction.php の factors)。
 // DBへの保存・戦略生成は呼び出し元のプランに関わらず常に行う(データを最新に保つため)。
+require_once __DIR__ . '/plan_access.php';
 $user   = current_user();
-$plan   = $user['plan'] ?? 'free';
-$isPaid = $user && in_array($plan, ['standard', 'premium'], true);
+$isPaid = plan_can_view_details($user);
 
 $responseScores = $scores;
 // v2シャドウ計算用の内部フィールドをレスポンスから除去
-foreach ($responseScores as &$s) { unset($s['_v2']); }
+foreach ($responseScores as &$s) {
+    unset($s['_v2'], $s['score_ability'], $s['score_course'], $s['score_today'], $s['score_weather']);
+}
 unset($s);
 
 if (!$isPaid) {
-    foreach ($responseScores as &$s) {
-        $s['score_ability']  = null;
-        $s['score_course']   = null;
-        $s['score_today']    = null;
-        $s['score_weather']  = null;
-        $s['score_total']    = null;
-        $s['predicted_rank'] = null;
-    }
-    unset($s);
-    // predicted_rank順のままだとAIの1位候補が並び順から推測できてしまうため、枠番順に戻す
-    usort($responseScores, function($a, $b) { return $a['lane'] <=> $b['lane']; });
+    $responseScores = strip_prediction_details($responseScores);   // 予測順位だけを残す
 }
 
 echo json_encode([

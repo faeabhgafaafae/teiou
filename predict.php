@@ -198,7 +198,7 @@
     <!-- オリジナル展示タブ -->
     <div class="panel" id="panel-original">
       <div class="card">
-        <h2>艇王オリジナル展示(予想スコア)</h2>
+        <h2>艇王オリジナル展示(予測順位・1着確率)</h2>
         <div class="pred-table-wrap" id="originalTableWrap"></div>
       </div>
     </div>
@@ -458,34 +458,31 @@ function buildStartVisual(predictions) {
   }
 }
 
+// 予測順位は全員、1着確率は Standard 以上(aiLocked のときは API が確率を返さない。plan_access.php)
 function buildOriginalTable(predictions, aiLocked) {
   var wrap = document.getElementById('originalTableWrap');
   wrap.textContent = '';
 
   if (aiLocked) {
+    // 予測順位は表示し、1着確率だけ鍵をかける
     var lock = document.createElement('div');
-    lock.className = 'premium-lock';
-    var icon = document.createElement('span');
-    icon.className = 'premium-lock-icon';
-    icon.textContent = '🔒';
-    var p = document.createElement('p');
-    p.textContent = '予想スコアはStandard/Premium会員限定です。';
+    lock.style.cssText = 'font-size:12px; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px 12px; margin-bottom:8px;';
+    lock.appendChild(document.createTextNode('🔒 1着確率は Standard / Premium 会員限定です。 '));
     var a = document.createElement('a');
     a.href = 'mypage.php#planCardStandard';
     a.textContent = 'プランをアップグレード';
-    lock.appendChild(icon);
-    lock.appendChild(p);
+    a.style.cssText = 'color:#d97706; font-weight:700;';
     lock.appendChild(a);
     wrap.appendChild(lock);
-    return;
   }
+  predictions = predictions.slice().sort(function(x, y) { return x.lane - y.lane; });
 
   var table = document.createElement('table');
   table.className = 'pred-table';
 
   var thead = document.createElement('thead');
   var htr = document.createElement('tr');
-  var cols = ['枠', '選手名', '展示T', 'ST', '能力', 'コース', '当日', '気象', '総合'];
+  var cols = ['枠', '選手名', '展示T', 'ST', '予測順位', '1着確率'];
   cols.forEach(function(c) {
     var th = document.createElement('th');
     th.textContent = c;
@@ -517,10 +514,7 @@ function buildOriginalTable(predictions, aiLocked) {
     var vals = [
       fmtVal(p.exhibit_time, 2),
       p.is_flying ? 'F' : fmtVal(p.start_timing, 2),
-      fmtVal(p.score_ability, 1),
-      fmtVal(p.score_course, 1),
-      fmtVal(p.score_today, 1),
-      fmtVal(p.score_weather, 1),
+      p.predicted_rank ? p.predicted_rank + '位' : '-',
     ];
     vals.forEach(function(v) {
       var td = document.createElement('td');
@@ -531,7 +525,7 @@ function buildOriginalTable(predictions, aiLocked) {
 
     var tdTotal = document.createElement('td');
     tdTotal.className = 'score-total';
-    tdTotal.textContent = fmtVal(p.score_total, 1);
+    tdTotal.textContent = aiLocked ? '🔒' : (p.score_total != null ? Number(p.score_total).toFixed(1) + '%' : '-');
     tr.appendChild(tdTotal);
 
     tbody.appendChild(tr);

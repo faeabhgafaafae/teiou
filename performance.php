@@ -116,6 +116,7 @@ svg.trend-chart { width: 100%; height: auto; }
 </style>
 <script src="venue-display.js"></script>
 <script src="strategy-colors.js?v=<?php echo (int)@filemtime(__DIR__ . '/strategy-colors.js'); ?>"></script>
+<script src="prediction-factors.js?v=<?php echo (int)@filemtime(__DIR__ . '/prediction-factors.js'); ?>"></script>
 </head>
 <body>
 
@@ -240,16 +241,16 @@ svg.trend-chart { width: 100%; height: auto; }
     <?php endif; ?>
   </div>
 
-  <!-- 6. 個別レース詳細(スコア内訳、premium限定) -->
+  <!-- 6. 個別レース詳細(予想の根拠、Standard 以上。plan_access.php) -->
   <div class="card">
-    <h2>個別レース詳細(スコア内訳)</h2>
-    <?php if ($isPremium): ?>
+    <h2>個別レース詳細(予想の根拠)</h2>
+    <?php if ($isStandardPlus): ?>
       <div id="raceDetailResult"><div class="loading">読み込み中...</div></div>
     <?php else: ?>
       <div class="premium-lock">
         <span class="premium-lock-icon">&#128274;</span>
-        <p>個別レースの詳細スコア内訳は Premium プラン限定機能です。</p>
-        <a href="mypage.php#planCardPremium">プランをアップグレード</a>
+        <p>個別レースの予想の根拠は Standard / Premium プラン限定機能です。</p>
+        <a href="mypage.php#planCardStandard">プランをアップグレード</a>
       </div>
     <?php endif; ?>
   </div>
@@ -822,93 +823,18 @@ loadVenueComparison();
 
 // ============================================================
 // 6. 個別レース詳細(スコア内訳、premium限定)
-// predict.php/ai-predict.php の詳細スコア内訳(get_prediction.phpの
-// breakdown)と同じデータ・表示ロジックを流用する。
+// 予想の根拠(get_prediction.php の factors)を prediction-factors.js で表示する(ai-predict.php と共通。
+// 2026-11-07 に旧 v1 のスコア内訳から置き換え)。
 // ============================================================
-function makeBkRow(label, value, sub) {
-  var row = document.createElement('div');
-  row.className = 'bk-row';
-  var lbl = document.createElement('span');
-  lbl.className = 'bk-label';
-  lbl.textContent = label;
-  var val = document.createElement('span');
-  val.className = 'bk-value';
-  val.textContent = value;
-  row.appendChild(lbl);
-  row.appendChild(val);
-  if (sub) {
-    var subEl = document.createElement('span');
-    subEl.className = 'bk-sub';
-    subEl.textContent = sub;
-    row.appendChild(subEl);
-  }
-  return row;
-}
-function makeBkChipRow(label, val, max) {
-  var row = document.createElement('div');
-  row.className = 'bk-row';
-  var lbl = document.createElement('span');
-  lbl.className = 'bk-label';
-  lbl.textContent = label;
-  var chip = document.createElement('span');
-  chip.className = 'bk-chip';
-  chip.textContent = Number(val).toFixed(1) + ' / ' + max + 'pt';
-  row.appendChild(lbl);
-  row.appendChild(chip);
-  return row;
-}
-function makeBkGroupTitle(text) {
-  var el = document.createElement('div');
-  el.className = 'bk-group-title';
-  el.textContent = text;
-  return el;
-}
-
+// 1艇分の予想の根拠(prediction-factors.js。get_prediction.php の factors)
 function renderRaceBreakdown(container, pred) {
-  var bk = pred.breakdown;
   container.textContent = '';
-  if (!bk) {
-    var noData = document.createElement('div');
-    noData.style.cssText = 'font-size:11px;color:#999;padding:4px 0;';
-    noData.textContent = '内訳データを取得できませんでした。';
-    container.appendChild(noData);
-    return;
-  }
-
   var head = document.createElement('div');
   head.style.cssText = 'font-size:12px;font-weight:700;color:#222;margin-bottom:4px;';
-  head.textContent = pred.name + '(' + pred.lane + '号艇・予測' + pred.predicted_rank + '位・スコア' + Number(pred.score_total).toFixed(1) + ')';
+  head.textContent = pred.name + '(' + pred.lane + '号艇・予測' + pred.predicted_rank + '位' +
+    (pred.score_total != null ? '・1着確率 ' + Number(pred.score_total).toFixed(1) + '%' : '') + ')';
   container.appendChild(head);
-
-  container.appendChild(makeBkGroupTitle('選手能力 (max 40pt)'));
-  container.appendChild(makeBkRow('全国勝率', bk.win_rate_national != null ? Number(bk.win_rate_national).toFixed(2) + '%' : '-'));
-  container.appendChild(makeBkRow('当地勝率', bk.win_rate_local != null ? Number(bk.win_rate_local).toFixed(2) + '%' : '-',
-    bk.local_total > 0 ? '(直近2年 ' + bk.local_total + '走)' : '(データなし→全国値を使用)'));
-  container.appendChild(makeBkChipRow('素点', bk.score_ability_raw || 0, 40));
-
-  container.appendChild(makeBkGroupTitle('コース補正 (max 35pt)'));
-  if (bk.course_total > 0) {
-    container.appendChild(makeBkRow(pred.lane + '号艇 (直近2年)', bk.course_total + '走'));
-    container.appendChild(makeBkRow('1着率', bk.course_win_rate != null ? Number(bk.course_win_rate).toFixed(1) + '%' : '-'));
-  } else {
-    container.appendChild(makeBkRow('データ', 'なし', '(レーン平均値を適用)'));
-  }
-  container.appendChild(makeBkChipRow('素点', bk.score_course_raw || 0, 35));
-
-  container.appendChild(makeBkGroupTitle('当日情報 (max 35pt)'));
-  container.appendChild(makeBkRow('展示タイム', pred.exhibit_time != null ? Number(pred.exhibit_time).toFixed(2) + '秒' : 'なし', '→ ' + (bk.score_exhibit_raw || 0).toFixed(1) + 'pt / 15pt'));
-  if (bk.is_flying) {
-    container.appendChild(makeBkRow('スタートタイミング', 'F (フライング)', '→ -10pt 適用'));
-  } else {
-    container.appendChild(makeBkRow('スタートタイミング', pred.start_timing != null ? Number(pred.start_timing).toFixed(2) + '秒' : 'なし', '→ ' + (bk.score_st_raw || 0).toFixed(1) + 'pt / 10pt'));
-  }
-  container.appendChild(makeBkRow('モーター2連率', pred.motor_2rate != null ? Number(pred.motor_2rate).toFixed(1) + '%' : 'なし', '→ ' + (bk.score_motor_raw || 0).toFixed(1) + 'pt / 10pt'));
-  container.appendChild(makeBkChipRow('小計', bk.score_today_raw || 0, 35));
-
-  container.appendChild(makeBkGroupTitle('気象 (max 5pt)'));
-  container.appendChild(makeBkRow('風速', bk.wind_speed != null ? Number(bk.wind_speed).toFixed(1) + 'm/s' : '-', bk.wind_dir || ''));
-  container.appendChild(makeBkRow('波高', bk.wave_height != null ? Number(bk.wave_height).toFixed(0) + 'cm' : '-'));
-  container.appendChild(makeBkChipRow('素点', bk.score_weather_raw || 0, 5));
+  container.appendChild(renderPredictionFactors(pred.factors));
 }
 
 async function toggleRaceDetail(row, body, race) {
@@ -948,7 +874,7 @@ async function toggleRaceDetail(row, body, race) {
     body.dataset.loaded = '1';
   } catch (e) {
     body.textContent = '';
-    body.appendChild(makeError('内訳の取得に失敗しました'));
+    body.appendChild(makeError('予想の根拠の取得に失敗しました'));
   }
 }
 
@@ -984,7 +910,7 @@ function renderRaceDetailRow(race) {
   var toggleBtn = document.createElement('button');
   toggleBtn.className = 'race-detail-toggle';
   toggleBtn.type = 'button';
-  toggleBtn.textContent = 'スコア内訳を見る';
+  toggleBtn.textContent = '予想の根拠を見る';
   hdr.appendChild(toggleBtn);
 
   var body = document.createElement('div');
@@ -1000,7 +926,7 @@ function renderRaceDetailRow(race) {
 }
 
 async function loadRaceDetails() {
-  if (!IS_PREMIUM) return;
+  if (!IS_STANDARD_PLUS) return;
   var el = document.getElementById('raceDetailResult');
   el.textContent = '';
   el.appendChild(makeLoading('読み込み中...'));
@@ -1017,7 +943,7 @@ async function loadRaceDetails() {
     }
     var note = document.createElement('div');
     note.className = 'note';
-    note.textContent = '直近30件の戦略買い目を表示しています。「スコア内訳を見る」で予想スコアの内訳(選手能力・コース補正・当日情報・気象)を確認できます。';
+    note.textContent = '直近30件の戦略買い目を表示しています。「予想の根拠を見る」で、統計モデルの計算で各艇の評価を上げた・下げた主な要因を確認できます。';
     el.appendChild(note);
 
     data.races.forEach(function(race) {

@@ -8,13 +8,8 @@ var ALL_VENUES = [
 
 var GRADE_CLASSES = { 'SG': 'grade-sg', 'G1': 'grade-g1', 'G2': 'grade-g2', 'G3': 'grade-g3', '一般': 'grade-ippan' };
 
-var VENUE_GRADES = {
-  '桐生': 'G3', '戸田': '一般', '江戸川': '一般', '平和島': 'G1', '多摩川': '一般',
-  '浜名湖': '一般', '蒲郡': '一般', '常滑': '一般', '津': '一般', '三国': '一般',
-  '琵琶湖': '一般', '住之江': 'G2', '尼崎': 'G3', '鳴門': '一般', '丸亀': '一般',
-  '児島': '一般', '宮島': '一般', '徳山': '一般', '下関': 'SG', '若松': '一般',
-  '芦屋': '一般', '福岡': '一般', '唐津': '一般', '大村': '一般'
-};
+// 開催グレードは index.php が表示日の races.grade を埋め込む(未取込みの会場はバッジなし)
+var VENUE_GRADES = window.VENUE_GRADES_FOR_DATE || {};
 
 // --- 状態管理用変数 ---
 var apiDate = '';
@@ -66,8 +61,9 @@ function switchPage(pageName) {
 // --- HTML生成・レンダリング関数 ---
 function createVenueCard(venueName, venueData) {
   var isActive = !!venueData;
-  var grade = VENUE_GRADES[venueName] || '一般';
+  var grade = VENUE_GRADES[venueName] || '';
   var gradeClass = GRADE_CLASSES[grade];
+  var gradeBadge = grade ? '<span class="grade-badge ' + gradeClass + '">' + grade + '</span>' : '';
   var imgSrc = venueName + '.jpg';
   var displayName = venueDisplayName(venueName);
 
@@ -80,7 +76,7 @@ function createVenueCard(venueName, venueData) {
   if (!isActive) {
     return '<div class="venue-card inactive">' +
         '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-          '<div><span class="venue-name">' + displayName + '</span><span class="grade-badge ' + gradeClass + '">' + grade + '</span></div>' +
+          '<div><span class="venue-name">' + displayName + '</span>' + gradeBadge + '</div>' +
           starButton +
         '</div>' +
         '<div class="card-main-info">' +
@@ -97,7 +93,7 @@ function createVenueCard(venueName, venueData) {
 
   return '<a href="' + href + '" class="venue-card">' +
       '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-        '<div><span class="venue-name">' + displayName + '</span><span class="grade-badge ' + gradeClass + '">' + grade + '</span></div>' +
+        '<div><span class="venue-name">' + displayName + '</span>' + gradeBadge + '</div>' +
         starButton +
       '</div>' +
       '<div class="card-main-info">' +
@@ -167,7 +163,7 @@ function renderFeaturedBanner(venues) {
 function renderVenueGrid() {
   var grid = document.getElementById('venueGrid');
   var filteredVenues = ALL_VENUES.filter(function(name) {
-    var grade = VENUE_GRADES[name] || '一般';
+    var grade = VENUE_GRADES[name] || '';
     var matchesGrade = (currentFilter === 'all' || grade === currentFilter);
     var matchesSearch = name.indexOf(currentSearch) !== -1;
     return matchesGrade && matchesSearch;
@@ -351,11 +347,6 @@ function setupNavigation() {
 }
 
 // --- 準備中メニュー用 ---
-function showComingSoon(e) {
-  if (e) e.preventDefault();
-  alert('準備中です。しばらくお待ちください。');
-}
-
 // --- 初期実行 ---
 loadVenues();
 checkAuth();

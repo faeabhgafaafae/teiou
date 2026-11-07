@@ -320,6 +320,7 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
 </style>
 <script src="venue-display.js"></script>
 <script src="strategy-colors.js?v=<?php echo (int)@filemtime(__DIR__ . '/strategy-colors.js'); ?>"></script>
+<script src="prediction-factors.js?v=<?php echo (int)@filemtime(__DIR__ . '/prediction-factors.js'); ?>"></script>
 </head>
 <body>
 
@@ -369,8 +370,8 @@ footer { text-align: center; padding: 28px 16px; color: #bbb; font-size: 11px; }
     <div class="pred-table-header">
       <div class="th-waku">枠</div>
       <div class="th-name">レーサー</div>
-      <div class="th-score">スコア</div>
-      <div class="th-breakdown">スコア内訳</div>
+      <div class="th-score">1着確率</div>
+      <div class="th-breakdown"></div>
       <div class="th-rates">
         <div class="th-top3">3連対率</div>
         <div>1着率</div>
@@ -424,10 +425,11 @@ var raceNo = parseInt(params.get('race_no') || '1', 10);
 
 function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
-var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
+// 開催グレードは races.grade(boatrace.jp から取込み)。未取込みの会場はバッジを出さない(venue_grades_lib.php)
+var VENUE_GRADES = <?php require_once __DIR__ . '/venue_grades_lib.php'; echo venue_grades_json(); ?>;
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
 var WAKU_STYLES = { 1:'background:#fff;color:#222;border:2px solid #ccc', 2:'background:#222;color:#fff', 3:'background:#e53e3e;color:#fff', 4:'background:#2563eb;color:#fff', 5:'background:#eab308;color:#222', 6:'background:#16a34a;color:#fff' };
-var vg = VENUE_GRADES[venue] || '一般';
+var vg = VENUE_GRADES[venue] || '';
 
 // [戻るボタン] パターンB: venue+date を付けてレース一覧へ戻す
 var backBtnEl = document.getElementById('backBtn');
@@ -443,6 +445,7 @@ document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R 予�
 var badge = document.getElementById('pageBadge');
 badge.textContent = vg;
 badge.className = 'gh-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
+if (!vg) badge.style.display = 'none';  // グレード未取込み
 badge.style.display = 'inline-block';
 document.getElementById('pageDate').textContent = fmtDate(date);
 
@@ -474,6 +477,8 @@ var personalExplainLoading = false;
 var personalExplainRefs = {};
 var currentRaceId = null;
 var userPlan = 'free';
+var canViewDetails = false;   // get_prediction.php の can_view_details(Standard 以上)
+var topScoreValue = 0;
 
 var topScoreLane = null;
 var pikaichiOnly = false;
@@ -493,141 +498,27 @@ function buildResults(predictions) {
       lane: Number(p.lane),
       name: p.name,
       grade: p.grade,
-      score: p.score_total,
-      score_ability: p.score_ability,
-      score_course: p.score_course,
-      score_today: p.score_today,
-      score_weather: p.score_weather,
+      score: p.score_total,              // 1着確率(%)。Free・未ログインは null(API が返さない)
+      predicted_rank: Number(p.predicted_rank) || 99,
       exhibit_time: p.exhibit_time,
       start_timing: p.start_timing,
       motor_2rate: p.motor_2rate,
-      breakdown: p.breakdown || null
+      factors: p.factors || null         // 予想の根拠(Standard 以上)
     });
   }
-  results.sort(function(a, b) { return Number(b.score) - Number(a.score); });
+  // 予測順位の順(予測順位は全員に公開。plan_access.php)
+  results.sort(function(a, b) { return a.predicted_rank - b.predicted_rank; });
   return results;
-}
-
-function makeBkRow(label, value, sub) {
-  var row = document.createElement('div');
-  row.className = 'bk-row';
-  var lbl = document.createElement('span');
-  lbl.className = 'bk-label';
-  lbl.textContent = label;
-  var val = document.createElement('span');
-  val.className = 'bk-value';
-  val.textContent = value;
-  row.appendChild(lbl);
-  row.appendChild(val);
-  if (sub) {
-    var subEl = document.createElement('span');
-    subEl.className = 'bk-sub';
-    subEl.textContent = sub;
-    row.appendChild(subEl);
-  }
-  return row;
-}
-
-function makeBkChipRow(label, val, max) {
-  var row = document.createElement('div');
-  row.className = 'bk-row';
-  var lbl = document.createElement('span');
-  lbl.className = 'bk-label';
-  lbl.textContent = label;
-  var chip = document.createElement('span');
-  chip.className = 'bk-chip';
-  chip.textContent = Number(val).toFixed(1) + ' / ' + max + 'pt';
-  row.appendChild(lbl);
-  row.appendChild(chip);
-  return row;
-}
-
-function makeBkGroupTitle(text) {
-  var el = document.createElement('div');
-  el.className = 'bk-group-title';
-  el.textContent = text;
-  return el;
 }
 
 function renderBreakdownSection(r) {
   var section = document.createElement('div');
   section.className = 'bk-section';
-
-  if (userPlan !== 'premium') {
-    var lockDiv = document.createElement('div');
-    lockDiv.className = 'bk-lock';
-    lockDiv.appendChild(document.createTextNode('🔒 詳細スコア内訳はPremium限定 '));
-    var lockLink = document.createElement('a');
-    lockLink.href = 'mypage.php#planCardPremium';
-    lockLink.textContent = 'プランをアップグレード';
-    lockDiv.appendChild(lockLink);
-    section.appendChild(lockDiv);
+  if (!canViewDetails) {
+    section.appendChild(renderFactorsLock());
     return section;
   }
-
-  var bk = r.breakdown;
-  if (!bk) {
-    var noData = document.createElement('div');
-    noData.style.cssText = 'font-size:11px;color:#999;padding:4px 0;';
-    noData.textContent = '内訳データを取得できませんでした。レースを再読み込みしてください。';
-    section.appendChild(noData);
-    return section;
-  }
-
-  var title = document.createElement('div');
-  title.className = 'bk-title';
-  title.appendChild(document.createTextNode('詳細スコア内訳 '));
-  var badge = document.createElement('span');
-  badge.className = 'bk-badge';
-  badge.textContent = 'PREMIUM';
-  title.appendChild(badge);
-  section.appendChild(title);
-
-  // 選手能力
-  section.appendChild(makeBkGroupTitle('選手能力 (max 40pt)'));
-  section.appendChild(makeBkRow('全国勝率', bk.win_rate_national != null ? Number(bk.win_rate_national).toFixed(2) + '%' : '-'));
-  section.appendChild(makeBkRow('当地勝率', bk.win_rate_local != null ? Number(bk.win_rate_local).toFixed(2) + '%' : '-',
-    bk.local_total > 0 ? '(直近2年 ' + bk.local_total + '走)' : '(データなし→全国値を使用)'));
-  section.appendChild(makeBkRow('加重平均', bk.win_rate_weighted != null ? Number(bk.win_rate_weighted).toFixed(2) + '%' : '-', '(全国40%+当地60%)'));
-  section.appendChild(makeBkChipRow('素点', bk.score_ability_raw || 0, 40));
-
-  // コース補正
-  section.appendChild(makeBkGroupTitle('コース補正 (max 35pt)'));
-  if (bk.course_total > 0) {
-    section.appendChild(makeBkRow(r.lane + '号艇 (直近2年)', bk.course_total + '走'));
-    section.appendChild(makeBkRow('1着率', bk.course_win_rate != null ? Number(bk.course_win_rate).toFixed(1) + '%' : '-'));
-    section.appendChild(makeBkRow('2着以内率', bk.course_r2_rate != null ? Number(bk.course_r2_rate).toFixed(1) + '%' : '-'));
-    section.appendChild(makeBkRow('3着以内率', bk.course_r3_rate != null ? Number(bk.course_r3_rate).toFixed(1) + '%' : '-'));
-  } else {
-    section.appendChild(makeBkRow('データ', 'なし', '(レーン平均値を適用)'));
-  }
-  section.appendChild(makeBkChipRow('素点', bk.score_course_raw || 0, 35));
-
-  // 当日情報
-  section.appendChild(makeBkGroupTitle('当日情報 (max 35pt)'));
-  var etDisplay = r.exhibit_time != null ? Number(r.exhibit_time).toFixed(2) + '秒' : 'なし';
-  section.appendChild(makeBkRow('展示タイム', etDisplay, '→ ' + (bk.score_exhibit_raw || 0).toFixed(1) + 'pt / 15pt'));
-
-  var stDisplay, stSub;
-  if (bk.is_flying) {
-    stDisplay = 'F (フライング)';
-    stSub = '→ -10pt 適用';
-  } else {
-    stDisplay = r.start_timing != null ? Number(r.start_timing).toFixed(2) + '秒' : 'なし';
-    stSub = '→ ' + (bk.score_st_raw || 0).toFixed(1) + 'pt / 10pt';
-  }
-  section.appendChild(makeBkRow('スタートタイミング', stDisplay, stSub));
-
-  var mrDisplay = r.motor_2rate != null ? Number(r.motor_2rate).toFixed(1) + '%' : 'なし';
-  section.appendChild(makeBkRow('モーター2連率', mrDisplay, '→ ' + (bk.score_motor_raw || 0).toFixed(1) + 'pt / 10pt'));
-  section.appendChild(makeBkChipRow('小計', bk.score_today_raw || 0, 35));
-
-  // 気象
-  section.appendChild(makeBkGroupTitle('気象 (max 5pt)'));
-  section.appendChild(makeBkRow('風速', bk.wind_speed != null ? Number(bk.wind_speed).toFixed(1) + 'm/s' : '-', bk.wind_dir || ''));
-  section.appendChild(makeBkRow('波高', bk.wave_height != null ? Number(bk.wave_height).toFixed(0) + 'cm' : '-'));
-  section.appendChild(makeBkChipRow('素点', bk.score_weather_raw || 0, 5));
-
+  section.appendChild(renderPredictionFactors(r.factors));
   return section;
 }
 
@@ -658,30 +549,19 @@ function renderPredCard(r, rank) {
 
   var scoreEl = document.createElement('div');
   scoreEl.className = 'pred-score-total';
-  scoreEl.textContent = r.score != null ? Number(r.score).toFixed(1) : '-';
-
-  var sAbility = Number(r.score_ability) || 0;
-  var sCourse = Number(r.score_course) || 0;
-  var sDaily = Number(r.score_today) || 0;
-  var sWeather = Number(r.score_weather) || 0;
+  // 1着確率(%)。Free・未ログインは鍵(予測順位はカードの並びで公開)
+  scoreEl.textContent = r.score != null ? Number(r.score).toFixed(1) + '%' : '🔒';
 
   var stackWrap = document.createElement('div');
   stackWrap.className = 'score-stack-wrap';
   var stack = document.createElement('div');
   stack.className = 'score-stack';
-  var segs = [
-    { cls: 'seg-ability', val: sAbility },
-    { cls: 'seg-course', val: sCourse },
-    { cls: 'seg-daily', val: sDaily },
-    { cls: 'seg-weather', val: sWeather }
-  ];
-  for (var s = 0; s < segs.length; s++) {
-    if (segs[s].val > 0) {
-      var seg = document.createElement('div');
-      seg.className = 'seg ' + segs[s].cls;
-      seg.style.width = segs[s].val + '%';
-      stack.appendChild(seg);
-    }
+  // 1着確率のバー(レース内で最も高い艇を100%として表示)
+  if (r.score != null && topScoreValue > 0) {
+    var seg = document.createElement('div');
+    seg.className = 'seg seg-ability';
+    seg.style.width = Math.min(100, Number(r.score) / topScoreValue * 100) + '%';
+    stack.appendChild(seg);
   }
   stackWrap.appendChild(stack);
   var chevron = document.createElement('div');
@@ -719,43 +599,6 @@ function renderPredCard(r, rank) {
   var detail = document.createElement('div');
   detail.className = 'pred-detail';
   detail.style.display = 'none';
-
-  var components = [
-    { label: '選手能力', val: sAbility, max: 40, cls: 'fill-ability' },
-    { label: 'コース補正', val: sCourse, max: 35, cls: 'fill-course' },
-    { label: '当日情報', val: sDaily, max: 35, cls: 'fill-daily' },
-    { label: '気象', val: sWeather, max: 5, cls: 'fill-weather' }
-  ];
-  for (var c = 0; c < components.length; c++) {
-    var comp = components[c];
-    var dRow = document.createElement('div');
-    dRow.className = 'score-detail-row';
-
-    var lbl = document.createElement('div');
-    lbl.className = 'score-detail-label';
-    lbl.textContent = comp.label;
-
-    var barWrap = document.createElement('div');
-    barWrap.className = 'score-detail-bar-wrap';
-    var track = document.createElement('div');
-    track.className = 'score-detail-bar-track';
-    var fill = document.createElement('div');
-    fill.className = 'score-detail-bar-fill ' + comp.cls;
-    var pct = comp.max > 0 ? (comp.val / comp.max * 100) : 0;
-    if (pct > 100) pct = 100;
-    fill.style.width = pct + '%';
-    track.appendChild(fill);
-    barWrap.appendChild(track);
-
-    var valEl = document.createElement('div');
-    valEl.className = 'score-detail-value';
-    valEl.textContent = comp.val.toFixed(1) + ' / ' + comp.max + '点';
-
-    dRow.appendChild(lbl);
-    dRow.appendChild(barWrap);
-    dRow.appendChild(valEl);
-    detail.appendChild(dRow);
-  }
 
   detail.appendChild(renderBreakdownSection(r));
 
@@ -843,6 +686,15 @@ async function loadData() {
       var freshRes = await fetch('api_predict.php?' + baseParams);
       if (!freshRes.ok) throw new Error('HTTP ' + freshRes.status);
       data = await freshRes.json();
+      // 生成・保存できたら get_prediction.php を読み直す(予想の根拠 factors は get_prediction.php が返す)
+      try {
+        var againRes = await fetch('get_prediction.php?' + baseParams);
+        if (againRes.ok) {
+          var again = await againRes.json();
+          if (again.predictions && again.predictions.length > 0) data = again;
+        }
+      } catch (e2) {}
+      if (data.can_view_details === undefined) data.can_view_details = !data.ai_locked;
     }
 
     if (!data || data.error || !data.predictions || data.predictions.length === 0) {
@@ -871,25 +723,15 @@ async function loadData() {
     topScoreLane = results.length ? results[0].lane : null;
     list.textContent = '';
 
+    // 並びは予測順位(全員に公開)。1着確率・予想の根拠は Standard 以上(plan_access.php)
+    canViewDetails = !!data.can_view_details;
+    topScoreValue = results.length && results[0].score != null ? Number(results[0].score) : 0;
     var legend = document.createElement('div');
     legend.className = 'score-legend';
-    var legendItems = [
-      { color: '#2563eb', label: '選手能力' },
-      { color: '#16a34a', label: 'コース補正' },
-      { color: '#e67e22', label: '当日情報' },
-      { color: '#00bcd4', label: '気象' }
-    ];
-    for (var li = 0; li < legendItems.length; li++) {
-      var item = document.createElement('div');
-      item.className = 'legend-item';
-      var dot = document.createElement('div');
-      dot.className = 'legend-dot';
-      dot.style.background = legendItems[li].color;
-      var txt = document.createTextNode(legendItems[li].label);
-      item.appendChild(dot);
-      item.appendChild(txt);
-      legend.appendChild(item);
-    }
+    legend.style.cssText = 'font-size:11px; color:#666;';
+    legend.textContent = canViewDetails
+      ? '予測順位の順に表示。1着確率は統計モデル(ロジスティック回帰)の計算値で、バーはレース内で最も高い艇を基準にした長さです。各艇をタップすると予想の根拠を表示します。'
+      : '予測順位の順に表示しています。1着確率と予想の根拠は Standard / Premium 会員が見られます。';
     list.appendChild(legend);
 
     renderedPlayers = [];
@@ -1003,6 +845,16 @@ async function loadExplain(raceId) {
     var res = await fetch(url);
     if (res.status === 401) {
       showExplainLoginPrompt(body);
+      return;
+    }
+    if (res.status === 403) {
+      body.textContent = '';
+      body.appendChild(document.createTextNode('🔒 AI解説は Standard / Premium 会員限定です。 '));
+      var up = document.createElement('a');
+      up.href = 'mypage.php#planCardStandard';
+      up.textContent = 'プランをアップグレード';
+      up.style.cssText = 'color:#d97706; font-weight:700;';
+      body.appendChild(up);
       return;
     }
     if (!res.ok) {

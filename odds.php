@@ -151,12 +151,13 @@ var raceNo = parseInt(params.get('race_no') || '1', 10);
 
 function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
-var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
+// 開催グレードは races.grade(boatrace.jp から取込み)。未取込みの会場はバッジを出さない(venue_grades_lib.php)
+var VENUE_GRADES = <?php require_once __DIR__ . '/venue_grades_lib.php'; echo venue_grades_json(); ?>;
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
 var WAKU_BG = { 1:'#fff', 2:'#222', 3:'#e53e3e', 4:'#2563eb', 5:'#eab308', 6:'#16a34a' };
 var WAKU_FG = { 1:'#222', 2:'#fff', 3:'#fff', 4:'#fff', 5:'#222', 6:'#fff' };
 var WAKU_BORDER = { 1:'2px solid #ccc', 2:'none', 3:'none', 4:'none', 5:'none', 6:'none' };
-var vg = VENUE_GRADES[venue] || '一般';
+var vg = VENUE_GRADES[venue] || '';
 
 function fmtDate(ds) { var d = new Date(ds + 'T00:00:00'); var w = ['日','月','火','水','木','金','土']; return (d.getMonth()+1) + '/' + d.getDate() + ' (' + w[d.getDay()] + ')'; }
 
@@ -165,6 +166,7 @@ document.title = '艇王 - ' + venueDisplayName(venue) + ' ' + raceNo + 'R オ�
 var badge = document.getElementById('pageBadge');
 badge.textContent = vg;
 badge.className = 'grade-badge ' + (GRADE_CLASSES[vg] || 'grade-ippan');
+if (!vg) badge.style.display = 'none';  // グレード未取込み
 document.getElementById('pageDate').textContent = fmtDate(date);
 
 var baseQ = 'venue=' + encodeURIComponent(venue) + '&date=' + date;

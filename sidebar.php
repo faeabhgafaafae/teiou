@@ -6,16 +6,17 @@
     <a href="predictions.php" class="nav-item" data-nav="predictions"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> 予測レース</a>
     <a href="performance.php" class="nav-item" data-nav="performance"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> 成績・回収率 <span class="nav-standard-badge" title="全体サマリーは無料。日別推移・会場別などは Standard 以上">一部STANDARD+</span></a>
     <a href="analysis.php" class="nav-item" data-nav="analysis"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg> データ分析 <span class="nav-standard-badge" title="一部は無料。全件表示・高度検索などは Standard / Premium">一部STANDARD+</span></a>
+    <a href="about.php" class="nav-item" data-nav="about"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg> 艇王について</a>
     <a href="admin.php" class="nav-item" id="menuAdmin" data-nav="admin" style="display:none;"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg> 管理画面</a>
   </nav>
 
   <div class="premium-box">
-    <h3>プレミアム会員ならもっと詳しく分析できます</h3>
+    <h3>会員プランでできること</h3>
     <ul>
-      <li><i class="fas fa-check"></i> 予想スコアの内訳を全公開</li>
-      <li><i class="fas fa-check"></i> 4戦略の比較ビュー</li>
-      <li><i class="fas fa-check"></i> マイ的中トラッカー</li>
-      <li><i class="fas fa-check"></i> 過去レースの高度検索</li>
+      <li><i class="fas fa-check"></i> Standard: 1着確率・買い目・AI解説</li>
+      <li><i class="fas fa-check"></i> Standard: 予想の根拠(評価の要因)</li>
+      <li><i class="fas fa-check"></i> Premium: 4戦略の比較・マイ的中トラッカー</li>
+      <li><i class="fas fa-check"></i> Premium: 会場横断比較・過去レース高度検索</li>
     </ul>
     <a href="mypage.php#planCardPremium" id="sidebarPromoBtn" class="btn-primary" style="display: block; text-align: center; text-decoration: none; line-height: 1.4;">詳しく見る</a>
   </div>
@@ -27,18 +28,12 @@
   </div>
 
   <div class="sidebar-footer">
-    <a href="#">ヘルプ</a><a href="#">お問い合わせ</a><br>
-    <a href="#">利用規約</a><a href="#">プライバシー</a><br>
+    <a href="about.php">艇王について・使い方</a><br>
     © 2026 艇王
   </div>
 </aside>
 
 <script>
-function showComingSoon(e) {
-  if (e) e.preventDefault();
-  alert('準備中です。しばらくお待ちください。');
-}
-
 (function() {
   var toggleBtn = document.getElementById('sidebarToggle');
   var sidebar = document.querySelector('.sidebar');

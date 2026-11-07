@@ -29,6 +29,7 @@ from urllib3.util.retry import Retry
 # ─── 設定 ──────────────────────────────────────────────
 API_URL  = os.environ.get('API_URL_RACELIST', 'https://2410049.moo.jp/import_racelist.php')
 API_KEY  = os.environ.get('API_KEY', 'teio2025')
+API_GRADES = os.environ.get('API_URL_GRADES') or 'https://2410049.moo.jp/import_grades.php'
 SLEEP_SEC = 3
 
 BASE_URL = 'https://www.boatrace.jp'
@@ -88,6 +89,46 @@ def scrape_schedule_times(jcd: str, hd: str) -> dict[int, str]:
             race_no += 1
 
     return times
+
+
+GRADE_CLASS_RE = re.compile(r'<td[^>]*\bclass="is-(SG|G1|G2|G3|ippan)[a-z]*\b')
+
+
+def parse_venue_grades(html: str) -> dict:
+    """boatrace.jp の開催一覧(race/index)から 会場コード => {'grade': 'SG|G1|G2|G3|一般', 'title': 開催名}。
+    各会場の行(tbody)にある会場画像 text_place1_XX.png と、グレードのセル(class="is-G1b" / "is-ippan" 等)、
+    開催名(raceindex へのリンク文字列)を読む。"""
+    out = {}
+    for block in html.split('<tbody>'):
+        m = re.search(r'text_place1_(\d{2})\.png', block)
+        g = GRADE_CLASS_RE.search(block)
+        if not m or not g:
+            continue
+        t = re.search(r'raceindex\?jcd=\d{2}&amp;hd=\d{8}">([^<]+)</a>', block)
+        out[m.group(1)] = {
+            'grade': '一般' if g.group(1) == 'ippan' else g.group(1),
+            'title': t.group(1).strip() if t else '',
+        }
+    return out
+
+
+def get_venue_grades(hd: str) -> dict:
+    """指定日(YYYYMMDD)の会場ごとのグレード。過去日も hd 指定で取得できる"""
+    res = fetch(f'{BASE_URL}/owpc/pc/race/index?hd={hd}', timeout=30)
+    return parse_venue_grades(res.text)
+
+
+def send_grades(hd: str) -> bool:
+    """会場ごとの開催グレード・開催名を races に保存する(import_grades.php)。失敗しても出走表の取込みは成功扱い"""
+    try:
+        grades = {VENUES.get(j, j): v for j, v in get_venue_grades(hd).items()}
+        date_str = f'{hd[:4]}-{hd[4:6]}-{hd[6:]}'
+        res = requests.post(API_GRADES, json={'api_key': API_KEY, 'date': date_str, 'grades': grades}, timeout=30)
+        print(f'  グレード: {len(grades)}場 → {res.json()}')
+        return True
+    except Exception as e:
+        print(f'  [GRADE ERROR] {e}')
+        return False
 
 
 def get_today_venues(hd: str) -> list[str]:
@@ -340,6 +381,10 @@ def main():
             time.sleep(SLEEP_SEC)
 
     print(f'\n完了! 送信{send_attempted}件中、{send_ok}件成功')
+
+    # 開催グレード・開催名(races の行ができた後に保存する)
+    if not args.rno:
+        send_grades(hd)
 
     # DB送信が1件も成功していない場合、boatrace.jp側の取得自体は動いていても
     # 実質的にDBへ何も反映されていない(2026-09-01の障害で判明した問題)。

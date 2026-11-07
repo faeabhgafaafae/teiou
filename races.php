@@ -198,9 +198,10 @@ var date  = params.get('date')  || today();
 function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
 // グレードはDBに持たないため静的マップで管理。年に数回変動するが更新コストは低い
-var VENUE_GRADES = { '桐生':'G3','戸田':'一般','江戸川':'一般','平和島':'G1','多摩川':'一般','浜名湖':'一般','蒲郡':'一般','常滑':'一般','津':'一般','三国':'一般','琵琶湖':'一般','住之江':'G2','尼崎':'G3','鳴門':'一般','丸亀':'一般','児島':'一般','宮島':'一般','徳山':'一般','下関':'SG','若松':'一般','芦屋':'一般','福岡':'一般','唐津':'一般','大村':'一般' };
+// 開催グレードは races.grade(boatrace.jp から取込み)。未取込みの会場はバッジを出さない(venue_grades_lib.php)
+var VENUE_GRADES = <?php require_once __DIR__ . '/venue_grades_lib.php'; echo venue_grades_json(); ?>;
 var GRADE_CLASSES = { 'SG':'grade-sg','G1':'grade-g1','G2':'grade-g2','G3':'grade-g3','一般':'grade-ippan' };
-var venueGrade = VENUE_GRADES[venue] || '一般';
+var venueGrade = VENUE_GRADES[venue] || '';
 
 var activeRaces = [];
 

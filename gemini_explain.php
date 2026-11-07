@@ -1,14 +1,24 @@
 <?php
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/model_switch.php';
+require_once __DIR__ . '/plan_access.php';
+require_once __DIR__ . '/model_explain_lib.php';
+
+// 解説文のプロンプトの版。2 = 統計モデルの寄与(評価を上げた/下げた要因)を渡す版(2026-11-07〜)。
+// キャッシュ(explanation / explanation_personal)は同じ版のものだけ使い、古い版(旧 v1 のスコア内訳で
+// 書かれた解説)は次に見られたときに作り直す。
+const EXPLAIN_PROMPT_VERSION = 2;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
-// type を問わずログイン必須。未ログインでのGroq API呼び出しを防ぐ
+// AI解説は Standard 以上(plan_access.php)。未ログインは 401(画面はログイン誘導)、Free は 403
 $user = current_user();
 if (!$user) {
     json_response(['error' => 'login_required', 'message' => 'ログインが必要です'], 401);
+}
+if (!plan_can_view_details($user)) {
+    json_response(['error' => 'premium_required', 'message' => 'AI解説はStandard/Premiumプラン限定です'], 403);
 }
 
 $race_id = $_GET['race_id'] ?? '';
@@ -18,13 +28,6 @@ if (!$race_id) {
 
 $type = $_GET['type'] ?? 'overall';
 
-// 個別解説(type=personal)はStandard/Premium限定
-if ($type === 'personal') {
-    $plan = $user['plan'] ?? 'free';
-    if ($plan === 'free') {
-        json_response(['error' => 'premium_required', 'message' => '個別解説はStandard/Premiumプラン限定です'], 403);
-    }
-}
 
 $pdo = get_db();
 
@@ -36,19 +39,17 @@ $raceDate     = (string)($stmtD->fetchColumn() ?: '');
 $displayModel = 'v2';
 $display      = load_display_predictions($pdo, (int)$race_id, $raceDate, $displayModel);
 $expTable     = prediction_table($displayModel);
-if ($expTable === 'predictions_v2') {
-    foreach (['explanation', 'explanation_personal'] as $col) {
-        try { $pdo->exec("ALTER TABLE predictions_v2 ADD COLUMN {$col} TEXT DEFAULT NULL"); }
-        catch (PDOException $e) { /* 1060 = カラム既存 */ }
-    }
+$cols = ['explanation TEXT DEFAULT NULL', 'explanation_personal TEXT DEFAULT NULL', 'explanation_ver INT DEFAULT NULL'];
+foreach ($cols as $def) {
+    if ($expTable !== 'predictions_v2' && strpos($def, 'explanation_ver') !== 0) continue;  // predictions は既存列
+    try { $pdo->exec("ALTER TABLE {$expTable} ADD COLUMN {$def}"); }
+    catch (PDOException $e) { /* 1060 = カラム既存 */ }
 }
 
-// ── 選手データ取得（共通） ──
-function fetch_players(PDO $pdo, int $race_id, array $display): array {
+// ── 選手データ取得(共通): 予測順位・1着確率と、統計モデルの寄与から求めた評価の要因 ──
+function fetch_players(PDO $pdo, int $race_id, array $display, string $model): array {
     $stmt = $pdo->prepare('
-        SELECT p.player_id, p.predicted_rank, p.score_total,
-               p.score_ability, p.score_course, p.score_today, p.score_weather,
-               e.lane, pl.name
+        SELECT p.player_id, p.predicted_rank, p.score_total, e.lane, pl.name
         FROM predictions p
         JOIN entries e ON e.race_id = p.race_id AND e.player_id = p.player_id
         JOIN players pl ON pl.id = p.player_id
@@ -57,22 +58,34 @@ function fetch_players(PDO $pdo, int $race_id, array $display): array {
     ');
     $stmt->execute([$race_id]);
     $rows = apply_display_ranks($stmt->fetchAll(), $display);
+    usort($rows, fn($a, $b) => ((int)$a['predicted_rank']) <=> ((int)$b['predicted_rank']));
+    try {
+        $factors = explain_race($pdo, $race_id, $model);
+    } catch (Exception $e) {
+        $factors = [];
+    }
     $players = [];
     foreach ($rows as $r) {
+        $pid = (int)$r['player_id'];
         $players[] = [
-            'player_id'     => (int)$r['player_id'],
-            'rank'          => (int)$r['predicted_rank'],
-            'lane'          => (int)$r['lane'],
-            'name'          => preg_replace('/\s+/', '', $r['name']),
-            'score_total'   => (float)$r['score_total'],
-            'score_ability' => (float)$r['score_ability'],
-            'score_course'  => (float)$r['score_course'],
-            'score_today'   => (float)$r['score_today'],
-            'score_weather' => (float)$r['score_weather'],
+            'player_id'   => $pid,
+            '予測順位'     => (int)$r['predicted_rank'],
+            '枠番'         => (int)$r['lane'],
+            '選手名'       => preg_replace('/\s+/', '', $r['name']),
+            '1着確率'      => round((float)$r['score_total'], 1) . '%',
+            '評価の要因'   => isset($factors[$pid]) ? explain_prompt_line($factors[$pid]) : 'データなし',
         ];
     }
     return $players;
 }
+
+// プロンプト共通の説明(旧 v1 の「選手能力・コース補正・当日情報・気象」の配点は使わない)
+const EXPLAIN_MODEL_NOTE =
+      "【予想の仕組み】\n"
+    . "予想は統計モデル(ロジスティック回帰)が出した各艇の1着確率で、確率の高い順が予測順位です。\n"
+    . "「評価の要因」は、モデルの計算でその艇の評価をレース平均より上げた要因・下げた要因(影響の大・中・小)です。\n"
+    . "解説は必ずこのデータにある要因だけを根拠にし、データにないこと(選手の調子・過去の対戦・天候の影響など)は書かない。\n"
+    . "「選手能力」「コース補正」「当日情報」「気象」「スコア」「点」という言葉は使わない。\n\n";
 
 // ── Groq API呼び出し（共通） ──
 function call_groq(string $prompt): string {
@@ -127,8 +140,9 @@ function call_groq(string $prompt): string {
 // ══════════════════════════════════════════
 if ($type === 'personal') {
     // キャッシュ確認
-    $stmt = $pdo->prepare("SELECT explanation_personal FROM {$expTable} WHERE race_id = ? AND explanation_personal IS NOT NULL LIMIT 1");
-    $stmt->execute([(int)$race_id]);
+    $stmt = $pdo->prepare("SELECT explanation_personal FROM {$expTable} WHERE race_id = ? AND explanation_personal IS NOT NULL
+                           AND explanation_ver = ? LIMIT 1");
+    $stmt->execute([(int)$race_id, EXPLAIN_PROMPT_VERSION]);
     $cached = $stmt->fetch();
 
     if ($cached) {
@@ -151,24 +165,20 @@ if ($type === 'personal') {
         json_response(['personals' => $personals, 'cached' => true]);
     }
 
-    $players = fetch_players($pdo, (int)$race_id, $display);
+    $players = fetch_players($pdo, (int)$race_id, $display, $displayModel);
     if (empty($players)) {
         json_response(['error' => '予想データが見つかりません'], 404);
     }
 
-    $prompt = "ボートレースの統計モデル(ロジスティック回帰)による予想結果です。\n"
-            . "各選手について、なぜこのスコアになったか・注意点を\n"
+    $prompt = "ボートレースの予想結果です。各選手について、なぜこの予測順位になったかと注意点を、\n"
             . "各選手50文字以内で個別に解説してください。\n\n"
+            . EXPLAIN_MODEL_NOTE
             . "【条件】\n"
             . "・選手名のスペースは除去（例: 菊地敬介選手）\n"
+            . "・確率の数字は使わない\n"
             . "・導入文不要、いきなり各選手の解説から始める\n"
             . "・以下のJSON形式のみで返答する（他のテキスト不要）:\n"
             . "[{\"player_id\":1,\"explanation\":\"解説文\"}, ...]\n\n"
-            . "【スコア説明】\n"
-            . "score_ability: 選手能力（最大40点・全国/当地勝率ベース）\n"
-            . "score_course: コース補正（最大35点・枠番の有利不利）\n"
-            . "score_today: 当日情報（最大35点・展示タイム/ST/モーター）\n"
-            . "score_weather: 気象（最大5点・風速/波高）\n\n"
             . "【予想データ】\n"
             . json_encode($players, JSON_UNESCAPED_UNICODE);
 
@@ -186,12 +196,12 @@ if ($type === 'personal') {
     }
 
     // DB保存
-    $stmt = $pdo->prepare("UPDATE {$expTable} SET explanation_personal = ? WHERE race_id = ? AND player_id = ?");
+    $stmt = $pdo->prepare("UPDATE {$expTable} SET explanation_personal = ?, explanation_ver = ? WHERE race_id = ? AND player_id = ?");
     foreach ($personals as $p) {
         $pid = (int)($p['player_id'] ?? 0);
         $exp = $p['explanation'] ?? '';
         if ($pid && $exp) {
-            $stmt->execute([$exp, (int)$race_id, $pid]);
+            $stmt->execute([$exp, EXPLAIN_PROMPT_VERSION, (int)$race_id, $pid]);
         }
     }
 
@@ -218,7 +228,7 @@ if ($type === 'personal') {
 // ══════════════════════════════════════════
 // type=overall: 全体解説（既存）
 // ══════════════════════════════════════════
-$stmt = $pdo->prepare("SELECT explanation FROM {$expTable} WHERE race_id = ? LIMIT 1");
+$stmt = $pdo->prepare("SELECT explanation, explanation_ver FROM {$expTable} WHERE race_id = ? LIMIT 1");
 $stmt->execute([(int)$race_id]);
 $row = $stmt->fetch();
 
@@ -226,42 +236,36 @@ if (!$row) {
     json_response(['error' => '予想データが見つかりません'], 404);
 }
 
-if ($row['explanation'] !== null) {
+if ($row['explanation'] !== null && (int)$row['explanation_ver'] === EXPLAIN_PROMPT_VERSION) {
     json_response(['explanation' => $row['explanation'], 'cached' => true]);
 }
 
-$players = fetch_players($pdo, (int)$race_id, $display);
+$players = fetch_players($pdo, (int)$race_id, $display, $displayModel);
 if (empty($players)) {
     json_response(['error' => '予想データが見つかりません'], 404);
 }
 
-$prompt = "ボートレースの統計モデル(ロジスティック回帰)による予想結果を以下に示します。\n"
+$prompt = "ボートレースの予想結果を以下に示します。\n"
         . "予想1位の選手が有利な理由と、2位以下で逆転の可能性がある選手について、\n"
         . "ボートレース解説者として端的に述べてください。\n\n"
+        . EXPLAIN_MODEL_NOTE
         . "【条件】\n"
         . "・150文字以内に必ず収める\n"
         . "・「〜しよう」「〜してください」など呼びかけ表現は使わない\n"
-        . "・スコアの数字は使わず、高い・低い・優位・不利などの表現を使う\n"
+        . "・確率の数字は使わず、高い・低い・優位・不利などの表現を使う\n"
         . "・選手名+「選手」と呼ぶ\n"
         . "・選手名の間にスペースは入れない（例: 菊地敬介選手）\n"
         . "・ボートレース用語を使う（インコース・アウトコース・スタートタイミング等）\n"
-        . "・「選手能力」「コース補正」「当日情報」「気象」の4項目に触れる\n"
         . "・「〜でしょう」「〜可能です」など曖昧な表現を避ける\n"
         . "・1位の理由を1文、注目選手を1文、計2文程度でまとめる\n"
         . "・「ボートレース解説者として」「予想結果を分析すると」などの導入文は不要\n"
         . "・いきなり解説内容から始める\n\n"
-        . "【スコア説明】\n"
-        . "score_total: 総合スコア（100点満点）\n"
-        . "score_ability: 選手能力スコア（最大40点・全国/当地勝率ベース）\n"
-        . "score_course: コース補正スコア（最大35点・枠番の有利不利）\n"
-        . "score_today: 当日情報スコア（最大35点・展示タイム/スタートタイミング/モーター2連率）\n"
-        . "score_weather: 気象スコア（最大5点・風速/波高）\n\n"
         . "【予想データ】\n"
         . json_encode($players, JSON_UNESCAPED_UNICODE);
 
 $text = call_groq($prompt);
 
-$stmt = $pdo->prepare("UPDATE {$expTable} SET explanation = ? WHERE race_id = ?");
-$stmt->execute([$text, (int)$race_id]);
+$stmt = $pdo->prepare("UPDATE {$expTable} SET explanation = ?, explanation_ver = ? WHERE race_id = ?");
+$stmt->execute([$text, EXPLAIN_PROMPT_VERSION, (int)$race_id]);
 
 json_response(['explanation' => $text]);

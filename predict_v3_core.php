@@ -63,9 +63,12 @@ class PredictV3
      * @param array $weather ['wind_speed'=>, 'wave_height'=>]
      * @return array [player_id => ['lane'=>, 'player_id'=>, 'probability'=>, 'predicted_rank'=>]]
      */
-    public static function score_race(array $entries, array $weather): array
+    /**
+     * 各艇の特徴量ベクトル(学習時と同じ順・欠損補完済み)。score_race() と contributions() で共用する。
+     * @return array [['player_id'=>, 'lane'=>, 'x'=>float[N_FEAT]], ...]
+     */
+    private static function feature_rows(array $entries, array $weather): array
     {
-        if (empty($entries)) return [];
 
         $M = self::IMPUTE_MEDIANS;
 
@@ -94,7 +97,7 @@ class PredictV3
             $st_rank[$i] = (float)$rank;
         }
 
-        $raw_probs = [];
+        $rows = [];
         foreach ($entries as $i => $e) {
             $lane = (int)$e['lane'];
 
@@ -148,17 +151,53 @@ class PredictV3
                 $grade === 'B1' ? 1.0 : 0.0,
             ];
 
+            $rows[] = ['player_id' => (int)$e['player_id'], 'lane' => $lane, 'x' => $x];
+        }
+        return $rows;
+    }
+
+    /**
+     * 各艇・各特徴量の寄与(係数 × 標準化した値 = ロジットへの加算分)。予想の根拠の表示に使う
+     * (model_explain_lib.php が特徴量をまとめ、レース平均との差で「評価を上げた/下げた要因」にする)。
+     * 特徴量の並びは FEATURE_KEYS。
+     * @return array [player_id => float[N_FEAT]]
+     */
+    public static function contributions(array $entries, array $weather): array
+    {
+        $out = [];
+        foreach (self::feature_rows($entries, $weather) as $row) {
+            $c = [];
+            for ($k = 0; $k < self::N_FEAT; $k++) {
+                $c[$k] = self::COEFS[$k] * ($row['x'][$k] - self::MEANS[$k]) / self::SCALES[$k];
+            }
+            $out[$row['player_id']] = $c;
+        }
+        return $out;
+    }
+
+    /** contributions() の並びに対応する特徴量名 */
+    public const FEATURE_KEYS = ['lane_2', 'lane_3', 'lane_4', 'lane_5', 'lane_6', 'global_win_rate', 'local_win_rate',
+        'exhibit_time_rel', 'start_timing', 'motor_2rate_rel', 'wind_speed', 'wave_height', 'avg_st', 'avg_st_rank',
+        'course_win_rate_sm', 'course_in2_sm', 'recent10_avg_rank', 'recent10_win_rate', 'recent10_st_mean',
+        'grade_A1', 'grade_A2', 'grade_B1'];
+
+    public static function score_race(array $entries, array $weather): array
+    {
+        if (empty($entries)) return [];
+
+        $raw_probs = [];
+        foreach (self::feature_rows($entries, $weather) as $row) {
+            $x = $row['x'];
             $logit = self::INTERCEPT;
             for ($k = 0; $k < self::N_FEAT; $k++) {
                 $logit += self::COEFS[$k] * ($x[$k] - self::MEANS[$k]) / self::SCALES[$k];
             }
-            $raw_probs[(int)$e['player_id']] = [
-                'lane'     => $lane,
+            $raw_probs[$row['player_id']] = [
+                'lane'     => $row['lane'],
                 'prob_raw' => 1.0 / (1.0 + exp(-$logit)),
             ];
         }
 
-        // レース内確率を正規化して合計=1に (v2と同一)
         $sum = array_sum(array_column($raw_probs, 'prob_raw'));
         $results = [];
         foreach ($raw_probs as $pid => $r) {
